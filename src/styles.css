@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f3ecdc;
+  --color-paper-deep: #e7ddc8;
+  --color-ink: #2b261c;
+  --color-ink-soft: #5c5346;
+  --color-moss: #1a3c34;
+  --color-moss-fg: #f4efe4;
+  --color-tea: #6b4e31;
+  --color-seal: #9b2d2a;
+  --color-leaf: #4d6b3c;
+  --color-leaf-pale: #c4b07a;
+  --color-leaf-red: #a04a32;
+  --color-line: #3d362b;
+  --color-chrome: #14110e;
+  --color-chrome-fg: #f4efe4;
+  --color-chrome-muted: #b6aa97;
+  --color-chrome-line: #2c261e;
+  --color-surface: #1d1914;
+  --radius-card: 0.15rem;
+  --aspect-reel: 9 / 16;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  --font-display: "LXGW WenKai", "Noto Serif SC", "Songti SC", serif;
+}
+
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("/fonts/lxgw-wenkai-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("/fonts/lxgw-wenkai-medium.woff2") format("woff2");
+  font-weight: 500 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-chrome);
+    color: var(--color-chrome-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
