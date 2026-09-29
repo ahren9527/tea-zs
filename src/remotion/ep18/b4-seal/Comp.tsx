@@ -1,8 +1,8 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { Paper } from "@/remotion/shared/paper";
-import { POP_SPRING, popTransform } from "@/remotion/shared/breath";
+import { Paper, usePaperColors, useFontSizeScale, useCustomText } from "@/remotion/shared/paper";
+import { popTransform } from "@/remotion/shared/breath";
 import { SfxTrack } from "@/remotion/shared/sfx";
-import { COLORS, FONT, SEAL_FONT } from "@/remotion/shared/theme";
+import { FONT, SEAL_FONT } from "@/remotion/shared/theme";
 import { LawIcon } from "@/remotion/ep18/shared/icons";
 import { CenterStack, SoloWord } from "@/remotion/ep18/shared/beat";
 import { useAppear, useFadeOut } from "@/remotion/ep18/shared/appear";
@@ -13,6 +13,10 @@ export function duration(_staggerFrames: number) {
 }
 
 export function Comp({ staggerFrames }: { staggerFrames: number }) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
+  const title = useCustomText("title", "封");
+  const taboo = useCustomText("taboo", "紫砂罐");
   const zishaHide = useFadeOut(LAYER_AT[0], 8);
   const zisha = useAppear(ZISHA_AT);
   const light = useAppear(LIGHT_AT);
@@ -20,7 +24,7 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
   return (
     <AbsoluteFill>
       <Paper />
-      <SoloWord at={CHAR_AT} until={MUST_AT} text="封" size={280} color={COLORS.seal} />
+      <SoloWord at={CHAR_AT} until={MUST_AT} text={title} size={280} color={colors.seal} />
       <SoloWord at={MUST_AT} until={ZISHA_AT} text="必须密封" size={96} />
       <div
         style={{
@@ -39,20 +43,20 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
             height: 280,
             opacity: zisha.opacity,
             transform: popTransform(zisha.enter, zisha.breath, 20, -3),
-            backgroundColor: "rgba(155, 45, 42, 0.08)",
+            backgroundColor: `${colors.seal}14`,
             borderRadius: 28,
-            border: `3px solid ${COLORS.seal}`,
+            border: `3px solid ${colors.seal}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontFamily: FONT,
-            fontSize: 72,
+            fontSize: Math.round(72 * fontScale),
             fontWeight: 600,
-            color: COLORS.seal,
+            color: colors.seal,
             letterSpacing: "0.18em",
           }}
         >
-          紫砂罐
+          {taboo}
           <BanStamp />
         </div>
       </div>
@@ -64,9 +68,9 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           style={{
             marginTop: 24,
             fontFamily: FONT,
-            fontSize: 48,
+            fontSize: Math.round(48 * fontScale),
             fontWeight: 600,
-            color: COLORS.seal,
+            color: colors.seal,
             letterSpacing: "0.28em",
             opacity: light.opacity,
             transform: popTransform(light.enter, light.breath, 14, -2),
@@ -83,6 +87,8 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
 function BanStamp() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
   const chop = spring({
     frame: frame - BAN_AT,
     fps,
@@ -106,16 +112,16 @@ function BanStamp() {
         marginLeft: -100,
         marginTop: -100,
         borderRadius: 8,
-        border: `8px solid ${COLORS.seal}`,
-        boxShadow: `inset 0 0 0 4px ${COLORS.seal}`,
-        backgroundColor: COLORS.paper,
-        color: COLORS.seal,
+        border: `8px solid ${colors.seal}`,
+        boxShadow: `inset 0 0 0 4px ${colors.seal}`,
+        backgroundColor: colors.paper,
+        color: colors.seal,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         fontFamily: SEAL_FONT,
-        fontSize: 56,
+        fontSize: Math.round(56 * fontScale),
         fontWeight: 900,
         lineHeight: 1.1,
         opacity: Math.max(0, op),
@@ -131,6 +137,9 @@ function BanStamp() {
 
 function LayerRow({ index }: { index: number }) {
   const layer = LAYERS[index];
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
+  const layerText = useCustomText(`layer${index + 1}`, layer.name);
   const { enter, opacity, breath } = useAppear(LAYER_AT[index]);
   return (
     <div
@@ -139,9 +148,9 @@ function LayerRow({ index }: { index: number }) {
         height: 200,
         opacity,
         transform: popTransform(enter, breath, 24, -3),
-        backgroundColor: index % 2 === 0 ? "rgba(231, 221, 200, 0.55)" : "rgba(243, 236, 220, 0.7)",
+        backgroundColor: index % 2 === 0 ? colors.paperDeep : colors.paper,
         borderRadius: 24,
-        boxShadow: `inset 6px 0 0 ${COLORS.seal}`,
+        boxShadow: `inset 6px 0 0 ${colors.seal}`,
         display: "flex",
         alignItems: "center",
         padding: "0 40px",
@@ -152,13 +161,13 @@ function LayerRow({ index }: { index: number }) {
       <LawIcon kind={layer.kind} />
       <div
         style={{
-          fontSize: 56,
+          fontSize: Math.round(56 * fontScale),
           fontWeight: 600,
-          color: COLORS.ink,
+          color: colors.ink,
           letterSpacing: "0.12em",
         }}
       >
-        {layer.name}
+        {layerText}
       </div>
     </div>
   );

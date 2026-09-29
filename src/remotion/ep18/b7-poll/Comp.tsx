@@ -1,8 +1,8 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { Paper } from "@/remotion/shared/paper";
+import { Paper, usePaperColors, useFontSizeScale, useCustomText } from "@/remotion/shared/paper";
 import { POP_SPRING, breathOffset, popTransform } from "@/remotion/shared/breath";
 import { SfxTrack } from "@/remotion/shared/sfx";
-import { COLORS, FONT } from "@/remotion/shared/theme";
+import { FONT } from "@/remotion/shared/theme";
 import { FOOT_AT, LENGTH, OPTIONS, OPT_AT, Q_AT, sfxHits } from "./data";
 
 export function duration(_staggerFrames: number) {
@@ -12,6 +12,10 @@ export function duration(_staggerFrames: number) {
 export function Comp({ staggerFrames }: { staggerFrames: number }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
+  const qText = useCustomText("question", "你平时怎么喝？");
+  const ctaText = useCustomText("cta", "评论区聊聊");
   const qLocal = frame - Q_AT;
   const qEnter = spring({ frame: qLocal, fps, config: POP_SPRING, durationInFrames: 18 });
   const qOp = interpolate(qLocal, [0, 8], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -30,15 +34,15 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           top: 280,
           textAlign: "center",
           fontFamily: FONT,
-          fontSize: 64,
+          fontSize: Math.round(64 * fontScale),
           fontWeight: 600,
-          color: COLORS.ink,
+          color: colors.ink,
           letterSpacing: "0.08em",
           opacity: Math.max(0, qOp),
           transform: popTransform(Math.max(0, qEnter), breathOffset(qLocal, fps), 18, -2),
         }}
       >
-        你平时怎么喝？
+        {qText}
       </div>
       {OPTIONS.map((opt, i) => (
         <Option key={opt.key} index={i} />
@@ -51,15 +55,15 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           top: 1580,
           textAlign: "center",
           fontFamily: FONT,
-          fontSize: 48,
+          fontSize: Math.round(48 * fontScale),
           fontWeight: 600,
-          color: COLORS.seal,
+          color: colors.seal,
           letterSpacing: "0.22em",
           opacity: Math.max(0, fOp),
           transform: popTransform(Math.max(0, fEnter), breathOffset(fLocal, fps), 14, -2),
         }}
       >
-        评论区聊聊
+        {ctaText}
       </div>
       <SfxTrack hits={sfxHits(staggerFrames)} />
     </AbsoluteFill>
@@ -69,7 +73,10 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
 function Option({ index }: { index: number }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
   const opt = OPTIONS[index];
+  const optText = useCustomText(index === 0 ? "optA" : "optB", opt.text);
   const local = frame - OPT_AT[index];
   const enter = spring({ frame: local, fps, config: POP_SPRING, durationInFrames: 18 });
   const opacity = interpolate(local, [0, 8], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -94,9 +101,9 @@ function Option({ index }: { index: number }) {
         opacity: Math.max(0, opacity),
         transform: popTransform(enter, breath, 28, -3),
         transformOrigin: "80px center",
-        backgroundColor: index % 2 === 0 ? "rgba(231, 221, 200, 0.55)" : "rgba(243, 236, 220, 0.72)",
+        backgroundColor: index % 2 === 0 ? colors.paperDeep : colors.paper,
         borderRadius: 28,
-        boxShadow: `inset 6px 0 0 ${COLORS.seal}`,
+        boxShadow: `inset 6px 0 0 ${colors.seal}`,
         display: "flex",
         alignItems: "center",
         padding: "0 48px 0 40px",
@@ -110,14 +117,14 @@ function Option({ index }: { index: number }) {
           height: 120,
           flexShrink: 0,
           borderRadius: 16,
-          border: `5px solid ${COLORS.seal}`,
-          boxShadow: `inset 0 0 0 3px ${COLORS.seal}`,
-          backgroundColor: "rgba(155, 45, 42, 0.1)",
-          color: COLORS.seal,
+          border: `5px solid ${colors.seal}`,
+          boxShadow: `inset 0 0 0 3px ${colors.seal}`,
+          backgroundColor: `${colors.seal}18`,
+          color: colors.seal,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 72,
+          fontSize: Math.round(72 * fontScale),
           fontWeight: 700,
           transform: `scale(${sealScale}) rotate(${sealRot}deg)`,
         }}
@@ -126,13 +133,13 @@ function Option({ index }: { index: number }) {
       </div>
       <div
         style={{
-          fontSize: 56,
+          fontSize: Math.round(56 * fontScale),
           fontWeight: 600,
-          color: COLORS.ink,
+          color: colors.ink,
           letterSpacing: "0.12em",
         }}
       >
-        {opt.text}
+        {optText}
       </div>
     </div>
   );

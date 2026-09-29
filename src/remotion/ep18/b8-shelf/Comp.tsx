@@ -1,8 +1,8 @@
 import { AbsoluteFill, interpolate } from "remotion";
-import { Paper } from "@/remotion/shared/paper";
+import { Paper, usePaperColors, useFontSizeScale, useCustomText } from "@/remotion/shared/paper";
 import { popTransform } from "@/remotion/shared/breath";
 import { SfxTrack } from "@/remotion/shared/sfx";
-import { COLORS, FONT } from "@/remotion/shared/theme";
+import { FONT } from "@/remotion/shared/theme";
 import { useAppear } from "@/remotion/ep18/shared/appear";
 import { FLOOR_AT, LENGTH, SCENE_AT, SHELF_AT, WALL_AT, sfxHits } from "./data";
 
@@ -12,6 +12,7 @@ export function duration(_staggerFrames: number) {
 
 const WALL_X = 90;
 const WALL_W = 70;
+const WALL_TOP = 320;
 const GAP_W = 150;
 const CAB_X = WALL_X + WALL_W + GAP_W;
 const CAB_W = 560;
@@ -26,6 +27,11 @@ const BOX_X = CAB_X + (CAB_W - BOX_W) / 2;
 const BOX_Y = 770;
 
 export function Comp({ staggerFrames }: { staggerFrames: number }) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
+  const rule1 = useCustomText("rule1", "离墙一尺");
+  const rule2 = useCustomText("rule2", "离地半尺");
+  const action = useCustomText("action", useCustomText("reason", "架起来放"));
   const scene = useAppear(SCENE_AT, 20);
   const wall = useAppear(WALL_AT, 18);
   const floor = useAppear(FLOOR_AT, 18);
@@ -51,7 +57,7 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           y={CAB_TOP}
           width={GAP_W * wallGrow}
           height={CAB_H}
-          fill={COLORS.seal}
+          fill={colors.seal}
           opacity={0.2 * wall.opacity}
         />
         <rect
@@ -60,7 +66,7 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           width={Math.max(0, GAP_W * wallGrow - 8)}
           height={CAB_H - 8}
           fill="none"
-          stroke={COLORS.seal}
+          stroke={colors.seal}
           strokeWidth="4"
           strokeDasharray="14 12"
           opacity={wall.opacity}
@@ -70,7 +76,7 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           y={FLOOR_Y - LEG_H * floorGrow}
           width={CAB_W}
           height={LEG_H * floorGrow}
-          fill={COLORS.seal}
+          fill={colors.seal}
           opacity={0.2 * floor.opacity}
         />
         <rect
@@ -79,7 +85,7 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           width={CAB_W - 8}
           height={Math.max(0, LEG_H * floorGrow - 8)}
           fill="none"
-          stroke={COLORS.seal}
+          stroke={colors.seal}
           strokeWidth="4"
           strokeDasharray="14 12"
           opacity={floor.opacity}
@@ -92,8 +98,8 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
         <HBrace x={WALL_X + WALL_W} y={980} w={GAP_W} opacity={wall.opacity} />
         <VBrace x={CAB_X + 86} y={CAB_BOT} h={LEG_H} opacity={floor.opacity} />
       </svg>
-      <Chip left={WALL_X + WALL_W + GAP_W / 2} top={900} label="离墙一尺" appear={wall} />
-      <Chip left={CAB_X + CAB_W / 2} top={FLOOR_Y + 36} label="离地半尺" appear={floor} shiftY={0} />
+      <Chip left={WALL_X + WALL_W + GAP_W / 2} top={900} label={rule1} appear={wall} />
+      <Chip left={CAB_X + CAB_W / 2} top={FLOOR_Y + 36} label={rule2} appear={floor} shiftY={0} />
       <div
         style={{
           position: "absolute",
@@ -108,18 +114,18 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
         <span
           style={{
             display: "inline-block",
-            background: COLORS.paper,
-            color: COLORS.seal,
+            background: colors.paper,
+            color: colors.seal,
             padding: "14px 40px",
             borderRadius: 16,
             fontFamily: FONT,
-            fontSize: 72,
+            fontSize: Math.round(72 * fontScale),
             fontWeight: 600,
             letterSpacing: "0.22em",
             boxShadow: "0 4px 18px rgba(43,38,28,0.14)",
           }}
         >
-          架起来放
+          {action}
         </span>
       </div>
       <SfxTrack hits={sfxHits(staggerFrames)} />
@@ -128,9 +134,10 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
 }
 
 function Floor() {
+  const colors = usePaperColors();
   return (
     <g>
-      <line x1="70" y1={FLOOR_Y} x2="1010" y2={FLOOR_Y} stroke={COLORS.ink} strokeWidth="8" />
+      <line x1="70" y1={FLOOR_Y} x2="1010" y2={FLOOR_Y} stroke={colors.ink} strokeWidth="8" />
       {[0, 1, 2, 3, 4].map((i) => (
         <line
           key={i}
@@ -138,12 +145,12 @@ function Floor() {
           y1={FLOOR_Y}
           x2={40 + i * 220}
           y2="1760"
-          stroke={COLORS.ink}
+          stroke={colors.ink}
           strokeWidth="3"
           opacity="0.22"
         />
       ))}
-      <text x="540" y="1810" textAnchor="middle" fill={COLORS.muted} fontFamily={FONT} fontSize="32" letterSpacing="0.28em">
+      <text x="540" y="1810" textAnchor="middle" fill={colors.ink} opacity="0.5" fontFamily={FONT} fontSize="32" letterSpacing="0.28em">
         地
       </text>
     </g>
@@ -151,19 +158,22 @@ function Floor() {
 }
 
 function Wall() {
+  const colors = usePaperColors();
   return (
     <g>
-      <rect x={WALL_X} y={CAB_TOP - 40} width={WALL_W} height={FLOOR_Y - (CAB_TOP - 40)} fill={COLORS.paperDeep} stroke={COLORS.ink} strokeWidth="6" />
-      <rect x={WALL_X + 12} y={520} width={46} height="220" fill="none" stroke={COLORS.ink} strokeWidth="3.5" />
-      <line x1={WALL_X + 12} y1="630" x2={WALL_X + 58} y2="630" stroke={COLORS.ink} strokeWidth="3" />
-      <line x1={WALL_X + 35} y1="520" x2={WALL_X + 35} y2="740" stroke={COLORS.ink} strokeWidth="3" />
+      <rect x={WALL_X} y={WALL_TOP} width={WALL_W} height={FLOOR_Y - WALL_TOP} fill={colors.paperDeep} stroke={colors.ink} strokeWidth="6" />
+      <rect x={WALL_X + 12} y={540} width={46} height="220" fill="none" stroke={colors.ink} strokeWidth="3.5" />
+      <line x1={WALL_X + 12} y1="650" x2={WALL_X + 58} y2="650" stroke={colors.ink} strokeWidth="3" />
+      <line x1={WALL_X + 35} y1="540" x2={WALL_X + 35} y2="760" stroke={colors.ink} strokeWidth="3" />
       <text
         x={WALL_X + WALL_W / 2}
-        y="400"
+        y={WALL_TOP + 52}
         textAnchor="middle"
-        fill={COLORS.muted}
+        dominantBaseline="central"
+        fill={colors.ink}
         fontFamily={FONT}
-        fontSize="32"
+        fontSize="34"
+        fontWeight="600"
         letterSpacing="0.28em"
       >
         墙
@@ -173,21 +183,23 @@ function Wall() {
 }
 
 function Cabinet() {
+  const colors = usePaperColors();
   const shelfYs = [640, 920, 1200];
   return (
     <g>
-      <rect x={CAB_X} y={CAB_TOP} width={CAB_W} height={CAB_H} rx="10" fill="#c4a574" stroke={COLORS.ink} strokeWidth="6" />
-      <rect x={CAB_X + 18} y={CAB_TOP + 18} width={CAB_W - 36} height={CAB_H - 36} rx="6" fill="#e2cba0" stroke={COLORS.ink} strokeWidth="3" opacity="0.95" />
+      <rect x={CAB_X} y={CAB_TOP} width={CAB_W} height={CAB_H} rx="10" fill="#c4a574" stroke={colors.ink} strokeWidth="6" />
+      <rect x={CAB_X + 18} y={CAB_TOP + 18} width={CAB_W - 36} height={CAB_H - 36} rx="6" fill="#e2cba0" stroke={colors.ink} strokeWidth="3" opacity="0.95" />
       {shelfYs.map((y) => (
-        <rect key={y} x={CAB_X + 28} y={y} width={CAB_W - 56} height="22" rx="3" fill="#8a6840" stroke={COLORS.ink} strokeWidth="2.5" />
+        <rect key={y} x={CAB_X + 28} y={y} width={CAB_W - 56} height="22" rx="3" fill="#8a6840" stroke={colors.ink} strokeWidth="2.5" />
       ))}
-      <rect x={CAB_X + 36} y={CAB_BOT} width="44" height={LEG_H} rx="4" fill="#6d5236" stroke={COLORS.ink} strokeWidth="4" />
-      <rect x={CAB_X + CAB_W - 80} y={CAB_BOT} width="44" height={LEG_H} rx="4" fill="#6d5236" stroke={COLORS.ink} strokeWidth="4" />
+      <rect x={CAB_X + 36} y={CAB_BOT} width="44" height={LEG_H} rx="4" fill="#6d5236" stroke={colors.ink} strokeWidth="4" />
+      <rect x={CAB_X + CAB_W - 80} y={CAB_BOT} width="44" height={LEG_H} rx="4" fill="#6d5236" stroke={colors.ink} strokeWidth="4" />
     </g>
   );
 }
 
 function TeaBox({ glow }: { glow: number }) {
+  const colors = usePaperColors();
   return (
     <g>
       <rect
@@ -196,10 +208,10 @@ function TeaBox({ glow }: { glow: number }) {
         width={BOX_W + 16}
         height={BOX_H + 16}
         rx="10"
-        fill={COLORS.seal}
+        fill={colors.seal}
         opacity={0.22 * glow}
       />
-      <rect x={BOX_X} y={BOX_Y} width={BOX_W} height={BOX_H} rx="8" fill="#5a3720" stroke={COLORS.ink} strokeWidth="5" />
+      <rect x={BOX_X} y={BOX_Y} width={BOX_W} height={BOX_H} rx="8" fill="#5a3720" stroke={colors.ink} strokeWidth="5" />
       <rect x={BOX_X + 16} y={BOX_Y + 16} width={BOX_W - 32} height={BOX_H - 32} rx="4" fill="none" stroke="#d8c39a" strokeWidth="3" />
       <text
         x={BOX_X + BOX_W / 2}
@@ -218,8 +230,9 @@ function TeaBox({ glow }: { glow: number }) {
 }
 
 function HBrace({ x, y, w, opacity }: { x: number; y: number; w: number; opacity: number }) {
+  const colors = usePaperColors();
   return (
-    <g opacity={opacity} stroke={COLORS.seal} strokeWidth="6" strokeLinecap="round" fill="none">
+    <g opacity={opacity} stroke={colors.seal} strokeWidth="6" strokeLinecap="round" fill="none">
       <line x1={x} y1={y - 22} x2={x} y2={y + 22} />
       <line x1={x + w} y1={y - 22} x2={x + w} y2={y + 22} />
       <line x1={x} y1={y} x2={x + w} y2={y} />
@@ -228,8 +241,9 @@ function HBrace({ x, y, w, opacity }: { x: number; y: number; w: number; opacity
 }
 
 function VBrace({ x, y, h, opacity }: { x: number; y: number; h: number; opacity: number }) {
+  const colors = usePaperColors();
   return (
-    <g opacity={opacity} stroke={COLORS.seal} strokeWidth="6" strokeLinecap="round" fill="none">
+    <g opacity={opacity} stroke={colors.seal} strokeWidth="6" strokeLinecap="round" fill="none">
       <line x1={x - 22} y1={y} x2={x + 22} y2={y} />
       <line x1={x - 22} y1={y + h} x2={x + 22} y2={y + h} />
       <line x1={x} y1={y} x2={x} y2={y + h} />
@@ -252,6 +266,8 @@ function Chip({
   shiftX?: number;
   shiftY?: number;
 }) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
   if (appear.opacity <= 0.01) return null;
   return (
     <div
@@ -260,12 +276,12 @@ function Chip({
         left: left + shiftX,
         top: top + shiftY,
         transform: `translateX(-50%) ${popTransform(appear.enter, appear.breath, 10, -2)}`,
-        background: COLORS.paper,
-        color: COLORS.seal,
+        background: colors.paper,
+        color: colors.seal,
         padding: "10px 22px",
         borderRadius: 14,
         fontFamily: FONT,
-        fontSize: 44,
+        fontSize: Math.round(44 * fontScale),
         fontWeight: 600,
         letterSpacing: "0.14em",
         whiteSpace: "nowrap",

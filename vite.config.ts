@@ -66,7 +66,7 @@ function authPopupPlugin(): Plugin {
           }
 
           const host = String(
-            req.headers["x-forwarded-host"] ?? req.headers.host ?? "localhost:8080",
+            req.headers["x-forwarded-host"] ?? req.headers.host ?? "localhost:3000",
           );
           const proto = String(
             req.headers["x-forwarded-proto"] ??
@@ -131,9 +131,21 @@ function authPopupPlugin(): Plugin {
 export default defineConfig(({ command }) => ({
   server: {
     host: "0.0.0.0",
-    port: 8080,
+    port: 3000,
     strictPort: true,
     allowedHosts: true,
+  },
+  optimizeDeps: {
+    include: [
+      "@better-auth/core/env",
+      "@better-auth/core/error",
+      "@better-auth/core/utils/string",
+      "@better-auth/core/utils/url",
+      "@better-fetch/fetch",
+      "defu",
+      "nanostores",
+      "better-auth/react",
+    ],
   },
   resolve: { tsconfigPaths: true },
   plugins: [

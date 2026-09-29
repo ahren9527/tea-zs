@@ -1,8 +1,8 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { Paper } from "@/remotion/shared/paper";
+import { Paper, usePaperColors, useFontSizeScale, useCustomText } from "@/remotion/shared/paper";
 import { POP_SPRING, breathOffset, popTransform } from "@/remotion/shared/breath";
 import { SfxTrack } from "@/remotion/shared/sfx";
-import { COLORS, FONT, SEAL_FONT } from "@/remotion/shared/theme";
+import { FONT, SEAL_FONT } from "@/remotion/shared/theme";
 import { APPEAR, CARDS, LENGTH, sfxHits } from "./data";
 
 export function duration(_staggerFrames: number) {
@@ -24,7 +24,10 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
 function Card({ index }: { index: number }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
   const card = CARDS[index];
+  const title = useCustomText(`card${index + 1}`, card.title);
   const local = frame - APPEAR[index];
   const enter = spring({
     frame: local,
@@ -57,9 +60,9 @@ function Card({ index }: { index: number }) {
         opacity: Math.max(0, opacity),
         transform: popTransform(enter, breath, 32, -3.5),
         transformOrigin: "80px center",
-        backgroundColor: index % 2 === 0 ? "rgba(231, 221, 200, 0.55)" : "rgba(243, 236, 220, 0.7)",
+        backgroundColor: index % 2 === 0 ? colors.paperDeep : colors.paper,
         borderRadius: 28,
-        boxShadow: `inset 6px 0 0 ${COLORS.seal}`,
+        boxShadow: `inset 6px 0 0 ${colors.seal}`,
         display: "flex",
         alignItems: "center",
         padding: "0 48px 0 40px",
@@ -73,15 +76,15 @@ function Card({ index }: { index: number }) {
           height: 120,
           flexShrink: 0,
           borderRadius: 16,
-          border: `5px solid ${COLORS.seal}`,
-          boxShadow: `inset 0 0 0 3px ${COLORS.seal}`,
-          backgroundColor: "rgba(155, 45, 42, 0.1)",
-          color: COLORS.seal,
+          border: `5px solid ${colors.seal}`,
+          boxShadow: `inset 0 0 0 3px ${colors.seal}`,
+          backgroundColor: `${colors.seal}18`,
+          color: colors.seal,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           fontFamily: SEAL_FONT,
-          fontSize: 64,
+          fontSize: Math.round(64 * fontScale),
           fontWeight: 900,
           transform: `scale(${sealScale}) rotate(${sealRot}deg)`,
         }}
@@ -90,13 +93,13 @@ function Card({ index }: { index: number }) {
       </div>
       <div
         style={{
-          fontSize: 60,
+          fontSize: Math.round(60 * fontScale),
           fontWeight: 600,
-          color: COLORS.ink,
+          color: colors.ink,
           letterSpacing: "0.08em",
         }}
       >
-        {card.title}
+        {title}
       </div>
     </div>
   );

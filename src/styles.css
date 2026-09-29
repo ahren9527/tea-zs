@@ -59,4 +59,8 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+
+  .aspect-reel {
+    aspect-ratio: 9 / 16 !important;
+  }
 }

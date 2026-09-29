@@ -16,13 +16,13 @@ export const LAYERS = [
 
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/tok.wav", at: CHAR_AT, volume: 0.38 },
-    { src: "tea/sfx/pop1.wav", at: MUST_AT, volume: 0.4 },
-    { src: "tea/sfx/pop2.wav", at: ZISHA_AT, volume: 0.42 },
-    { src: "tea/sfx/stamp.wav", at: BAN_AT, volume: 0.5 },
+    { src: "tea/sfx/wood.wav", at: CHAR_AT, volume: 0.42 },
+    { src: "tea/sfx/paper.wav", at: MUST_AT, volume: 0.4 },
+    { src: "tea/sfx/tok.wav", at: ZISHA_AT, volume: 0.42 },
+    { src: "tea/sfx/stamp.wav", at: BAN_AT, volume: 0.54 },
     { src: "tea/sfx/pop1.wav", at: LAYER_AT[0], volume: 0.4 },
-    { src: "tea/sfx/pop2.wav", at: LAYER_AT[1], volume: 0.4 },
-    { src: "tea/sfx/pop3.wav", at: LAYER_AT[2], volume: 0.44 },
-    { src: "tea/sfx/tok.wav", at: LIGHT_AT, volume: 0.4 },
+    { src: "tea/sfx/pop2.wav", at: LAYER_AT[1], volume: 0.44 },
+    { src: "tea/sfx/ding.wav", at: LAYER_AT[2], volume: 0.46 },
+    { src: "tea/sfx/scale-a.wav", at: LIGHT_AT, volume: 0.44 },
   ];
 }

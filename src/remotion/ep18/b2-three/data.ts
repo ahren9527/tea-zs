@@ -10,6 +10,14 @@ export const LENGTH = framesOf(8);
 export const APPEAR = [framesOf(0.4), framesOf(2.6), framesOf(4.9)] as const;
 
 export function sfxHits(_staggerFrames: number) {
-  const files = ["tea/sfx/pop1.wav", "tea/sfx/pop2.wav", "tea/sfx/pop3.wav"];
-  return APPEAR.map((at, i) => ({ src: files[i], at, volume: 0.44 }));
+  const sequence = [
+    { src: "tea/sfx/pop1.wav", volume: 0.4 },
+    { src: "tea/sfx/pop2.wav", volume: 0.44 },
+    { src: "tea/sfx/scale-a.wav", volume: 0.48 },
+  ];
+  return APPEAR.map((at, i) => ({
+    src: sequence[i].src,
+    at,
+    volume: sequence[i].volume,
+  }));
 }

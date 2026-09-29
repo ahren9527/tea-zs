@@ -1,4 +1,24 @@
 import type { ClipDef } from "./shared/types";
+// Ep 19 clips
+import { Comp as E19B1, duration as e19b1Duration } from "./ep19/b1-hook/Comp";
+import { draw as e19b1Draw } from "./ep19/b1-hook/draw";
+import { Comp as E19B4_1 } from "./ep19/b4-1-defense/Comp";
+import { duration as e19b4_1Duration } from "./ep19/b4-1-defense/data-export";
+import { draw as e19b4_1Draw } from "./ep19/b4-1-defense/draw";
+import { Comp as E19B4_2 } from "./ep19/b4-2-duel/Comp";
+import { duration as e19b4_2Duration } from "./ep19/b4-2-duel/data-export";
+import { draw as e19b4_2Draw } from "./ep19/b4-2-duel/draw";
+import { Comp as E19B5_1 } from "./ep19/b5-1-trap/Comp";
+import { duration as e19b5_1Duration } from "./ep19/b5-1-trap/data-export";
+import { draw as e19b5_1Draw } from "./ep19/b5-1-trap/draw";
+import { Comp as E19B5_2 } from "./ep19/b5-2-open/Comp";
+import { duration as e19b5_2Duration } from "./ep19/b5-2-open/data-export";
+import { draw as e19b5_2Draw } from "./ep19/b5-2-open/draw";
+import { Comp as E19B6_1 } from "./ep19/b6-1-vessels/Comp";
+import { duration as e19b6_1Duration } from "./ep19/b6-1-vessels/data-export";
+import { draw as e19b6_1Draw } from "./ep19/b6-1-vessels/draw";
+
+// Ep 18 clips
 import { Comp as B1, duration as b1Duration } from "./ep18/b1-hook/Comp";
 import { draw as b1Draw } from "./ep18/b1-hook/draw";
 import { Comp as B2, duration as b2Duration } from "./ep18/b2-three/Comp";
@@ -17,8 +37,85 @@ import { Comp as B8, duration as b8Duration } from "./ep18/b8-shelf/Comp";
 import { draw as b8Draw } from "./ep18/b8-shelf/draw";
 import { Comp as B9, duration as b9Duration } from "./ep18/b9-close/Comp";
 import { draw as b9Draw } from "./ep18/b9-close/draw";
+import { Comp as B10, duration as b10Duration } from "./ep18/b10-jar/Comp";
+import { draw as b10Draw } from "./ep18/b10-jar/draw";
 
 export const CLIPS: ClipDef[] = [
+  // --- 第 19 期: 大罐存、小罐醒 ---
+  {
+    id: "ep19-b1",
+    episode: 19,
+    code: "B1",
+    title: "频繁开大袋",
+    note: "频繁开大袋 ≠ 正常取茶 · 散茶头香散失 70% · 6.8秒",
+    folder: "src/remotion/ep19/b1-hook",
+    exportName: "正上茶舍_19_B1_频繁开大袋.mp4",
+    Comp: E19B1,
+    duration: e19b1Duration,
+    draw: e19b1Draw,
+  },
+  {
+    id: "ep19-b4-1",
+    episode: 19,
+    code: "B4-1",
+    title: "避光与密封物理防御",
+    note: "小瓷罐纵剖面 · 避光折射散射 · 硅胶密封挤压 · 5秒",
+    folder: "src/remotion/ep19/b4-1-defense",
+    exportName: "正上茶舍_19_B4-1_避光与密封物理防御.mp4",
+    Comp: E19B4_1,
+    duration: e19b4_1Duration,
+    draw: e19b4_1Draw,
+  },
+  {
+    id: "ep19-b4-2",
+    episode: 19,
+    code: "B4-2",
+    title: "材质红黑对决",
+    note: "瓷铁 vs 砂玻 · 避光折射与枯萎灰褐 · 密封光罩与跑香逸散 · 5秒",
+    folder: "src/remotion/ep19/b4-2-duel",
+    exportName: "正上茶舍_19_B4-2_材质红黑对决.mp4",
+    Comp: E19B4_2,
+    duration: e19b4_2Duration,
+    draw: e19b4_2Draw,
+  },
+  {
+    id: "ep19-b5-1",
+    episode: 19,
+    code: "B5-1",
+    title: "吸异味雷区",
+    note: "后景厨房铁锅油烟升腾 · 前景墨绿瓷罐两叶一芽茶变质 · 避开厨房油烟 · 4.5秒",
+    folder: "src/remotion/ep19/b5-1-trap",
+    exportName: "正上茶舍_19_B5-1_吸异味雷区.mp4",
+    Comp: E19B5_1,
+    duration: e19b5_1Duration,
+    draw: e19b5_1Draw,
+  },
+  {
+    id: "ep19-b5-2",
+    episode: 19,
+    code: "B5-2",
+    title: "梅雨大开雷区",
+    note: "中式湿度计飙升85% · 物理湿气水滴倾泻 · 大铝箔自封袋大敞大开 · 茶叶受潮发软 · 5秒",
+    folder: "src/remotion/ep19/b5-2-open",
+    exportName: "正上茶舍_19_B5-2_梅雨大开雷区.mp4",
+    Comp: E19B5_2,
+    duration: e19b5_2Duration,
+    draw: e19b5_2Draw,
+  },
+  {
+    id: "ep19-b6-1",
+    episode: 19,
+    code: "B6-1",
+    title: "昼夜双境·仓台对读",
+    note: "上半屏暗仓夜境大瓮经年 · 下半屏晨曦案头小瓷罐醒茶 · 居中破空砸落印章横幅 · 4.5秒",
+    folder: "src/remotion/ep19/b6-1-vessels",
+    exportName: "正上茶舍_19_B6-1_昼夜双境仓台对读.mp4",
+    Comp: E19B6_1,
+    duration: e19b6_1Duration,
+    draw: e19b6_1Draw,
+  },
+
+  // --- 第 18 期: 存茶三法则 ---
   {
     id: "ep18-b1",
     episode: 18,
@@ -126,6 +223,18 @@ export const CLIPS: ClipDef[] = [
     Comp: B9,
     duration: b9Duration,
     draw: b9Draw,
+  },
+  {
+    id: "ep18-b10",
+    episode: 18,
+    code: "B10",
+    title: "大罐存小罐醒",
+    note: "大罐存 · 小罐醒 · 主仓与随喝搭配 · 12秒",
+    folder: "src/remotion/ep18/b10-jar",
+    exportName: "正上茶舍_18_B10_大罐存小罐醒.mp4",
+    Comp: B10,
+    duration: b10Duration,
+    draw: b10Draw,
   },
 ];
 

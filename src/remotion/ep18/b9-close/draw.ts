@@ -1,25 +1,27 @@
 import { fillPaper } from "@/remotion/shared/draw-paper";
-import { COLORS, FONT, easeOutCubic, type AnimParams } from "@/remotion/shared/theme";
-import { FLY_AT, LENGTH, LINE, ZOOM_AT } from "./data";
+import { FONT, easeOutCubic, PAPER_THEMES, type AnimParams } from "@/remotion/shared/theme";
+import { FLY_AT, LINE } from "./data";
 
-export function draw(ctx: CanvasRenderingContext2D, elapsed: number, _params: AnimParams) {
-  fillPaper(ctx);
+export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
+  fillPaper(ctx, params.paperTheme);
+  const theme = PAPER_THEMES[params.paperTheme ?? "classic"] ?? PAPER_THEMES.classic;
+  const fontScale = params.fontScale ?? 1;
+  const text = params.customTexts?.line || LINE;
   const frame = (elapsed / 1000) * 29.97;
   if (frame < FLY_AT) return;
-  const fly = easeOutCubic(Math.min(1, (frame - FLY_AT) / 14));
+  const p = easeOutCubic(Math.min(1, (frame - FLY_AT) / 14));
   const opacity = Math.min(1, (frame - FLY_AT) / 8);
-  const x = 540 + (1 - fly) * 420;
-  const y = 960 + (1 - fly) * 90;
-  const zoomT = Math.max(0, Math.min(1, (frame - ZOOM_AT) / (LENGTH - 6 - ZOOM_AT)));
-  const zoom = 1 + 0.58 * (1 - (1 - zoomT) ** 2);
+  const y = 960 + (1 - p) * 28;
+  const scale = 0.9 + 0.1 * p;
   ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(zoom, zoom);
+  ctx.translate(540, y);
+  ctx.scale(scale, scale);
   ctx.globalAlpha = opacity;
-  ctx.fillStyle = COLORS.seal;
-  ctx.font = `600 72px ${FONT}`;
+  ctx.fillStyle = theme.seal;
+  ctx.font = `600 ${Math.round(72 * fontScale)}px ${FONT}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(LINE, 0, 0);
+  ctx.fillText(text, 0, 0);
   ctx.restore();
 }
+

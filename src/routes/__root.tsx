@@ -3,7 +3,8 @@ import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "正上茶舍动画台";
+const APP_NAME = "正上茶舍";
+const APP_DESC = "正上茶舍 (Tea-ZS) - 茶学自媒体口播动画台与茶叶知识互动展示系统";
 const host = import.meta.env.VITE_PUBLIC_HOSTNAME;
 const ogImage = host ? `https://${host}/og.jpg` : undefined;
 
@@ -13,6 +14,9 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },
+      { name: "description", content: APP_DESC },
+      { property: "og:title", content: APP_NAME },
+      { property: "og:description", content: APP_DESC },
       { name: "apple-mobile-web-app-title", content: APP_NAME },
       { name: "theme-color", content: "#14110e" },
       { name: "twitter:card", content: "summary_large_image" },

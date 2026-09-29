@@ -12,9 +12,9 @@ export const BADS = [
 
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/tok.wav", at: CHAR_AT, volume: 0.38 },
-    { src: "tea/sfx/pop1.wav", at: BAD_AT[0], volume: 0.42 },
+    { src: "tea/sfx/wood.wav", at: CHAR_AT, volume: 0.42 },
+    { src: "tea/sfx/pop1.wav", at: BAD_AT[0], volume: 0.4 },
     { src: "tea/sfx/pop2.wav", at: BAD_AT[1], volume: 0.42 },
-    { src: "tea/sfx/pop3.wav", at: BAD_AT[2], volume: 0.44 },
+    { src: "tea/sfx/stamp.wav", at: BAD_AT[2], volume: 0.5 },
   ];
 }

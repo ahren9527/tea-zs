@@ -1,5 +1,6 @@
 import { popTransform } from "@/remotion/shared/breath";
-import { COLORS, FONT, SEAL_FONT } from "@/remotion/shared/theme";
+import { usePaperColors, useFontSizeScale } from "@/remotion/shared/paper";
+import { FONT, SEAL_FONT } from "@/remotion/shared/theme";
 import { LawIcon } from "./icons";
 import { useAppear, useFadeOut } from "./appear";
 
@@ -10,7 +11,7 @@ export function SoloWord({
   until,
   text,
   size = 96,
-  color = COLORS.ink,
+  color,
   stamp = false,
   kind,
 }: {
@@ -22,6 +23,9 @@ export function SoloWord({
   stamp?: boolean;
   kind?: Kind;
 }) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
+  const activeColor = color ?? colors.ink;
   const { enter, opacity, breath } = useAppear(at);
   const hide = useFadeOut(until ?? 100_000, 8);
   const vis = opacity * hide;
@@ -47,16 +51,16 @@ export function SoloWord({
             width: box,
             height: box,
             borderRadius: 8,
-            border: `9px solid ${COLORS.seal}`,
-            boxShadow: `inset 0 0 0 5px ${COLORS.seal}`,
-            backgroundColor: COLORS.paper,
-            color: COLORS.seal,
+            border: `9px solid ${colors.seal}`,
+            boxShadow: `inset 0 0 0 5px ${colors.seal}`,
+            backgroundColor: colors.paper,
+            color: colors.seal,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             fontFamily: SEAL_FONT,
-            fontSize: chars.length > 2 ? 64 : 88,
+            fontSize: Math.round((chars.length > 2 ? 64 : 88) * fontScale),
             fontWeight: 900,
             lineHeight: 1.1,
           }}
@@ -87,9 +91,9 @@ export function SoloWord({
       <div
         style={{
           fontFamily: FONT,
-          fontSize: size,
+          fontSize: Math.round(size * fontScale),
           fontWeight: 600,
-          color,
+          color: activeColor,
           letterSpacing: "0.16em",
           textAlign: "center",
           lineHeight: 1.15,
@@ -160,21 +164,24 @@ export function StackLine({
   at,
   text,
   size = 80,
-  color = COLORS.ink,
+  color,
 }: {
   at: number;
   text: string;
   size?: number;
   color?: string;
 }) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
+  const activeColor = color ?? colors.ink;
   const { enter, opacity, breath } = useAppear(at);
   return (
     <div
       style={{
         fontFamily: FONT,
-        fontSize: size,
+        fontSize: Math.round(size * fontScale),
         fontWeight: 600,
-        color,
+        color: activeColor,
         letterSpacing: "0.16em",
         opacity,
         transform: popTransform(enter, breath, 18, -2),
@@ -194,6 +201,8 @@ export function MarkCard({
   label: string;
   kind: Kind;
 }) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
   const { enter, opacity, breath } = useAppear(at);
   return (
     <div
@@ -201,8 +210,8 @@ export function MarkCard({
         width: 300,
         height: 420,
         borderRadius: 32,
-        backgroundColor: "rgba(155, 45, 42, 0.08)",
-        border: `3px solid ${COLORS.seal}`,
+        backgroundColor: `${colors.seal}14`,
+        border: `3px solid ${colors.seal}`,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -216,9 +225,9 @@ export function MarkCard({
       <LawIcon kind={kind} size={148} />
       <div
         style={{
-          fontSize: 48,
+          fontSize: Math.round(48 * fontScale),
           fontWeight: 600,
-          color: COLORS.seal,
+          color: colors.seal,
           letterSpacing: "0.12em",
         }}
       >
@@ -229,6 +238,8 @@ export function MarkCard({
 }
 
 export function SealChip({ at, text }: { at: number; text: string }) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
   const { enter, opacity, breath } = useAppear(at);
   return (
     <div
@@ -236,15 +247,15 @@ export function SealChip({ at, text }: { at: number; text: string }) {
         width: 240,
         height: 240,
         borderRadius: 12,
-        border: `7px solid ${COLORS.seal}`,
-        boxShadow: `inset 0 0 0 4px ${COLORS.seal}`,
-        backgroundColor: COLORS.paper,
-        color: COLORS.seal,
+        border: `7px solid ${colors.seal}`,
+        boxShadow: `inset 0 0 0 4px ${colors.seal}`,
+        backgroundColor: colors.paper,
+        color: colors.seal,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontFamily: SEAL_FONT,
-        fontSize: 72,
+        fontSize: Math.round(72 * fontScale),
         fontWeight: 900,
         letterSpacing: "0.08em",
         opacity,

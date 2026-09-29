@@ -11,13 +11,13 @@ export type SceneLine = {
 
 export type ClipDef = {
   id: string;
-  episode: 16 | 17 | 18;
+  episode: 16 | 17 | 18 | 19;
   code: string;
   title: string;
   note: string;
   folder: string;
   exportName: string;
-  Comp: ComponentType<{ staggerFrames: number }>;
+  Comp: ComponentType<any>;
   duration: (staggerFrames: number) => number;
   draw: (ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) => void;
 };

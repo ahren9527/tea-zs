@@ -12,9 +12,9 @@ export const OPTIONS = [
 
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/tok.wav", at: Q_AT, volume: 0.4 },
+    { src: "tea/sfx/ding.wav", at: Q_AT, volume: 0.44 },
     { src: "tea/sfx/pop1.wav", at: OPT_AT[0], volume: 0.42 },
     { src: "tea/sfx/pop2.wav", at: OPT_AT[1], volume: 0.44 },
-    { src: "tea/sfx/stamp.wav", at: FOOT_AT, volume: 0.4 },
+    { src: "tea/sfx/scale-a.wav", at: FOOT_AT, volume: 0.46 },
   ];
 }

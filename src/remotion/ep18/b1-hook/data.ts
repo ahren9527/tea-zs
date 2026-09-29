@@ -12,8 +12,9 @@ export const LINE_AT = framesOf(7.6);
 
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/pop1.wav", at: MYTH_AT, volume: 0.42 },
-    { src: "tea/sfx/stamp.wav", at: STAMP_AT, volume: 0.5 },
-    { src: "tea/sfx/tok.wav", at: LINE_AT + 4, volume: 0.4 },
+    { src: "tea/sfx/paper.wav", at: MYTH_AT - 4, volume: 0.35 },
+    { src: "tea/sfx/wood.wav", at: MYTH_AT, volume: 0.44 },
+    { src: "tea/sfx/stamp.wav", at: STAMP_AT, volume: 0.52 },
+    { src: "tea/sfx/ding.wav", at: LINE_AT + 4, volume: 0.38 },
   ];
 }

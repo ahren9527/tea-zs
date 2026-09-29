@@ -8,9 +8,9 @@ export const SHELF_AT = framesOf(8.6);
 
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/wood.wav", at: SCENE_AT, volume: 0.4 },
-    { src: "tea/sfx/pop1.wav", at: WALL_AT, volume: 0.42 },
-    { src: "tea/sfx/pop2.wav", at: FLOOR_AT, volume: 0.42 },
-    { src: "tea/sfx/stamp.wav", at: SHELF_AT, volume: 0.46 },
+    { src: "tea/sfx/wood.wav", at: SCENE_AT, volume: 0.44 },
+    { src: "tea/sfx/paper.wav", at: WALL_AT, volume: 0.4 },
+    { src: "tea/sfx/pop1.wav", at: FLOOR_AT, volume: 0.44 },
+    { src: "tea/sfx/scale-a.wav", at: SHELF_AT, volume: 0.48 },
   ];
 }

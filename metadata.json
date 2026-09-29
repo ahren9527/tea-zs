@@ -1,0 +1,6 @@
+{
+  "name": "正上茶舍",
+  "description": "正上茶舍 (Tea-ZS) - 茶学自媒体口播动画台与茶叶知识互动展示系统",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

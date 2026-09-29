@@ -11,12 +11,12 @@ export const ROOM_AT = framesOf(16.6);
 
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/tok.wav", at: CHAR_AT, volume: 0.38 },
-    { src: "tea/sfx/pop1.wav", at: NOT_AT, volume: 0.42 },
-    { src: "tea/sfx/pop2.wav", at: SOUR_AT, volume: 0.44 },
-    { src: "tea/sfx/pop3.wav", at: RAIN_AT, volume: 0.4 },
-    { src: "tea/sfx/pop1.wav", at: DEHUM_AT, volume: 0.4 },
-    { src: "tea/sfx/stamp.wav", at: FRIDGE_AT, volume: 0.5 },
-    { src: "tea/sfx/tok.wav", at: ROOM_AT, volume: 0.4 },
+    { src: "tea/sfx/wood.wav", at: CHAR_AT, volume: 0.42 },
+    { src: "tea/sfx/pop1.wav", at: NOT_AT, volume: 0.4 },
+    { src: "tea/sfx/pop2.wav", at: SOUR_AT, volume: 0.42 },
+    { src: "tea/sfx/paper.wav", at: RAIN_AT, volume: 0.38 },
+    { src: "tea/sfx/ding.wav", at: DEHUM_AT, volume: 0.45 },
+    { src: "tea/sfx/stamp.wav", at: FRIDGE_AT, volume: 0.52 },
+    { src: "tea/sfx/scale-a.wav", at: ROOM_AT, volume: 0.46 },
   ];
 }

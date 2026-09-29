@@ -23,7 +23,10 @@ export class StageErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.message) {
       return (
-        <div className="flex aspect-reel h-full w-full items-center justify-center bg-paper px-8 text-center">
+        <div
+          className="flex aspect-reel h-full w-full items-center justify-center bg-paper px-8 text-center"
+          style={{ aspectRatio: "9 / 16" }}
+        >
           <p className="font-display text-sm text-ink/70">画面加载失败，点「重新播放」</p>
         </div>
       );

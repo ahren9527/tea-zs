@@ -1,36 +1,27 @@
-import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { Paper } from "@/remotion/shared/paper";
-import { POP_SPRING } from "@/remotion/shared/breath";
+import { AbsoluteFill } from "remotion";
+import { Paper, usePaperColors, useFontSizeScale, useCustomText } from "@/remotion/shared/paper";
+import { popTransform } from "@/remotion/shared/breath";
 import { SfxTrack } from "@/remotion/shared/sfx";
-import { COLORS, FONT } from "@/remotion/shared/theme";
-import { FLY_AT, LENGTH, LINE, ZOOM_AT, sfxHits } from "./data";
+import { FONT } from "@/remotion/shared/theme";
+import { useAppear } from "@/remotion/ep18/shared/appear";
+import { FLY_AT, LENGTH, LINE, sfxHits } from "./data";
 
 export function duration(_staggerFrames: number) {
   return LENGTH;
 }
 
-export function Comp({ staggerFrames }: { staggerFrames: number }) {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const local = frame - FLY_AT;
-  const enter = spring({
-    frame: local,
-    fps,
-    config: POP_SPRING,
-    durationInFrames: 22,
-  });
-  const fly = Math.max(0, enter);
-  const opacity = interpolate(local, [0, 8], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const x = interpolate(fly, [0, 1], [420, 0]);
-  const y = interpolate(fly, [0, 1], [90, 0]);
-  const zoom = interpolate(frame, [ZOOM_AT, LENGTH - 6], [1, 1.58], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.out(Easing.quad),
-  });
+export function Comp({
+  staggerFrames,
+  line: customLine,
+}: {
+  staggerFrames: number;
+  line?: string;
+  customTexts?: Record<string, string>;
+}) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
+  const text = useCustomText("line", customLine || LINE);
+  const { enter, opacity, breath } = useAppear(FLY_AT, 20);
 
   return (
     <AbsoluteFill>
@@ -42,21 +33,21 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          opacity: Math.max(0, opacity),
-          transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${zoom.toFixed(4)})`,
+          opacity,
+          transform: popTransform(enter, breath, 28, -2),
         }}
       >
         <div
           style={{
             fontFamily: FONT,
-            fontSize: 72,
+            fontSize: Math.round(72 * fontScale),
             fontWeight: 600,
-            color: COLORS.seal,
+            color: colors.seal,
             letterSpacing: "0.16em",
             whiteSpace: "nowrap",
           }}
         >
-          {LINE}
+          {text}
         </div>
       </div>
       <SfxTrack hits={sfxHits(staggerFrames)} />

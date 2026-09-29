@@ -1,15 +1,34 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { Paper } from "@/remotion/shared/paper";
+import { Paper, useCustomText } from "@/remotion/shared/paper";
 import { POP_SPRING, breathOffset, popTransform } from "@/remotion/shared/breath";
 import { SfxTrack } from "@/remotion/shared/sfx";
-import { COLORS, FONT, SEAL_FONT } from "@/remotion/shared/theme";
+import { FONT, SEAL_FONT } from "@/remotion/shared/theme";
+import { usePaperColors, useFontSizeScale } from "@/remotion/shared/theme-context";
 import { LENGTH, LINE, LINE_AT, MYTH, MYTH_AT, STAMP, STAMP_AT, sfxHits } from "./data";
 
 export function duration(_staggerFrames: number) {
   return LENGTH;
 }
 
-export function Comp({ staggerFrames }: { staggerFrames: number }) {
+export function Comp({
+  staggerFrames,
+  myth: customMyth,
+  stamp: customStamp,
+  line: customLine,
+}: {
+  staggerFrames: number;
+  myth?: string;
+  stamp?: string;
+  line?: string;
+}) {
+  const colors = usePaperColors();
+  const fontScale = useFontSizeScale();
+  const hookMyth = useCustomText("myth", MYTH);
+  const hookStamp = useCustomText("stamp", STAMP);
+  const hookLine = useCustomText("line", LINE);
+  const mythText = customMyth || hookMyth;
+  const stampText = customStamp || hookStamp;
+  const lineText = customLine || hookLine;
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const mythLocal = frame - MYTH_AT;
@@ -78,15 +97,15 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
         >
           <div
             style={{
-              fontSize: 108,
+              fontSize: Math.round(108 * fontScale),
               fontWeight: 600,
-              color: COLORS.ink,
+              color: colors.ink,
               letterSpacing: "0.18em",
               lineHeight: 1,
               opacity: mythDim,
             }}
           >
-            {MYTH}
+            {mythText}
           </div>
           <div
             style={{
@@ -98,23 +117,23 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
               marginLeft: -134,
               marginTop: -134,
               borderRadius: 8,
-              border: `9px solid ${COLORS.seal}`,
-              boxShadow: `inset 0 0 0 5px ${COLORS.seal}`,
-              backgroundColor: COLORS.paper,
-              color: COLORS.seal,
+              border: `9px solid ${colors.seal}`,
+              boxShadow: `inset 0 0 0 5px ${colors.seal}`,
+              backgroundColor: colors.paper,
+              color: colors.seal,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               fontFamily: SEAL_FONT,
-              fontSize: 88,
+              fontSize: Math.round(88 * fontScale),
               fontWeight: 900,
               lineHeight: 1.08,
               opacity: Math.max(0, stampOp),
               transform: `scale(${stampScale}) rotate(${stampRot}deg)`,
             }}
           >
-            {STAMP.split("").map((ch) => (
+            {stampText.split("").map((ch) => (
               <span key={ch}>{ch}</span>
             ))}
           </div>
@@ -128,15 +147,15 @@ export function Comp({ staggerFrames }: { staggerFrames: number }) {
           alignItems: "center",
           justifyContent: "center",
           fontFamily: FONT,
-          fontSize: 72,
+          fontSize: Math.round(72 * fontScale),
           fontWeight: 600,
-          color: COLORS.ink,
+          color: colors.ink,
           letterSpacing: "0.12em",
           opacity: Math.max(0, lineOp),
           transform: popTransform(Math.max(0, lineEnter), breathOffset(frame - LINE_AT, fps), 18, -2),
         }}
       >
-        {LINE}
+        {lineText}
       </div>
       <SfxTrack hits={sfxHits(staggerFrames)} />
     </AbsoluteFill>
