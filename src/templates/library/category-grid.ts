@@ -12,7 +12,7 @@ export const categoryGrid = defineTemplate({
   desc: "2-9 张分类卡按网格依次弹出（自动 2 列 / 3 列），每张含图标、名称与一句说明。",
   aliases: ["分类", "网格", "卡片网格", "品类", "产品"],
   fields: [
-    { key: "eyebrow", type: "text", label: "眉题", optional: true, maxLen: 14, placeholder: "正上茶舍的三款白茶" },
+    { key: "eyebrow", type: "text", label: "眉题", optional: true, maxLen: 14, placeholder: "正上茶舍的三款茶" },
     { key: "title", type: "text", label: "标题", maxLen: 12, placeholder: "三款茶怎么选" },
     {
       key: "items",
@@ -31,12 +31,12 @@ export const categoryGrid = defineTemplate({
     { key: "foot", type: "text", label: "底部一句", optional: true, maxLen: 16 },
   ],
   defaults: {
-    eyebrow: "正上茶舍的三款白茶",
-    title: "三款茶怎么选",
+    eyebrow: "福鼎白茶常见的三种",
+    title: "白茶怎么分",
     items: [
-      { name: "素雪", tag: "白牡丹", note: "清甜鲜爽，适合入门", icon: "bud" },
-      { name: "蜜韵", tag: "寿眉", note: "枣香蜜韵，耐泡耐煮", icon: "leaf" },
-      { name: "月影", tag: "贡眉", note: "花香柔和，日常口粮", icon: "cup" },
+      { name: "白牡丹", tag: "芽叶", note: "一芽一二叶", icon: "bud" },
+      { name: "贡眉", tag: "菜茶", note: "菜茶品种制成", icon: "leaf" },
+      { name: "寿眉", tag: "叶多", note: "以叶片为主", icon: "cup" },
     ],
     foot: "",
   },

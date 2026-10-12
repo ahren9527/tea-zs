@@ -46,7 +46,7 @@ export const lawPoints = defineTemplate({
     points: [
       { text: "吸潮 ≠ 变醇", sub: "受潮的茶不会越放越好", icon: "damp", kind: "bad" },
       { text: "发酸、发霉", sub: "闻到酸味就已经晚了", icon: "warn", kind: "bad" },
-      { text: "梅雨季开除湿机", sub: "室内湿度压到 60% 以下", icon: "hygro", kind: "ok" },
+      { text: "梅雨季开除湿机", sub: "连阴天屋里一潮就开", icon: "hygro", kind: "ok" },
     ],
     taboo: "别塞冰箱",
     tabooStamp: "禁",
