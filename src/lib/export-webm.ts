@@ -8,10 +8,10 @@ import {
   canEncodeAudio,
   canEncodeVideo,
 } from "mediabunny";
-import { getClip } from "@/remotion/catalog";
 import { hitsFor } from "@/remotion/shared/sfx-hits";
+import { STATIC_MODE } from "@/lib/static-mode";
 import { FPS, STAGE, type AnimParams } from "@/remotion/shared/theme";
-import { drawFrame, preloadIcons, totalDuration } from "@/lib/draw-stage";
+import { drawFrame, preloadIcons, resolveClip, totalDuration, type ClipRef } from "@/lib/draw-stage";
 
 // 16 Mbps ultra-high bitrate for crisp typography and paper texture
 const ULTRA_BITRATE = 16_000_000;
@@ -40,9 +40,10 @@ async function pickCodec(): Promise<"avc" | "hevc"> {
   throw new Error("当前浏览器不能编码 H.264，请用 Chrome 导出");
 }
 
-async function mixSfx(clipId: string, staggerMs: number, durationSec: number): Promise<AudioBuffer | null> {
+async function mixSfx(clipRef: ClipRef, staggerMs: number, durationSec: number): Promise<AudioBuffer | null> {
   const staggerFrames = Math.max(6, Math.round((staggerMs / 1000) * FPS));
-  const hits = hitsFor(clipId, staggerFrames);
+  const clip = resolveClip(clipRef);
+  const hits = clip.sfx ? clip.sfx(staggerFrames) : hitsFor(clip.id, staggerFrames);
   if (!hits.length || typeof OfflineAudioContext === "undefined") return null;
   const sr = 44100;
   const ctx = new OfflineAudioContext(2, Math.max(sr, Math.ceil(durationSec * sr) + sr), sr);
@@ -81,7 +82,7 @@ export type ExportProgress = {
 
 async function exportWithMediabunny(
   params: AnimParams,
-  clipId: string,
+  clipId: ClipRef,
   onProgress?: (p: ExportProgress) => void,
   abortSignal?: AbortSignal,
 ): Promise<Blob> {
@@ -186,7 +187,7 @@ async function exportWithMediabunny(
 
 async function recordWebm(
   params: AnimParams,
-  clipId: string,
+  clipId: ClipRef,
   onProgress?: (p: ExportProgress) => void,
   abortSignal?: AbortSignal,
 ): Promise<Blob> {
@@ -250,7 +251,7 @@ async function recordWebm(
 
 async function exportViaServer(
   params: AnimParams,
-  clipId: string,
+  clipId: ClipRef,
   onProgress?: (p: ExportProgress) => void,
   abortSignal?: AbortSignal,
 ): Promise<Blob> {
@@ -271,18 +272,18 @@ async function exportViaServer(
 
 export async function exportMp4(
   params: AnimParams,
-  clipId = "ep18-b1",
+  clipId: ClipRef = "ep18-b1",
   onProgress?: (p: ExportProgress) => void,
   abortSignal?: AbortSignal,
 ): Promise<Blob> {
   await document.fonts.ready;
   await preloadIcons();
-  getClip(clipId);
+  await resolveClip(clipId).prepare?.(params);
 
   try {
     return await exportWithMediabunny(params, clipId, onProgress, abortSignal);
   } catch (browserErr) {
-    if (abortSignal?.aborted) throw browserErr;
+    if (abortSignal?.aborted || STATIC_MODE) throw browserErr;
     try {
       return await exportViaServer(params, clipId, onProgress, abortSignal);
     } catch {
@@ -294,13 +295,13 @@ export async function exportMp4(
 
 export async function exportWebm(
   params: AnimParams,
-  clipId = "ep18-b1",
+  clipId: ClipRef = "ep18-b1",
   onProgress?: (p: ExportProgress) => void,
   abortSignal?: AbortSignal,
 ): Promise<Blob> {
   await document.fonts.ready;
   await preloadIcons();
-  getClip(clipId);
+  await resolveClip(clipId).prepare?.(params);
   return recordWebm(params, clipId, onProgress, abortSignal);
 }
 

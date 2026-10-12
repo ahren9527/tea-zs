@@ -1,12 +1,17 @@
 import { Player, type PlayerRef } from "@remotion/player";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StageErrorBoundary } from "@/components/stage-error";
-import { getClip } from "@/remotion/catalog";
+import { resolveClip, type ClipRef } from "@/lib/draw-stage";
 import { FPS, HEIGHT, WIDTH, PAPER_THEMES, type PaperThemeKey } from "@/remotion/shared/theme";
 import { PaperThemeContext, FontSizeContext, CustomTextContext } from "@/remotion/shared/theme-context";
 
 type Props = {
-  clipId: string;
+  /** 经典片段 id，或直接传 ClipDef（模板分镜） */
+  clipId: ClipRef;
+  /** 额外传给合成组件的 props（模板分镜的 templateId / content / timing） */
+  extraProps?: Record<string, unknown>;
+  /** 播放器重建的依据；不传时文案变化会重建播放器（经典片段的旧行为） */
+  resetKey?: string;
   staggerMs: number;
   playId: number;
   playbackRate?: number;
@@ -21,6 +26,8 @@ type Props = {
 
 export function RemotionStage({
   clipId,
+  extraProps,
+  resetKey,
   staggerMs,
   playId,
   playbackRate = 1,
@@ -34,7 +41,7 @@ export function RemotionStage({
 }: Props) {
   const ref = useRef<PlayerRef>(null);
   const [mounted, setMounted] = useState(false);
-  const clip = getClip(clipId);
+  const clip = resolveClip(clipId);
   const staggerFrames = Math.max(6, Math.round((staggerMs / 1000) * FPS));
   const durationInFrames = Math.max(1, Math.round(clip.duration(staggerFrames)));
   const inputProps = useMemo(
@@ -44,11 +51,12 @@ export function RemotionStage({
       ...customTexts,
       paperTheme,
       fontScale,
+      ...extraProps,
     }),
-    [staggerFrames, customTexts, paperTheme, fontScale],
+    [staggerFrames, customTexts, paperTheme, fontScale, extraProps],
   );
-  const textKey = useMemo(() => JSON.stringify(customTexts ?? {}), [customTexts]);
-  const playerKey = `${clipId}-${playId}-${paperTheme}-${fontScale}-${staggerFrames}-${textKey}`;
+  const textKey = useMemo(() => resetKey ?? JSON.stringify(customTexts ?? {}), [customTexts, resetKey]);
+  const playerKey = `${clip.id}-${playId}-${paperTheme}-${fontScale}-${staggerFrames}-${textKey}`;
   const themeColor = PAPER_THEMES[paperTheme]?.paper ?? "#f3ecdc";
 
   const ThemedComponent = useMemo(() => {
@@ -154,14 +162,14 @@ export function RemotionStage({
   );
 }
 
-export function remotionLengthSec(clipId: string, staggerMs: number) {
-  const clip = getClip(clipId);
+export function remotionLengthSec(clipId: ClipRef, staggerMs: number) {
+  const clip = resolveClip(clipId);
   const staggerFrames = Math.max(6, Math.round((staggerMs / 1000) * FPS));
   return (clip.duration(staggerFrames) / FPS).toFixed(1);
 }
 
-export function remotionTotalFrames(clipId: string, staggerMs: number) {
-  const clip = getClip(clipId);
+export function remotionTotalFrames(clipId: ClipRef, staggerMs: number) {
+  const clip = resolveClip(clipId);
   const staggerFrames = Math.max(6, Math.round((staggerMs / 1000) * FPS));
   return Math.max(1, Math.round(clip.duration(staggerFrames)));
 }

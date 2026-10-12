@@ -128,6 +128,11 @@ function authPopupPlugin(): Plugin {
 // opens a second dev-server port, which breaks the single-port preview.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
+// `npm run build:static`（scripts/build-static.mjs）设置 STATIC_BUILD=1：
+// 纯前端 SPA（TanStack Start spa 模式，预渲染一个 index.html 壳），不带 Nitro / 服务端路由，
+// 产物可直接放 Cloudflare Pages 等静态托管。
+const STATIC_BUILD = process.env.STATIC_BUILD === "1";
+
 export default defineConfig(({ command }) => ({
   server: {
     host: "0.0.0.0",
@@ -162,8 +167,11 @@ export default defineConfig(({ command }) => ({
           splitBehavior: () => [],
         },
       },
+      ...(STATIC_BUILD
+        ? { spa: { enabled: true, prerender: { outputPath: "/index.html", crawlLinks: false } } }
+        : {}),
     }),
-    ...(command === "build"
+    ...(command === "build" && !STATIC_BUILD
       ? [
           nitro({
             preset: "vercel",

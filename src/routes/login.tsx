@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
+import { STATIC_MODE } from "@/lib/static-mode";
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -26,7 +27,7 @@ function Login() {
             </button>
           ))
         ) : (
-          <p className="text-sm text-chrome-muted">登录已关闭。</p>
+          <p className="text-sm text-chrome-muted">{STATIC_MODE ? "这是静态版，不需要登录：所有作品自动保存在本机浏览器里。" : "登录已关闭。"}</p>
         )}
         <a href="/" className="block text-sm text-chrome-muted hover:text-chrome-fg">
           返回动画台
