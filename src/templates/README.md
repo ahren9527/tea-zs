@@ -1,6 +1,10 @@
 # 节拍模板库（src/templates）
 
-面板固定、模板固定，**每期只改内容**。一期 = 元信息（期数、标题、纸色、字号）+ 有序的分镜列表；
+> **主路径已改为「每期定制动画」**：每个节拍手写在 `src/remotion/epNN/<节拍>/`，自动出现在面板里，
+> 见 [`docs/新建一期.md`](../../docs/新建一期.md)。下面的模板只是**可选的起手式**：
+> 在面板里「新建一期 → 从模板起步」，或 `npm run new:clip -- 20 B1 标题 --from-template hook-stamp` 把模板复制进节拍文件夹再改。
+
+模板期的结构：一期 = 元信息（期数、标题、纸色、字号）+ 有序的分镜列表；
 每个分镜 = `{ template, code, title, content, timing, exportName? }`，存成 JSON（见 `src/episodes/seeds/*.json`）。
 
 ## 目录
