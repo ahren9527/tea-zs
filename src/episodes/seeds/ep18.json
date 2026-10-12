@@ -1,0 +1,201 @@
+{
+  "kind": "zhengshang-episode",
+  "version": 1,
+  "episode": {
+    "id": "seed-ep18",
+    "number": 18,
+    "title": "白茶怎么存？",
+    "theme": "classic",
+    "fontScale": 1,
+    "beats": [
+      {
+        "id": "seed-ep18-b1",
+        "template": "hook-stamp",
+        "code": "B1",
+        "title": "破题",
+        "note": "00—10秒：存普洱讲究开窗透气，但白茶最怕跑香！你以为是在陈化，其实是在毁茶！",
+        "timing": { "pace": 1, "holdSec": 1.2, "durationSec": 10 },
+        "content": {
+          "eyebrow": "存了三年，反而发酸没味？",
+          "myth": "越放越香",
+          "stamp": "毁茶",
+          "stampStyle": "seal",
+          "statLabel": "",
+          "statFrom": 100,
+          "statTo": 23,
+          "statUnit": "%",
+          "punch": "你以为在陈化"
+        }
+      },
+      {
+        "id": "seed-ep18-b2",
+        "template": "rule-cards",
+        "code": "B2",
+        "title": "三法则",
+        "note": "10—18秒：在家存白茶，就看三样",
+        "timing": { "pace": 1, "holdSec": 1.2, "durationSec": 8 },
+        "content": {
+          "eyebrow": "在家存白茶，就看三样",
+          "title": "存茶三法则",
+          "cards": [
+            { "mark": "干", "text": "干不干", "sub": "潮气是第一大敌", "icon": "damp" },
+            { "mark": "封", "text": "封没封严", "sub": "跑香、吸潮都从缝里来", "icon": "lock" },
+            { "mark": "净", "text": "旁边有没有怪味", "sub": "茶最吸味", "icon": "smell" }
+          ],
+          "foot": ""
+        }
+      },
+      {
+        "id": "seed-ep18-b3",
+        "template": "law-points",
+        "code": "B3",
+        "title": "干",
+        "note": "18—38秒：茶吸了潮气，不是变醇，是发酸发霉……千万别塞冰箱",
+        "timing": { "pace": 1, "holdSec": 1.5 },
+        "content": {
+          "char": "干",
+          "kicker": "先说干",
+          "points": [
+            { "text": "吸潮 ≠ 变醇", "sub": "吸了潮气只会发酸发霉", "icon": "damp", "kind": "bad" },
+            { "text": "梅雨季开除湿机", "sub": "连阴天屋里一潮就开", "icon": "hygro", "kind": "ok" },
+            { "text": "常温、阴凉处就够", "sub": "不必刻意找冷的地方", "icon": "thermo", "kind": "ok" }
+          ],
+          "taboo": "别塞冰箱",
+          "tabooStamp": "禁"
+        }
+      },
+      {
+        "id": "seed-ep18-b4",
+        "template": "layer-steps",
+        "code": "B4",
+        "title": "封",
+        "note": "38—56秒：紫砂罐浑身细孔不能用 → 老茶客三层法 → 挡潮避光",
+        "timing": { "pace": 1, "holdSec": 1.5 },
+        "content": {
+          "eyebrow": "第二，封",
+          "title": "老茶客的三层法",
+          "taboo": "紫砂罐",
+          "tabooStamp": "不能用",
+          "layout": "stack",
+          "steps": [
+            { "text": "铝箔袋", "sub": "排干净气、扎好口子", "icon": "foil" },
+            { "text": "塑料袋", "sub": "再套一层防潮", "icon": "bag" },
+            { "text": "纸箱", "sub": "放进去，挡光", "icon": "box" }
+          ],
+          "foot": "既挡潮 · 更避光"
+        }
+      },
+      {
+        "id": "seed-ep18-b5",
+        "template": "law-points",
+        "code": "B5",
+        "title": "净",
+        "note": "56—66秒：茶最吸味。厨房油烟、卫生间潮气、樟脑丸味，挨着准串味",
+        "timing": { "pace": 1, "holdSec": 1.2 },
+        "content": {
+          "char": "净",
+          "kicker": "茶最吸味",
+          "points": [
+            { "text": "厨房油烟", "sub": "", "icon": "smell", "kind": "bad" },
+            { "text": "卫生间潮气", "sub": "", "icon": "damp", "kind": "bad" },
+            { "text": "樟脑丸味", "sub": "挨着准串味", "icon": "camphor", "kind": "bad" }
+          ],
+          "taboo": "",
+          "tabooStamp": "禁"
+        }
+      },
+      {
+        "id": "seed-ep18-b8",
+        "template": "layer-steps",
+        "code": "B6",
+        "title": "架起来放",
+        "note": "66—74秒：离墙一尺，离地半尺。架起来放",
+        "timing": { "pace": 1, "holdSec": 1.2 },
+        "content": {
+          "eyebrow": "存茶老规矩",
+          "title": "茶放在哪儿",
+          "taboo": "",
+          "tabooStamp": "",
+          "layout": "stair",
+          "steps": [
+            { "text": "离墙一尺", "sub": "避开墙角返潮", "icon": "wall" },
+            { "text": "离地半尺", "sub": "地面潮气上不来", "icon": "drop" },
+            { "text": "架起来放", "sub": "潮气杂味全避开", "icon": "shelf" }
+          ],
+          "foot": ""
+        }
+      },
+      {
+        "id": "seed-ep18-b6",
+        "template": "seal-row",
+        "code": "B7",
+        "title": "六个字",
+        "note": "74—80秒：白茶怎么存，就六个字：够干、封死、没味",
+        "timing": { "pace": 1, "holdSec": 1.2 },
+        "content": {
+          "intro": "白茶怎么存，就六个字",
+          "stamps": [
+            { "text": "够干", "note": "" },
+            { "text": "封死", "note": "" },
+            { "text": "没味", "note": "" }
+          ],
+          "style": "mixed",
+          "foot": "存对了，年份才有意义"
+        }
+      },
+      {
+        "id": "seed-ep18-b9",
+        "template": "closing-line",
+        "code": "B8",
+        "title": "先存对再谈老",
+        "note": "80—84秒：先存对，再谈老",
+        "timing": { "pace": 1, "holdSec": 1.5 },
+        "content": {
+          "line": "先存对，再谈老",
+          "layout": "horizontal",
+          "sub": "",
+          "sealText": "正上",
+          "brand": "正上茶舍"
+        }
+      },
+      {
+        "id": "seed-ep18-b7",
+        "template": "poll",
+        "code": "B9",
+        "title": "互动",
+        "note": "84—92秒：你平时是现喝现撬，还是提前分装？评论区聊聊",
+        "timing": { "pace": 1, "holdSec": 1.5 },
+        "content": {
+          "eyebrow": "下期聊「大罐存、小罐醒」",
+          "question": "你平时怎么喝？",
+          "options": [
+            { "text": "现喝现撬", "sub": "喝多少撬多少" },
+            { "text": "提前分装", "sub": "倒进小罐放几天" }
+          ],
+          "cta": "评论区聊聊"
+        }
+      },
+      {
+        "id": "seed-ep18-b10",
+        "template": "split-pair",
+        "code": "B10",
+        "title": "大罐存小罐醒",
+        "note": "下期预告：大罐存、小罐醒",
+        "timing": { "pace": 1, "holdSec": 1.5 },
+        "content": {
+          "title": "大罐存 · 小罐醒",
+          "stamp": "下期",
+          "topLabel": "大罐长期封存",
+          "topSub": "避光密封 · 静置陈化",
+          "topIcon": "urn",
+          "topMood": "night",
+          "bottomLabel": "小罐日常慢醒",
+          "bottomSub": "按周取用 · 唤醒茶香",
+          "bottomIcon": "jar",
+          "bottomMood": "day",
+          "foot": "分工明确 · 滋味常新"
+        }
+      }
+    ]
+  }
+}

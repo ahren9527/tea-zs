@@ -1,0 +1,146 @@
+{
+  "kind": "zhengshang-episode",
+  "version": 1,
+  "episode": {
+    "id": "seed-ep19",
+    "number": 19,
+    "title": "大罐存、小罐醒",
+    "theme": "classic",
+    "fontScale": 1,
+    "beats": [
+      {
+        "id": "seed-ep19-b1",
+        "template": "hook-stamp",
+        "code": "B1",
+        "title": "频繁开大袋",
+        "note": "频繁开大袋 ≠ 正常取茶 · 头香散失",
+        "timing": { "pace": 1.1, "holdSec": 1 },
+        "content": {
+          "eyebrow": "散茶最怕的事",
+          "myth": "频繁开大袋",
+          "stamp": "跑香",
+          "stampStyle": "cross",
+          "statLabel": "频繁开袋 · 头香留存",
+          "statFrom": 100,
+          "statTo": 30,
+          "statUnit": "%",
+          "punch": ""
+        }
+      },
+      {
+        "id": "seed-ep19-b4-1",
+        "template": "law-points",
+        "code": "B4-1",
+        "title": "避光与密封",
+        "note": "小罐要同时做到避光和密封",
+        "timing": { "pace": 1.1, "holdSec": 1 },
+        "content": {
+          "char": "罐",
+          "kicker": "小罐要守住两道关",
+          "points": [
+            { "text": "避光", "sub": "釉面挡住直射光", "icon": "sun", "kind": "ok" },
+            { "text": "密封", "sub": "硅胶圈压紧锁香", "icon": "lock", "kind": "ok" }
+          ],
+          "taboo": "",
+          "tabooStamp": ""
+        }
+      },
+      {
+        "id": "seed-ep19-b4-2",
+        "template": "duel",
+        "code": "B4-2",
+        "title": "材质对决",
+        "note": "瓷铁 vs 砂玻",
+        "timing": { "pace": 1.1, "holdSec": 1 },
+        "content": {
+          "eyebrow": "小罐什么材质好",
+          "title": "材质对决",
+          "vs": "对",
+          "leftName": "瓷 · 铁",
+          "leftIcon": "tin",
+          "leftPoints": [{ "text": "不透光" }, { "text": "密封好" }],
+          "leftVerdict": "锁香",
+          "rightName": "砂 · 玻",
+          "rightIcon": "jar",
+          "rightPoints": [{ "text": "透光" }, { "text": "透气跑香" }],
+          "rightVerdict": "见光死"
+        }
+      },
+      {
+        "id": "seed-ep19-b5-1",
+        "template": "danger-zone",
+        "code": "B5-1",
+        "title": "吸异味雷区",
+        "note": "后景厨房油烟 · 前景瓷罐 · 避开厨房油烟",
+        "timing": { "pace": 1, "holdSec": 1 },
+        "content": {
+          "badge": "雷区一",
+          "title": "极易吸味",
+          "hazard": "smoke",
+          "subject": "jar",
+          "source": "smell",
+          "meter": false,
+          "meterLabel": "",
+          "meterValue": 0,
+          "sign": "避开厨房油烟",
+          "signMark": "bad"
+        }
+      },
+      {
+        "id": "seed-ep19-b5-2",
+        "template": "danger-zone",
+        "code": "B5-2",
+        "title": "梅雨大开雷区",
+        "note": "湿度飙升 85% · 大袋大开 · 茶叶受潮",
+        "timing": { "pace": 1, "holdSec": 1 },
+        "content": {
+          "badge": "雷区二",
+          "title": "梅雨大开",
+          "hazard": "damp",
+          "subject": "bag",
+          "source": "",
+          "meter": true,
+          "meterLabel": "室内湿度",
+          "meterValue": 85,
+          "sign": "梅雨忌大开补茶",
+          "signMark": "bad"
+        }
+      },
+      {
+        "id": "seed-ep19-b6-1",
+        "template": "split-pair",
+        "code": "B6-1",
+        "title": "仓台对读",
+        "note": "上半屏暗仓大瓮 · 下半屏晨曦小罐 · 居中印章横幅",
+        "timing": { "pace": 1.1, "holdSec": 1.2 },
+        "content": {
+          "title": "大罐睡觉 · 小罐上班",
+          "stamp": "准则",
+          "topLabel": "大罐 · 经年封存",
+          "topSub": "暗处静置 · 少开少动",
+          "topIcon": "urn",
+          "topMood": "night",
+          "bottomLabel": "小罐 · 案头醒茶",
+          "bottomSub": "一周一取 · 随喝随倒",
+          "bottomIcon": "jar",
+          "bottomMood": "day",
+          "foot": ""
+        }
+      },
+      {
+        "id": "seed-ep19-close",
+        "template": "closing-line",
+        "code": "B7",
+        "title": "大罐存小罐醒",
+        "timing": { "pace": 1, "holdSec": 1.5 },
+        "content": {
+          "line": "大罐存，小罐醒",
+          "layout": "vertical",
+          "sub": "",
+          "sealText": "正上",
+          "brand": "正上茶舍"
+        }
+      }
+    ]
+  }
+}
