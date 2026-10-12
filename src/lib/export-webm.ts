@@ -277,7 +277,7 @@ export async function exportMp4(
 ): Promise<Blob> {
   await document.fonts.ready;
   await preloadIcons();
-  await resolveClip(clipId).prepare?.();
+  await resolveClip(clipId).prepare?.(params);
 
   try {
     return await exportWithMediabunny(params, clipId, onProgress, abortSignal);
@@ -300,7 +300,7 @@ export async function exportWebm(
 ): Promise<Blob> {
   await document.fonts.ready;
   await preloadIcons();
-  await resolveClip(clipId).prepare?.();
+  await resolveClip(clipId).prepare?.(params);
   return recordWebm(params, clipId, onProgress, abortSignal);
 }
 
