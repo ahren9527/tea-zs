@@ -9,6 +9,7 @@ import {
   canEncodeVideo,
 } from "mediabunny";
 import { hitsFor } from "@/remotion/shared/sfx-hits";
+import { STATIC_MODE } from "@/lib/static-mode";
 import { FPS, STAGE, type AnimParams } from "@/remotion/shared/theme";
 import { drawFrame, preloadIcons, resolveClip, totalDuration, type ClipRef } from "@/lib/draw-stage";
 
@@ -282,7 +283,7 @@ export async function exportMp4(
   try {
     return await exportWithMediabunny(params, clipId, onProgress, abortSignal);
   } catch (browserErr) {
-    if (abortSignal?.aborted) throw browserErr;
+    if (abortSignal?.aborted || STATIC_MODE) throw browserErr;
     try {
       return await exportViaServer(params, clipId, onProgress, abortSignal);
     } catch {

@@ -26,6 +26,7 @@ import { ExportDialog } from "@/components/export-dialog";
 import { RemotionStage } from "@/components/remotion-stage";
 import { PlayerTimeline } from "@/components/studio/player-timeline";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
+import { STATIC_MODE } from "@/lib/static-mode";
 import { preloadIcons } from "@/lib/draw-stage";
 import { downloadBlob, exportMp4, exportWebm, type ExportProgress } from "@/lib/export-webm";
 import { useActiveEpisode, useEpisodes } from "@/episodes/store";
@@ -265,14 +266,18 @@ function Home() {
             <CheckCircle2 className="size-3.5 text-emerald-400" />
             {savedLabel ? `已自动保存 ${savedLabel}` : "自动保存已开启"}
           </span>
-          <SignedIn>
-            <UserButton />
-          </SignedIn>
-          <SignedOut>
-            <a href="/login" className="rounded-md border border-chrome-line/80 bg-surface/60 px-3 py-1 text-xs font-serif text-chrome-muted hover:text-chrome-fg">
-              登录
-            </a>
-          </SignedOut>
+          {!STATIC_MODE && (
+            <>
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+              <SignedOut>
+                <a href="/login" className="rounded-md border border-chrome-line/80 bg-surface/60 px-3 py-1 text-xs font-serif text-chrome-muted hover:text-chrome-fg">
+                  登录
+                </a>
+              </SignedOut>
+            </>
+          )}
         </div>
       </header>
 

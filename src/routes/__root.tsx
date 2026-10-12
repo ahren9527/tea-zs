@@ -1,7 +1,8 @@
-import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { ClientOnly, createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
+import { STATIC_MODE } from "@/lib/static-mode";
 
 const APP_NAME = "正上茶舍";
 const APP_DESC = "正上茶舍 (Tea-ZS) - 茶学自媒体口播动画台与茶叶知识互动展示系统";
@@ -33,8 +34,13 @@ export const Route = createRootRoute({
       { rel: "preload", href: "/fonts/lxgw-wenkai-medium.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: appCss },
       { rel: "stylesheet", href: "/fonts/zs-wenkai.css" },
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+      // PWA 清单由服务端中间件提供，静态部署没有
+      ...(STATIC_MODE
+        ? []
+        : [
+            { rel: "manifest", href: "/__grok/manifest.webmanifest" },
+            { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+          ]),
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600;700;900&display=swap",
@@ -49,7 +55,14 @@ export const Route = createRootRoute({
       <body>
         <PreviewHostBridge />
         <AuthProvider>
-          <Outlet />
+          {/* 静态版的 index.html 只是空壳（不含页面内容），页面只在浏览器里渲染，避免水合不一致 */}
+          {STATIC_MODE ? (
+            <ClientOnly>
+              <Outlet />
+            </ClientOnly>
+          ) : (
+            <Outlet />
+          )}
         </AuthProvider>
         <Scripts />
       </body>
