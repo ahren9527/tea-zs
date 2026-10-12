@@ -21,8 +21,8 @@ export type ClipDef = {
   Comp: ComponentType<any>;
   duration: (staggerFrames: number) => number;
   draw: (ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) => void;
-  /** 可选：自带音效列表（模板片段用）；没有则按 id 查 sfx-hits */
+  /** 可选：音效列表（定制片段写在 index.ts，模板片段由 plan 生成） */
   sfx?: (staggerFrames: number) => SfxHit[];
-  /** 可选：导出前的准备（如按需加载字体分片） */
-  prepare?: () => Promise<void>;
+  /** 可选：导出前的准备（如按需加载字体分片），params 含本次的自定义文案 */
+  prepare?: (params?: AnimParams) => Promise<void>;
 };

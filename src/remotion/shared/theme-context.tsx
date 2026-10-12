@@ -14,7 +14,8 @@ export function usePaperColors() {
   return PAPER_THEMES[key] ?? PAPER_THEMES.classic;
 }
 
-export function useFontSizeScale(): number {
+/** 参数仅为兼容旧片段的调用写法（第 19 期 Comp 传了 props），实际一律取 Context */
+export function useFontSizeScale(_legacyOverride?: number): number {
   return useContext(FontSizeContext) || 1;
 }
 
@@ -23,7 +24,7 @@ export function useScaledFontSize(baseSize: number): number {
   return Math.round(baseSize * scale);
 }
 
-export function useCustomTexts(): Record<string, string> {
+export function useCustomTexts(_legacyOverride?: Record<string, string>): Record<string, string> {
   return useContext(CustomTextContext) || {};
 }
 

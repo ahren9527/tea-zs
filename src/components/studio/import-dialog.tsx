@@ -84,7 +84,7 @@ export function ImportDialog({ open, episode, onClose, onImport }: Props) {
             >
               <ClipboardCopy className="size-3" /> {copied ? "已复制" : "复制脚本"}
             </button>
-            <span className="text-[10px] text-chrome-muted/70">（经典定制分镜不会写进脚本，JSON 会完整保留）</span>
+            <span className="text-[10px] text-chrome-muted/70">（定制分镜不会写进脚本，JSON 会完整保留）</span>
           </div>
         )}
 
@@ -146,7 +146,7 @@ export function ImportDialog({ open, episode, onClose, onImport }: Props) {
             {preview == null ? "粘贴后这里会显示识别结果" : preview.ok ? `识别到：${preview.title}，共 ${preview.count} 个分镜` : `解析失败：${preview.error}`}
           </span>
           <div className="ml-auto flex gap-2">
-            <button type="button" disabled={!preview?.ok || !episode || episode.classic} onClick={() => doImport(true)} className="rounded-md border border-chrome-line px-3 py-1.5 text-xs hover:bg-chrome-line disabled:opacity-40" title={episode?.classic ? "经典定制期不能被替换" : ""}>
+            <button type="button" disabled={!preview?.ok || !episode || episode.classic} onClick={() => doImport(true)} className="rounded-md border border-chrome-line px-3 py-1.5 text-xs hover:bg-chrome-line disabled:opacity-40" title={episode?.classic ? "定制期不能被替换" : ""}>
               替换当前期
             </button>
             <button type="button" disabled={!preview?.ok} onClick={() => doImport(false)} className="rounded-md bg-moss px-3 py-1.5 text-xs font-medium text-moss-fg hover:bg-moss/90 disabled:opacity-40">

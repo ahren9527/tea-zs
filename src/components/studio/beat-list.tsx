@@ -21,7 +21,7 @@ type Props = {
 function templateLabel(b: Beat) {
   if (b.template === "bespoke") {
     const c = CLIPS.find((x) => x.id === b.content.clipId);
-    return c ? `经典定制 · ${c.folder.split("/").pop()}` : "经典定制";
+    return c ? `定制 · ${c.folder.replace(/^src\/remotion\//, "")}` : "定制片段";
   }
   return getTemplate(b.template)?.name ?? `未知模板 ${b.template}`;
 }
