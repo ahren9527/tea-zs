@@ -24,7 +24,7 @@ import { SchemaForm } from "@/components/studio/schema-form";
 import { TemplatePicker } from "@/components/studio/template-picker";
 import { ExportDialog } from "@/components/export-dialog";
 import { RemotionStage } from "@/components/remotion-stage";
-import { TimelineControls } from "@/components/timeline-controls";
+import { PlayerTimeline } from "@/components/studio/player-timeline";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { preloadIcons } from "@/lib/draw-stage";
 import { downloadBlob, exportMp4, exportWebm, type ExportProgress } from "@/lib/export-webm";
@@ -61,8 +61,6 @@ function Home() {
   const beat = episode?.beats.find((b) => b.id === activeBeatId) ?? episode?.beats[0];
 
   const [playId, setPlayId] = useState(1);
-  const [playing, setPlaying] = useState(false);
-  const [currentFrame, setCurrentFrame] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isLoop, setIsLoop] = useState(true);
   const [tab, setTab] = useState<"content" | "timing">("content");
@@ -98,14 +96,12 @@ function Home() {
     (id: string) => {
       store.selectBeat(id);
       setPlayId((n) => n + 1);
-      setCurrentFrame(0);
     },
     [store],
   );
 
   const replay = useCallback(() => {
     setPlayId((n) => n + 1);
-    setCurrentFrame(0);
     playerRef.current?.seekTo(0);
     playerRef.current?.play();
   }, []);
@@ -364,8 +360,6 @@ function Home() {
                   fontScale={resolved.fontScale}
                   customTexts={resolved.customTexts}
                   onPlayerReady={handlePlayerReady}
-                  onPlayingChange={setPlaying}
-                  onFrameUpdate={setCurrentFrame}
                 />
               </div>
             ) : (
@@ -373,10 +367,8 @@ function Home() {
             )}
           </div>
           {resolved && (
-            <TimelineControls
+            <PlayerTimeline
               player={player}
-              playing={playing}
-              currentFrame={currentFrame}
               totalFrames={resolved.totalFrames}
               markers={resolved.markers}
               playbackRate={playbackRate}

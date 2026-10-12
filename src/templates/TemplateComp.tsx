@@ -23,8 +23,14 @@ export function TemplateComp({ templateId, content, timing, paperTheme = "classi
   const { fps } = useVideoConfig();
   const ref = useRef<HTMLCanvasElement>(null);
   const def = getTemplate(templateId);
-  const plan = useMemo(() => (def ? computePlan(def, content, timing ?? DEFAULT_TIMING) : null), [def, content, timing]);
-  const hits = useMemo(() => (plan && !muted ? sfxFromPlan(plan) : []), [plan, muted]);
+  // 以内容的序列化值做缓存键：即使上游传来新对象，只要内容没变就不重排时间轴、不重建音轨
+  const planKey = JSON.stringify([templateId, content, timing ?? DEFAULT_TIMING]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const plan = useMemo(() => (def ? computePlan(def, content, timing ?? DEFAULT_TIMING) : null), [def, planKey]);
+  const hitsAll = useMemo(() => (plan ? sfxFromPlan(plan) : []), [plan]);
+  const hitsKey = JSON.stringify(hitsAll);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const hits = useMemo(() => (muted ? [] : hitsAll), [hitsKey, muted]);
   const [fontTick, setFontTick] = useState(0);
 
   useEffect(() => {
@@ -33,7 +39,8 @@ export function TemplateComp({ templateId, content, timing, paperTheme = "classi
     return () => {
       alive = false;
     };
-  }, [content]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planKey]);
 
   useEffect(() => {
     if (typeof document === "undefined" || !document.fonts) return;
