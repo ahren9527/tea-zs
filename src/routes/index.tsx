@@ -157,7 +157,7 @@ function Home() {
           <div className="flex size-9 items-center justify-center rounded-sm border border-seal/60 bg-seal font-serif text-base font-black tracking-tighter text-paper shadow-sm">正上</div>
           <div>
             <p className="font-serif text-[10px] uppercase tracking-[0.25em] text-chrome-muted">正上茶舍 · 口播动画台</p>
-            <p className="font-display text-sm font-bold">每期只改内容，动画模板固定</p>
+            <p className="font-display text-sm font-bold">每期定制动画 · 面板固定</p>
           </div>
         </div>
 
@@ -173,16 +173,18 @@ function Home() {
               setPlayId((n) => n + 1);
             }}
           >
-            <optgroup label="模板期（只改内容）">
-              {templateEps.map((e) => (
-                <option key={e.id} value={e.id}>
-                  第{e.number}期 · {e.title}
-                </option>
-              ))}
-            </optgroup>
             {classicEps.length > 0 && (
-              <optgroup label="经典 / 定制（原手写片段）">
+              <optgroup label="定制期（src/remotion/epNN 手写动画）">
                 {classicEps.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    第{e.number}期 · {e.title}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {templateEps.length > 0 && (
+              <optgroup label="模板期（从模板起步）">
+                {templateEps.map((e) => (
                   <option key={e.id} value={e.id}>
                     第{e.number}期 · {e.title}
                   </option>
@@ -195,7 +197,16 @@ function Home() {
               <FilePlus2 className="size-3.5" /> 新建一期
             </button>
             {newMenu && (
-              <div className="absolute left-0 z-40 mt-1 w-56 overflow-hidden rounded-md border border-chrome-line bg-surface text-xs shadow-xl">
+              <div className="absolute left-0 z-40 mt-1 w-72 overflow-hidden rounded-md border border-chrome-line bg-surface text-xs shadow-xl">
+                <div className="border-b border-chrome-line/60 px-3 py-2.5">
+                  <p className="flex items-center gap-1.5 font-medium text-chrome-fg">
+                    <Sparkles className="size-3.5 text-moss-fg" /> 定制一期（主路径）
+                  </p>
+                  <p className="mt-1 text-[10px] leading-relaxed text-chrome-muted">每个节拍的动画单独手写。在项目里运行下面的命令建好节拍文件夹，保存后这里自动出现新的一期：</p>
+                  <code className="mt-1.5 block select-all rounded bg-chrome px-2 py-1 font-mono text-[10px] text-moss-fg">npm run new:clip -- 20 B1 标题</code>
+                  <p className="mt-1 text-[10px] text-chrome-muted">详见 docs/新建一期.md</p>
+                </div>
+                <p className="px-3 pt-2 text-[10px] uppercase tracking-widest text-chrome-muted">从模板起步（可选）</p>
                 <button
                   type="button"
                   className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-chrome-line/50"
@@ -207,7 +218,7 @@ function Home() {
                   <Copy className="mt-0.5 size-3.5 text-moss-fg" />
                   <span>
                     复制当前期
-                    <span className="block text-[10px] text-chrome-muted">沿用分镜结构，只改文案（推荐）</span>
+                    <span className="block text-[10px] text-chrome-muted">沿用分镜结构，只改文案</span>
                   </span>
                 </button>
                 <button
@@ -220,8 +231,8 @@ function Home() {
                 >
                   <FilePlus2 className="mt-0.5 size-3.5 text-moss-fg" />
                   <span>
-                    空白一期
-                    <span className="block text-[10px] text-chrome-muted">只带开场 + 收尾两个分镜</span>
+                    空白模板期
+                    <span className="block text-[10px] text-chrome-muted">只带开场 + 收尾两个模板分镜</span>
                   </span>
                 </button>
                 <button
@@ -299,9 +310,9 @@ function Home() {
           <input aria-label="字号" type="range" min={0.8} max={1.3} step={0.05} value={episode.fontScale} onChange={(e) => store.updateEpisode(episode.id, { fontScale: Number(e.target.value) })} />
           <span className="w-9 font-mono text-[10px] text-chrome-muted">{Math.round(episode.fontScale * 100)}%</span>
         </label>
-        {episode.classic && <span className="rounded bg-seal/25 px-2 py-0.5 text-[11px] text-red-200">经典定制期：原手写动画，可改文案与导出</span>}
+        {episode.classic && <span className="rounded bg-seal/25 px-2 py-0.5 text-[11px] text-red-200" title={`动画代码在 src/remotion/ep${episode.number}/`}>定制期：动画在 src/remotion/ep{episode.number}/，这里改文案与导出</span>}
         <div className="ml-auto flex items-center gap-2">
-          <button type="button" onClick={() => store.restoreSeeds()} className="flex items-center gap-1 text-chrome-muted hover:text-chrome-fg" title="把示例期（第18/19期 模板版与经典定制）补回列表">
+          <button type="button" onClick={() => store.restoreSeeds()} className="flex items-center gap-1 text-chrome-muted hover:text-chrome-fg" title="把定制期和模板示例期补回列表">
             <RotateCcw className="size-3" /> 恢复示例
           </button>
           <button
@@ -397,7 +408,7 @@ function Home() {
                         模板：<span className="text-chrome-fg">{tplDef.name}</span>
                       </>
                     ) : (
-                      <>经典定制片段（原手写动画，结构固定）</>
+                      <>定制片段（手写动画，代码在 {resolved?.clip.folder}）</>
                     )}
                   </span>
                   {tplDef && (
@@ -465,7 +476,7 @@ function Home() {
                         </div>
                       </>
                     ) : (
-                      <p className="text-chrome-muted">经典定制片段的节奏写在代码里，这里只能改导出名与纸色。</p>
+                      <p className="text-chrome-muted">定制片段的节奏写在代码里，这里只能改导出名与纸色。</p>
                     )}
                     <label className="block">
                       <span className="mb-1 block">导出文件名</span>

@@ -18,6 +18,7 @@ import {
 } from "@/templates/schema";
 import { getTemplate, templateMeta } from "@/templates/registry";
 import { seedEpisodes } from "./seeds";
+import { allClipIds, syncCustomEpisodes } from "./classic";
 
 export const STORAGE_KEY = "zs-episodes-v1";
 
@@ -26,6 +27,8 @@ type State = {
   activeEpisodeId: string;
   activeBeatId: Record<string, string>;
   savedAt: number;
+  /** 上次见过的定制片段 id，用来判断 src/remotion 里新加了哪些 */
+  knownClipIds: string[];
 };
 
 type Actions = {
@@ -51,7 +54,7 @@ type Actions = {
 
 function initial(): State {
   const episodes = seedEpisodes();
-  return { episodes, activeEpisodeId: episodes[0]?.id ?? "", activeBeatId: {}, savedAt: 0 };
+  return { episodes, activeEpisodeId: episodes[0]?.id ?? "", activeBeatId: {}, savedAt: 0, knownClipIds: allClipIds() };
 }
 
 function touch(ep: Episode): Episode {
@@ -203,7 +206,7 @@ export const useEpisodes = create<State & Actions>()(
           set((s) => {
             const have = new Set(s.episodes.map((e) => e.id));
             const missing = seedEpisodes().filter((e) => !have.has(e.id));
-            return { episodes: [...s.episodes, ...missing], savedAt: Date.now() };
+            return { episodes: [...s.episodes, ...missing], savedAt: Date.now(), knownClipIds: allClipIds() };
           }),
       };
     },
@@ -212,18 +215,24 @@ export const useEpisodes = create<State & Actions>()(
       version: 1,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
-      partialize: (s) => ({ episodes: s.episodes, activeEpisodeId: s.activeEpisodeId, activeBeatId: s.activeBeatId, savedAt: s.savedAt }),
+      partialize: (s) => ({ episodes: s.episodes, activeEpisodeId: s.activeEpisodeId, activeBeatId: s.activeBeatId, savedAt: s.savedAt, knownClipIds: s.knownClipIds }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
         if (!p.episodes || !Array.isArray(p.episodes) || !p.episodes.length) return current;
         // 存档经过 normalize，防止旧版本 / 手改坏数据导致白屏
-        const episodes = p.episodes.map((raw) => normalizeEpisode(raw, templateMeta).episode);
+        // 再和代码里的定制片段对齐：新加的期 / 片段自动出现，删掉的文件夹自动消失
+        const episodes = syncCustomEpisodes(
+          p.episodes.map((raw) => normalizeEpisode(raw, templateMeta).episode),
+          Array.isArray(p.knownClipIds) ? p.knownClipIds : undefined,
+        );
+        if (!episodes.length) return current;
         return {
           ...current,
           episodes,
           activeEpisodeId: episodes.some((e) => e.id === p.activeEpisodeId) ? p.activeEpisodeId! : episodes[0].id,
           activeBeatId: p.activeBeatId ?? {},
           savedAt: p.savedAt ?? 0,
+          knownClipIds: allClipIds(),
         };
       },
     },
