@@ -135,6 +135,27 @@ function shadowOf(ctx: CanvasRenderingContext2D, path: () => void, o: { blur: nu
   ctx.restore();
 }
 
+/** 沿一条线的柔和投影（同样用 shadowBlur，线本体画到画面外） */
+function shadowStroke(ctx: CanvasRenderingContext2D, pts: Pt[], width: number, o: { blur: number; dx: number; dy: number; alpha: number }) {
+  const m = ctx.getTransform();
+  const s = Math.hypot(m.a, m.b) || 1;
+  const far = 10000;
+  ctx.save();
+  ctx.shadowColor = rgba("#3a2616", o.alpha);
+  ctx.shadowBlur = o.blur * s;
+  ctx.shadowOffsetX = (o.dx + far) * m.a + o.dy * m.c;
+  ctx.shadowOffsetY = (o.dx + far) * m.b + o.dy * m.d;
+  ctx.translate(-far, 0);
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = width;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  tracePoly(ctx, pts, false);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function textBounds(text: string, x: number, y: number, fs: number, vertical = false) {
   const n = Array.from(text).length;
   return vertical
@@ -244,6 +265,15 @@ function drawSubject(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalett
     ctx.globalAlpha = land.alpha;
     ctx.translate(CAKE.x, CAKE.y + land.y);
     ctx.scale(land.scaleX, land.scaleY);
+    // 撬走之后：缺口里落着饼身的影子（光从左上来）
+    if (lifted) {
+      ctx.save();
+      ctx.beginPath();
+      tracePoly(ctx, CHUNK_POLY);
+      ctx.clip();
+      for (const br of [CRACK_UP, CRACK_DOWN]) shadowStroke(ctx, br, 16, { blur: 22, dx: 8, dy: 12, alpha: 0.5 });
+      ctx.restore();
+    }
     if (lifted) {
       // 撬走之后：饼和饼上的一切都不画进那块缺口
       ctx.beginPath();
@@ -646,13 +676,13 @@ function drawPortion(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalett
 }
 
 // ---- 棉纸 + 茶块 + 印章 ----
-const D = 222; // 棉纸对角半径
+const D = 290; // 棉纸对角半径（正方形纸，四角朝斜向，竖向只占 D·0.71，不压字幕区）
 const FOLD = D * 0.52; // 折线到中心的距离
 const FLAPS = [
-  { dir: Math.PI / 2, at: 0 }, // 下
-  { dir: -Math.PI / 2, at: 3 }, // 上
-  { dir: Math.PI, at: 6 }, // 左
-  { dir: 0, at: 9 }, // 右
+  { dir: (3 * Math.PI) / 4, at: 0 }, // 左下
+  { dir: -Math.PI / 4, at: 3 }, // 右上
+  { dir: Math.PI / 4, at: 6 }, // 右下
+  { dir: (-3 * Math.PI) / 4, at: 9 }, // 左上
 ];
 
 function chunkPose(frame: number) {
@@ -679,7 +709,7 @@ function chunkPose(frame: number) {
     x = nx;
     y = ny;
     rot = lerp(rot, Math.PI / 2, mv);
-    scale = lerp(scale, 0.7, mv);
+    scale = lerp(scale, 0.8, mv);
     height = lerp(1, 0.6, mv);
     const landL = frame - (MOVE_AT + 16);
     if (landL > 0) {
@@ -705,7 +735,10 @@ function drawChunk(ctx: CanvasRenderingContext2D, frame: number, tex: { canvas: 
   tracePoly(ctx, CHUNK_POLY);
   ctx.clip();
   ctx.drawImage(tex.canvas as CanvasImageSource, -tex.ext, -tex.ext, tex.ext * 2, tex.ext * 2);
-  // 撬起时更受光
+  // 撬起时更受光（只照在叶面上，不照到饼外的空白）
+  ctx.beginPath();
+  tracePoly(ctx, SIL);
+  ctx.clip();
   ctx.fillStyle = rgba(pal.light, 0.1 * c.height);
   ctx.fillRect(-R * 1.5, -R * 1.5, R * 3, R * 3);
   ctx.restore();
@@ -737,7 +770,7 @@ function flapGeom(dir: number, p: number) {
 /** 棉纸当前外轮廓：顺时针走一圈，每个角取「折线端点 b → 角尖（未翻过去时）→ 折线端点 a」 */
 function packetOutline(flapP: number[]): Pt[] {
   const out: Pt[] = [];
-  for (const dir of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+  for (const dir of [Math.PI / 4, (3 * Math.PI) / 4, (-3 * Math.PI) / 4, -Math.PI / 4]) {
     const i = FLAPS.findIndex((f) => f.dir === dir);
     const g = flapGeom(dir, flapP[i]);
     out.push(g.b);
@@ -834,7 +867,7 @@ function drawPacketAndChunk(ctx: CanvasRenderingContext2D, frame: number, pal: F
       text: textOf(params, "seal"),
       x: PACKET.x + 4,
       y: PACKET.y + 2,
-      size: 118 * (params.fontScale ?? 1) ** 0.5,
+      size: 132 * (params.fontScale ?? 1) ** 0.5,
       pose,
       color: pal.cinnabar,
       paper: pal.paper,
