@@ -2,7 +2,7 @@
 /**
  * 在 Node 里直接跑某个节拍的 draw.ts（导出路径），把指定秒数渲成 PNG，用来检查画面。
  *
- *   node scripts/render-frames.mjs src/remotion/ep20/b4/draw.ts 0.5 3 10.5 14.3 17.8 [--out screenshots/ep20-b4] [--theme classic]
+ *   node scripts/render-frames.mjs src/remotion/ep20/b2/draw.ts 0.5 3 7.6 12.6 [--out screenshots/ep20-b2] [--theme classic]
  *
  * 依赖（不进 package.json，按需装在任意目录）：@napi-rs/canvas、esbuild，以及字体文件：
  *   RENDER_DEPS=/path/to/dir   该目录下 node_modules 里有 @napi-rs/canvas 与 esbuild（默认先找本仓库）
@@ -28,7 +28,9 @@ const theme = opt("theme", "classic");
 const texts = opt("texts", "");
 const [entry, ...secs] = args;
 if (!entry || !secs.length) {
-  console.error("用法：node scripts/render-frames.mjs <draw.ts> <秒> [秒…] [--out dir] [--theme key] [--texts JSON]");
+  console.error(
+    "用法：node scripts/render-frames.mjs <draw.ts> <秒> [秒…] [--out dir] [--theme key] [--texts JSON]",
+  );
   process.exit(1);
 }
 

@@ -1,6 +1,7 @@
 /**
- * 白茶饼（俯视）的几何与纹理：外轮廓、压制纹理环、裂纹、撬下来的那一块。
- * 纹理是静态的，画一次缓存；动画只做变换和裁切。所有形状以饼心为原点（局部坐标）。
+ * 第 20 期共用：白茶饼（俯视）的外轮廓与叶片纹理。纹理按标准半径 CAKE_R 画一次缓存，
+ * 用的时候按需要的半径缩放（drawCake）。所有形状以饼心为原点（局部坐标）。
+ * （来自 B4 示范拍的茶饼，B4 改用 AI 视频后抽成本期共用件。）
  */
 import {
   TAU,
@@ -16,13 +17,21 @@ import {
   type FxPalette,
   type Pt,
 } from "@/remotion/shared/fx";
-import { CAKE, CHUNK } from "./data";
+import { tracePoly } from "./draw-kit";
 
-const R = CAKE.r;
+/** 纹理的标准半径（舞台 px） */
+export const CAKE_R = 330;
+const R = CAKE_R;
 
 /** 饼边半径（略不规整） */
 export function rimRadius(a: number) {
-  return R * (1 + 0.013 * noise1(Math.cos(a) * 2 + 7, 3) + 0.011 * noise1(Math.sin(a) * 2 + 3, 9) + 0.006 * noise1(a * 9, 11));
+  return (
+    R *
+    (1 +
+      0.013 * noise1(Math.cos(a) * 2 + 7, 3) +
+      0.011 * noise1(Math.sin(a) * 2 + 3, 9) +
+      0.006 * noise1(a * 9, 11))
+  );
 }
 
 export function silhouette(n = 180): Pt[] {
@@ -34,75 +43,50 @@ export function silhouette(n = 180): Pt[] {
   }
   return out;
 }
+export const CAKE_SIL = silhouette();
 
-/** 第 k 条压制纹理环（rr 是相对半径） */
-export function ringPoint(rr: number, a: number, k = 0): Pt {
-  const r = R * rr * (1 + 0.024 * noise1(Math.cos(a) * 2.3 + k * 1.7, 21) + 0.012 * noise1(a * 6 + k, 23));
-  return { x: Math.cos(a) * r, y: Math.sin(a) * r };
-}
-export const GRAIN_RINGS = [0.2, 0.31, 0.42, 0.52, 0.62, 0.72, 0.81, 0.89, 0.95];
-export const CHUNK_RING_INDEX = 4; // 0.62
-export function ringPath(k: number, start = -Math.PI / 2, n = 140): Pt[] {
-  const pts: Pt[] = [];
-  for (let i = 0; i <= n; i++) pts.push(ringPoint(GRAIN_RINGS[k], start + (i / n) * TAU, k));
-  return pts;
-}
-
-/** 顺纹裂纹：从针尖（环上 0°）沿纹理环分两路，到端点后折向饼边 */
-function crackBranch(dir: 1 | -1): Pt[] {
-  const end = dir > 0 ? CHUNK.a1 : CHUNK.a0;
-  const turn = end - dir * 0.07;
-  const pts: Pt[] = [];
-  const n = 26;
-  for (let i = 0; i <= n; i++) pts.push(ringPoint(CHUNK.ring, (i / n) * turn, CHUNK_RING_INDEX));
-  // 折向饼边：略带弧度
-  const m = 8;
-  const from = pts[pts.length - 1];
-  for (let i = 1; i <= m; i++) {
-    const t = i / m;
-    const a = turn + (end - turn) * t;
-    const rr = CHUNK.ring + (1.04 - CHUNK.ring) * t;
-    const p = { x: Math.cos(a) * R * rr, y: Math.sin(a) * R * rr };
-    pts.push({ x: from.x + (p.x - from.x) * 1, y: p.y });
-  }
-  return jaggedPath(pts, dir > 0 ? 41 : 43, 4.2, 7);
-}
-export const CRACK_UP = crackBranch(-1); // 往 a0（上）
-export const CRACK_DOWN = crackBranch(1); // 往 a1（下）
-
-/** 引导线（顺纹那条环在这一块里的一段） */
-export function guidePath(): Pt[] {
-  const pts: Pt[] = [];
-  const n = 40;
-  for (let i = 0; i <= n; i++) pts.push(ringPoint(CHUNK.ring, CHUNK.a0 + (CHUNK.a1 - CHUNK.a0) * (i / n), CHUNK_RING_INDEX));
-  return pts;
-}
-
-/** 撬下的那一块的外轮廓（含饼边外散叶的余量） */
-export function chunkPolygon(): Pt[] {
-  const up = CRACK_UP.slice().reverse(); // 饼边(a0) → 针尖
-  const down = CRACK_DOWN; // 针尖 → 饼边(a1)
-  const outer: Pt[] = [];
-  const n = 30;
+/**
+ * 撬下的一块（标准半径坐标）：a0..a1 之间、从 ring（相对半径）到饼边外的楔形，断口是毛的。
+ */
+export function chunkPolygon(a0: number, a1: number, ring = 0.55, seed = 3): Pt[] {
+  const inner: Pt[] = [];
+  const n = 14;
+  // 一侧断口：饼边 → 内环
+  const side = (a: number, s: number) => {
+    const pts: Pt[] = [];
+    for (let i = 0; i <= 6; i++) {
+      const rr = 1.08 - (1.08 - ring) * (i / 6);
+      pts.push({ x: Math.cos(a) * R * rr, y: Math.sin(a) * R * rr });
+    }
+    return jaggedPath(pts, s, 5, 8);
+  };
+  const s0 = side(a0, seed);
   for (let i = 0; i <= n; i++) {
-    const a = CHUNK.a1 + 0.02 - (i / n) * (CHUNK.a1 - CHUNK.a0 + 0.04);
-    outer.push({ x: Math.cos(a) * R * 1.13, y: Math.sin(a) * R * 1.13 });
+    const a = a0 + (a1 - a0) * (i / n);
+    const rr = ring * (1 + 0.05 * noise1(i * 0.9, seed + 5));
+    inner.push({ x: Math.cos(a) * R * rr, y: Math.sin(a) * R * rr });
   }
-  return [...up, ...down, ...outer];
+  const s1 = side(a1, seed + 7).reverse();
+  const outer: Pt[] = [];
+  for (let i = 0; i <= 20; i++) {
+    const a = a1 - (a1 - a0) * (i / 20);
+    outer.push({ x: Math.cos(a) * R * 1.1, y: Math.sin(a) * R * 1.1 });
+  }
+  return [...s0, ...jaggedPath(inner, seed + 11, 4, 9), ...s1, ...outer];
 }
-export const CHUNK_POLY = chunkPolygon();
-export const CHUNK_CENTER: Pt = (() => {
-  const a = (CHUNK.a0 + CHUNK.a1) / 2;
-  return { x: Math.cos(a) * R * 0.84, y: Math.sin(a) * R * 0.84 };
-})();
 
-export function tracePoly(ctx: CanvasRenderingContext2D, pts: Pt[], close = true) {
-  pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
-  if (close) ctx.closePath();
+export function centroid(pts: Pt[]): Pt {
+  let x = 0;
+  let y = 0;
+  for (const p of pts) {
+    x += p.x;
+    y += p.y;
+  }
+  return { x: x / pts.length, y: y / pts.length };
 }
 
 // ---------------- 纹理（缓存） ----------------
-export const TEX_SCALE = 1.6;
+const TEX_SCALE = 1.6;
 const EXT = R * 1.16;
 
 function leafColors(pal: FxPalette) {
@@ -137,7 +121,15 @@ function paintCake(c: CanvasRenderingContext2D, pal: FxPalette) {
     if (v < 0.86) return col.tan;
     return col.bud;
   };
-  const leaf = (x: number, y: number, rot: number, len: number, wid: number, color: string, vein: boolean) => {
+  const leaf = (
+    x: number,
+    y: number,
+    rot: number,
+    len: number,
+    wid: number,
+    color: string,
+    vein: boolean,
+  ) => {
     c.fillStyle = color;
     c.beginPath();
     traceLeaf(c, x, y, rot, len, wid);
@@ -145,7 +137,14 @@ function paintCake(c: CanvasRenderingContext2D, pal: FxPalette) {
     // 叶面一侧受光
     c.fillStyle = rgba("#fff6e4", 0.1);
     c.beginPath();
-    traceLeaf(c, x - Math.sin(rot) * wid * 0.25, y + Math.cos(rot) * wid * -0.25, rot, len * 0.8, wid * 0.4);
+    traceLeaf(
+      c,
+      x - Math.sin(rot) * wid * 0.25,
+      y + Math.cos(rot) * wid * -0.25,
+      rot,
+      len * 0.8,
+      wid * 0.4,
+    );
     c.fill();
     if (vein) {
       c.strokeStyle = rgba(col.gap, 0.45);
@@ -175,7 +174,15 @@ function paintCake(c: CanvasRenderingContext2D, pal: FxPalette) {
       const color = pick();
       const isBud = color === col.bud;
       c.globalAlpha = 0.78 + r() * 0.22;
-      leaf(x, y, rot, isBud ? len * 0.8 : len, len * (isBud ? 0.15 : 0.24 + r() * 0.14), color, !isBud && len > 26);
+      leaf(
+        x,
+        y,
+        rot,
+        isBud ? len * 0.8 : len,
+        len * (isBud ? 0.15 : 0.24 + r() * 0.14),
+        color,
+        !isBud && len > 26,
+      );
     }
   }
   // 芽毫：细长、发白、毛茸茸
@@ -239,7 +246,10 @@ function paintCake(c: CanvasRenderingContext2D, pal: FxPalette) {
   c.strokeStyle = bevel;
   c.lineWidth = 14;
   c.beginPath();
-  tracePoly(c, silhouette().map((q) => ({ x: q.x * 0.975, y: q.y * 0.975 })));
+  tracePoly(
+    c,
+    silhouette().map((q) => ({ x: q.x * 0.975, y: q.y * 0.975 })),
+  );
   c.stroke();
   c.restore();
 
@@ -265,14 +275,15 @@ function paintCake(c: CanvasRenderingContext2D, pal: FxPalette) {
 /** 缓存好的饼纹理（按主题），返回画布与它在局部坐标里的范围 */
 export function cakeTexture(pal: FxPalette) {
   const size = EXT * 2 * TEX_SCALE;
-  const s = cachedSurface(`ep20b4-cake:${pal.paper}`, size, size, (c) => {
+  const s = cachedSurface(`ep20-cake:${pal.paper}`, size, size, (c) => {
     c.save();
     c.translate(size / 2, size / 2);
     c.scale(TEX_SCALE, TEX_SCALE);
     paintCake(c, pal);
     c.restore();
-    // 柔化一次：自身错位叠几层，去掉「矢量感」的硬边（不依赖 ctx.filter）
-    const soft = cachedSurface(`ep20b4-cake-soft:${pal.paper}`, size, size, (sc) => sc.drawImage(c.canvas as CanvasImageSource, 0, 0));
+    const soft = cachedSurface(`ep20-cake-soft:${pal.paper}`, size, size, (sc) =>
+      sc.drawImage(c.canvas as CanvasImageSource, 0, 0),
+    );
     c.globalAlpha = 0.22;
     for (const [dx, dy] of [
       [1.2, 0],
@@ -284,4 +295,10 @@ export function cakeTexture(pal: FxPalette) {
     c.globalAlpha = 1;
   });
   return { canvas: s.canvas, ext: EXT };
+}
+
+/** 在当前坐标系（已平移到饼心）按标准半径画整块饼纹理；外部用 scale(r / CAKE_R) 缩放 */
+export function paintCakeTexture(ctx: CanvasRenderingContext2D, pal: FxPalette) {
+  const tex = cakeTexture(pal);
+  ctx.drawImage(tex.canvas as CanvasImageSource, -tex.ext, -tex.ext, tex.ext * 2, tex.ext * 2);
 }
