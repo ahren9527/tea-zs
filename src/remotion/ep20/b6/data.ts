@@ -1,5 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { foley } from "@/remotion/shared/sfx-lib";
+import { mg, mgLayer } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -69,15 +69,23 @@ export const CHUNK_HOME = { x: 590, y: 760, scale: 1.1 };
 export const CUP = { x: 880, y: 1000 };
 export const TALLY = { x0: 340, y: 660, step: 82 };
 
-// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
-// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
+// ---------------- 音效（动画风为主、写实为辅：mograph 主层 + mgLayer 下垫 ~-10 dB 物件录音；≤1 下 / 0.4 秒，叠层除外；打在接触 / 落定帧） ----------------
+// 第 20 期不开底噪（ambience 关）。有音高的 ding 都在 D 大调五声里，按句子往上走。
 export function sfxHits(_staggerFrames: number) {
   return [
-    // 茶块浮入 / 茶杯被朱砂拦回：不配音
-    foley("jarLid", JAR_AT + 9, { volume: 0.45, variant: 1 }), // 紫砂罐落定（轻碰）
-    foley("cakeThud", DROP_AT + DROP_DUR, { volume: 0.5 }), // 茶块落进罐里（闷、轻）
-    foley("jarLid", LID_CLOSE_AT + 5, { volume: 0.95, variant: 0 }), // 盖子重落（主动作）
-    // 暗影 / 一天一划 / 香气 / 「干醒」：不配音，留给口播
-    foley("jarLid", WAKE_AT + 2, { volume: 0.3, variant: 1, rate: 1.06 }), // 盖子掀开一线（极轻）
+    mg("pop", CHUNK_AT, { volume: 0.35 }), // 茶块浮入
+    mg("dingD5", PORTION_AT + 2, { volume: 0.35 }), // 「一周量」
+    mg("swish", WAIT_AT, { volume: 0.5 }), // 朱砂一笔拦回 +「先别急」（茶杯凑近不配）
+    ...mgLayer("thumpSoft", "jarLid", JAR_AT + 9, { volume: 0.55, underVariant: 1 }), // 紫砂罐落定
+    mg("swooshUp", DROP_AT + 2, { volume: 0.3 }), // 茶块划弧飞向罐口（掀盖不单配）
+    ...mgLayer("pop", "cakeThud", DROP_AT + DROP_DUR, { volume: 0.45 }), // 茶块落进罐里
+    ...mgLayer("tok", "jarLid", LID_CLOSE_AT + 5, { volume: 0.95, underVariant: 0 }), // 盖子重落（主动作）
+    mg("swooshDown", DARK_AT, { volume: 0.4 }), // 暗影扫过
+    mg("dingE5", DARK_AT + 2, { volume: 0.35 }), // 「避光」
+    mg("dingFs5", DAYS_AT + 2, { volume: 0.35 }), // 「3–7 天」（一天一划只隔 7 帧，不逐笔配）
+    ...mgLayer("tokLight", "jarLid", WAKE_AT + 2, { volume: 0.4, underVariant: 1 }), // 盖子掀开一线
+    mg("sparkle", AROMA_AT, { volume: 0.3 }), // 香气升起
+    mg("dingA5", KEY_AT + 2, { volume: 0.5 }), // 「干醒」
+    mg("swish", KEY_MARK_AT, { volume: 0.35 }), // 「干醒」旁朱砂竖笔
   ];
 }

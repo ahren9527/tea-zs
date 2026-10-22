@@ -2,7 +2,8 @@
  * 音效库（纯函数，无 React）：预览 SfxTrack 与导出混音共用同一套解析，
  * 所以「预览听到的」=「导出混进去的」。
  *
- * 原则：高级、克制、少而准 —— 只给主动作配音；≤ 1 下 / 0.5 秒；品牌声只给口诀落印 / 金句；底噪永远很低。
+ * 原则：少而准 —— 只给主动作配音；品牌声只给口诀落印 / 金句；底噪永远很低（第 20 期已关）。
+ * 第 20 期起：动画风 MOGRAPH 为主层，写实 FOLEY 为辅层（mgLayer），≤ 1 下 / 0.4 秒（叠层除外）。
  * 新物件音效都已归一到峰值 -12 dBFS（room-tone 为 -40 LUFS）；foley() 默认 volume 1，乘总线 0.8 后峰值约 -14 dBFS。
  * 来源与许可证：public/tea/sfx/LICENSES.md；重建：python3 scripts/sfx/build-foley.py
  */
@@ -75,6 +76,95 @@ export const FOLEY = {
 
 export type FoleyName = keyof typeof FOLEY;
 
+/**
+ * 动画风（motion-graphics）音效：第 20 期起的**主层**。全部在仓库里合成（scripts/sfx/build-mograph.py），
+ * 同一音色家族、有音高的都调到 D 大调五声（和古筝 A4 同调）；夸张但不吵，峰值 -11 dBFS。
+ * 写实物件录音（FOLEY）退为**辅层**：关键物件动作用 mgLayer() 在动画声下面低 ~10 dB 垫一层质感；
+ * 纯图形动作（大字、swoosh、朱砂叉）只用动画声。
+ */
+export const MOGRAPH = {
+  /** 重落地：带次低频的「咚」（茶饼落桌） */
+  thump: ["mg-thump", "mg-thump-2"],
+  /** 轻落地：圆一点短一点（罐子落定、茶块落进罐里） */
+  thumpSoft: ["mg-thump-soft"],
+  /** 亮 pop / plip（小元素冒出来） */
+  pop: ["mg-pop", "mg-pop-2", "mg-pop-3"],
+  /** 滑入：空气 swoosh，音高上扬 */
+  swooshUp: ["mg-swoosh-up"],
+  /** 落下 / 拉远：音高下行 */
+  swooshDown: ["mg-swoosh-down"],
+  /** 大字落定：软槌 ding（D 五声），按句子走音阶 */
+  dingD5: ["mg-ding-d5"],
+  dingE5: ["mg-ding-e5"],
+  dingFs5: ["mg-ding-fs5"],
+  dingA5: ["mg-ding-a5"],
+  dingB5: ["mg-ding-b5"],
+  /** 低一档 ding（重字：碎 / 下期见） */
+  dingD4: ["mg-ding-d4"],
+  /** 小铃 D6：品牌层（叠在古筝下） */
+  bell: ["mg-bell"],
+  /** 印章：厚实 thunk + 小回弹 */
+  stamp: ["mg-stamp"],
+  /** 裂 / 碎：短促 crunch */
+  crunch: ["mg-crunch"],
+  /** 闪光散落（五声高音小颗粒） */
+  sparkle: ["mg-sparkle"],
+  /** 罐盖：空心木 tok-clonk */
+  tok: ["mg-tok"],
+  /** 单下轻 tok（掀开一线 / 轻碰） */
+  tokLight: ["mg-tok-light"],
+  /** 毛笔划掉 / 快速一扫 */
+  swish: ["mg-swish"],
+  /** 纸 / 铝箔：夸张 crinkle snap（短） */
+  crinkle: ["mg-crinkle", "mg-crinkle-2"],
+  /** 戳 / 扎（茶针） */
+  poke: ["mg-poke"],
+  /** 顺纹推 / 刮（茶刀） */
+  scrape: ["mg-scrape"],
+  /** 拧进（茶锥）：三下棘轮 tick */
+  ratchet: ["mg-ratchet"],
+  /** 展开（茶巾 / 卷轴 / 竹帘）：抖动 flutter */
+  flutter: ["mg-flutter"],
+  /** 压封口：利落 snap */
+  snap: ["mg-snap"],
+} as const;
+
+export type MographName = keyof typeof MOGRAPH;
+
+/** 写实辅层默认相对音量（≈ -10.5 dB） */
+export const FOLEY_UNDER = 0.3;
+
+/** 动画风音效（主层）：mg("thump", 42) → { src: "tea/sfx/mg-thump(-2).wav", at: 42, volume: 1, vary: 0.02 } */
+export function mg(name: MographName, at: number, opts: FoleyOpts = {}): SfxHit {
+  const list = MOGRAPH[name];
+  const { variant, ...rest } = opts;
+  const idx =
+    variant != null ? variant % list.length : Math.floor(sfxHash(name, at, 11) * list.length);
+  return { src: `${DIR}/${list[idx]}.wav`, at, volume: 1, vary: 0.02, ...rest };
+}
+
+/**
+ * 主 + 辅叠层：动画声在上（volume），写实物件声在下（volume × under，默认 ≈ -10.5 dB），同一帧起。
+ * 例：...mgLayer("thump", "cakeThud", 42, { volume: 0.9 })
+ */
+export function mgLayer(
+  name: MographName,
+  under: FoleyName,
+  at: number,
+  opts: FoleyOpts & { under?: number; underOffset?: number; underVariant?: number } = {},
+): SfxHit[] {
+  const { under: u = FOLEY_UNDER, underOffset = 0, underVariant, ...rest } = opts;
+  const main = mg(name, at, rest);
+  return [
+    main,
+    foley(under, at + underOffset, {
+      volume: (main.volume ?? 1) * u,
+      variant: underVariant,
+      rate: rest.rate,
+    }),
+  ];
+}
+
 /** 品牌声：只给口诀落印 / 金句。zheng = 筝的一声挑弦；bowl = 小钵 / 磬一击。 */
 export const BRAND = {
   zheng: "zheng-pluck",
@@ -118,6 +208,18 @@ export function brandHit(
 ): SfxHit {
   const { kind = "zheng", ...rest } = opts;
   return { src: `${DIR}/${BRAND[kind]}.wav`, at, volume: 0.7, ...rest };
+}
+
+/**
+ * 品牌签名（口诀落印 / 金句）：古筝挑弦 A4 为主，叠一层很轻的小铃 D6（mograph 家族，五度关系）。
+ * 一拍最多一次。返回数组，展开进 sfxHits。
+ */
+export function brandSignature(
+  at: number,
+  opts: { volume?: number; bell?: number } = {},
+): SfxHit[] {
+  const { volume = 0.7, bell = 0.35 } = opts;
+  return [brandHit(at, { volume }), mg("bell", at, { volume: bell, vary: 0 })];
 }
 
 /** 茶室底噪（循环、淡入淡出）。放进 sfxHits 数组即可，或写在 defineClip({ ambience }) 里。 */

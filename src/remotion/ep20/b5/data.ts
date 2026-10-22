@@ -1,5 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { brandHit, foley } from "@/remotion/shared/sfx-lib";
+import { brandSignature, mg, mgLayer } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -55,14 +55,15 @@ export const COL_Y = [700, 860] as const;
 export const COL_SIZE = 138;
 export const SEAL_POS = { x: 336, y: 1210, size: 290 };
 
-// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
-// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
+// ---------------- 音效（动画风为主、写实为辅：mograph 主层 + mgLayer 下垫 ~-10 dB 物件录音；≤1 下 / 0.4 秒，叠层除外；打在接触 / 落定帧） ----------------
+// 第 20 期不开底噪（ambience 关）。有音高的 ding 都在 D 大调五声里，按句子往上走。
 export function sfxHits(_staggerFrames: number) {
   return [
-    foley("scrollUnroll", SHEET_AT + 1, { volume: 0.6 }), // 条幅落定
-    foley("paperweight", SHEET_AT + 17, { volume: 0.75 }), // 镇纸压住（两根只配第一根）
-    // 口诀一 / 二逐字晕开：文字不配音
-    foley("sealWood", SEAL_HIT, { volume: 0.9 }), // 朱印「快取快封」砸下（接触帧）
-    brandHit(SEAL_HIT + 2), // 品牌声（本期两次之一：口诀落印）
+    ...mgLayer("swooshDown", "scrollUnroll", SHEET_AT + 1, { volume: 0.5 }), // 条幅落定
+    ...mgLayer("thumpSoft", "paperweight", SHEET_AT + 17, { volume: 0.6 }), // 镇纸压住（两根只配第一根）
+    mg("dingD5", P1_AT, { volume: 0.35 }), // 口诀一「顺纹借力」晕开
+    mg("dingE5", P2_AT, { volume: 0.35 }), // 口诀二「够喝一周」晕开
+    ...mgLayer("stamp", "sealWood", SEAL_HIT, { volume: 0.9 }), // 朱印「快取快封」砸下（接触帧）
+    ...brandSignature(SEAL_HIT + 2), // 品牌签名（本期两次之一）：古筝 A4 + 轻铃 D6
   ];
 }

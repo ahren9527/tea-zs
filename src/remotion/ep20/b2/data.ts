@@ -1,5 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { foley } from "@/remotion/shared/sfx-lib";
+import { mg, mgLayer } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -73,16 +73,23 @@ export const HERO = { x: 540, y: 330, size: 200 };
 /** 屋角段：避光 / 离地 / 离墙 三行大字，在窗右侧逐行落下 */
 export const ROOM_WORDS = { x: 690, y: 450, size: 170, step: 196 };
 
-// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
-// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
+// ---------------- 音效（动画风为主、写实为辅：mograph 主层 + mgLayer 下垫 ~-10 dB 物件录音；≤1 下 / 0.4 秒，叠层除外；打在接触 / 落定帧） ----------------
+// 第 20 期不开底噪（ambience 关）。有音高的 ding 都在 D 大调五声里，按句子往上走。
 export function sfxHits(_staggerFrames: number) {
   return [
-    foley("cakeThud", CAKE_DROP_AT + CAKE_FALL, { volume: 0.85 }), // 棉纸饼落桌
-    foley("paperTear", TEAR_AT + 2, { volume: 0.7 }), // 想撕：纸被揭起一角（朱砂叉不配音）
-    foley("paperRustle", KEEP_AT, { volume: 0.55 }), // 纸抚平
-    foley("foilCrinkle", BAG_AT + 4, { volume: 0.7 }), // 铝箔袋滑下套住
-    foley("foilSeal", SEAL_AT, { volume: 0.9 }), // 封口一压
-    foley("whoosh", TILT_AT, { volume: 0.3 }), // 唯一一次大镜头：侧倒拉远进屋角
-    foley("scrollUnroll", DARK_AT, { volume: 0.45 }), // 竹帘落下（避光）；离地 / 离墙标尺与大字不配音
+    ...mgLayer("thump", "cakeThud", CAKE_DROP_AT + CAKE_FALL, { volume: 0.8 }), // 棉纸饼落桌
+    mg("dingD5", PAPER_LABEL_AT + 2, { volume: 0.35 }), // 「棉纸」
+    // 揭纸一角（TEAR_AT）离朱砂叉只差 7 帧：只给叉
+    mg("swish", CROSS_AT, { volume: 0.55 }), // 朱砂叉 +「别撕」
+    ...mgLayer("crinkle", "paperRustle", KEEP_AT, { volume: 0.45 }), // 纸抚平
+    ...mgLayer("swooshDown", "foilCrinkle", BAG_AT + 4, { volume: 0.5, under: 0.35 }), // 铝箔袋从上滑下套住
+    mg("dingE5", BAG_DONE - 2, { volume: 0.35 }), // 「铝箔袋」
+    ...mgLayer("snap", "foilSeal", SEAL_AT, { volume: 0.85 }), // 封口一压
+    mg("swooshUp", TILT_AT, { volume: 0.4 }), // 侧倒拉远进屋角
+    ...mgLayer("flutter", "scrollUnroll", DARK_AT, { volume: 0.5 }), // 竹帘落下
+    mg("dingD5", DARK_AT + 2, { volume: 0.4 }), // 「避光」落定
+    mg("dingE5", FLOOR_AT + 2, { volume: 0.4 }), // 「离地」落定（架子弹起）
+    mg("dingFs5", WALL_AT + 2, { volume: 0.4 }), // 「离墙」落定
+    mg("dingA5", CALM_AT + 2, { volume: 0.5 }), // 「转化稳」
   ];
 }

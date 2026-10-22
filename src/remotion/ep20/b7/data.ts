@@ -1,5 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { brandHit, foley } from "@/remotion/shared/sfx-lib";
+import { brandSignature, mg, mgLayer } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -89,18 +89,25 @@ export const OPT_COLS = { x: [300, 780] as const, y: 470, size: 170, step: 180 }
 export const TEASER = { y: 340, size: 180, subY: 560, subSize: 130 };
 export const BYE = { x: 540, y: 1510, size: 210 };
 
-// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
-// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
+// ---------------- 音效（动画风为主、写实为辅：mograph 主层 + mgLayer 下垫 ~-10 dB 物件录音；≤1 下 / 0.4 秒，叠层除外；打在接触 / 落定帧） ----------------
+// 第 20 期不开底噪（ambience 关）。有音高的 ding 都在 D 大调五声里，按句子往上走。
 export function sfxHits(_staggerFrames: number) {
   return [
-    foley("cakeThud", CAKE_AT + 10, { volume: 0.8 }), // 缺角整饼落下
-    foley("paperRustle", WRAP_AT + 2, { volume: 0.65 }), // 棉纸四角折起包好
-    foley("sealWood", SEAL_HIT, { volume: 0.85 }), // 朱印「封」
-    brandHit(GOLD1_AT + 2), // 品牌声（本期两次之二：金句「撬时不伤叶 / 醒后才更香」，余韵盖住两句）
-    foley("leafScatter", PIECES_AT + 8, { volume: 0.4 }), // 碎饼落下（茶针 / 毛笔圈不配音）
-    foley("jarLid", JAR1_AT + 9, { volume: 0.45, variant: 0 }), // 新茶罐落定
-    foley("jarLid", JAR2_AT + 9, { volume: 0.5, variant: 1 }), // 老茶罐落定
-    foley("paperweight", BOX_AT + 10, { volume: 0.6 }), // 塞进木箱挤在一起（木面一闷）
-    foley("sealWood", BYE_HIT, { volume: 0.8 }), // 「下期见」落印（木印，不用品牌声）
+    ...mgLayer("thump", "cakeThud", CAKE_AT + 10, { volume: 0.75 }), // 缺角整饼落下
+    ...mgLayer("crinkle", "paperRustle", WRAP_AT + 2, { volume: 0.55 }), // 棉纸四角折起包好
+    ...mgLayer("stamp", "sealWood", SEAL_HIT, { volume: 0.85 }), // 朱印「封」
+    mg("dingFs5", OPEN_AT + 2, { volume: 0.35 }), // 「别敞着」
+    ...brandSignature(GOLD1_AT + 2), // 品牌签名（本期两次之二）：金句「撬时不伤叶」
+    mg("dingD5", GOLD2_AT, { volume: 0.28 }), // 「醒后才更香」（轻轻落在古筝余韵里）
+    ...mgLayer("crunch", "leafScatter", PIECES_AT + 8, { volume: 0.45, under: 0.5 }), // 碎饼落下（茶针离它 7 帧，不单配）
+    mg("swish", OPT1_AT, { volume: 0.4 }), // 毛笔圈「饼碎了」
+    mg("swish", OPT2_AT, { volume: 0.4 }), // 毛笔圈「扎到手」
+    ...mgLayer("thumpSoft", "jarLid", JAR1_AT + 9, { volume: 0.5, underVariant: 0 }), // 新茶罐落定
+    ...mgLayer("thumpSoft", "jarLid", JAR2_AT + 9, { volume: 0.55, underVariant: 1 }), // 老茶罐落定
+    ...mgLayer("tok", "paperweight", BOX_AT + 10, { volume: 0.6 }), // 塞进木箱挤在一起
+    mg("ratchet", SHAKE_AT, { volume: 0.35 }), // 箱子晃一晃（会出什么事？）
+    mg("swooshUp", SPLIT_AT, { volume: 0.4 }), // 分开 + 竹青隔线
+    ...mgLayer("stamp", "sealWood", BYE_HIT, { volume: 0.8 }), // 「下期见」落印（木印，不用品牌声）
+    mg("dingD4", BYE_HIT + 2, { volume: 0.4 }), // 收一声低 ding
   ];
 }

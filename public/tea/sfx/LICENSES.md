@@ -8,6 +8,34 @@
 - Kenney 条目来自 Kenney 官方 CC0 音效包（包内 License.txt：“Creative Commons Zero, CC0 … free to use in personal, educational and commercial projects”）。
 - 处理链与截取点全部写在 `scripts/sfx/build-foley.py`，可一键重建：`python3 scripts/sfx/build-foley.py`。
 
+## 动画风音效（mograph，2026-10，第 20 期起的主层）
+
+全部 **在本仓库里程序合成**（`scripts/sfx/build-mograph.py`，numpy + scipy，无任何第三方录音 / 采样，随机种子固定、可逐字节重建：`python3 scripts/sfx/build-mograph.py`）。
+许可：本仓库原创，随项目使用，无第三方许可约束。统一处理：48 kHz / 16-bit / 单声道，高通 35 Hz，2.2 kHz 下挖 3 dB（让位人声），峰值 -11 dBFS。
+有音高的音色都调在 **D 大调五声**（D E F# A B），与品牌声古筝单音 A4 同调。
+
+| 文件                                                | 用途                                    | 合成方法                                                       |
+| --------------------------------------------------- | --------------------------------------- | -------------------------------------------------------------- |
+| mg-thump.wav / mg-thump-2.wav                       | 重落地（茶饼落桌）                      | 正弦从 A3 指数下滑到 D2 + 次低频 + 起音咔嗒 + 木质泛音，软削波 |
+| mg-thump-soft.wav                                   | 轻落地（罐子落定、镇纸）                | 同上，A3 → A2，更短                                            |
+| mg-pop.wav / mg-pop-2.wav / mg-pop-3.wav            | 亮 pop / plip（小元素）                 | 快速下滑正弦泡泡（A5 / B5 / D6）                               |
+| mg-swoosh-up.wav / mg-swoosh-down.wav               | 滑入 / 落下、拉远                       | 时变带通噪声（350→3200 Hz / 2800→300 Hz）+ 滑音正弦            |
+| mg-ding-d5 / e5 / fs5 / a5 / b5.wav、mg-ding-d4.wav | 大字落定（按句子走五声音阶；D4 = 重字） | 软槌加法合成（基频 + 3.98x / 9.2x 分音 + 槌头噪声）+ 短混响    |
+| mg-bell.wav                                         | 品牌层：叠在古筝下的轻铃 D6             | 非谐分音铃（1 / 2 / 2.76 / 5.4 / 8.93）+ 混响                  |
+| mg-stamp.wav                                        | 印章：厚实 thunk + 小回弹               | 两下下滑 thump（85 ms 间隔）+ 木质泛音                         |
+| mg-crunch.wav                                       | 裂 / 碎                                 | 22 颗带通噪声颗粒 + A3→D3 下滑体感                             |
+| mg-sparkle.wav                                      | 闪光散落（碎叶、香气）                  | 9 颗五声高音 pop（A6–A7）随机散布 + 混响                       |
+| mg-tok.wav / mg-tok-light.wav                       | 罐盖：空心木 tok-clonk / 单下轻 tok     | 双模态木块（1x / 2.71x）A4 → D4                                |
+| mg-swish.wav                                        | 毛笔划掉 / 朱砂一笔                     | 短时变带通噪声 900→4200 Hz                                     |
+| mg-crinkle.wav / mg-crinkle-2.wav                   | 纸 / 铝箔夸张 crinkle                   | 11–14 颗尖脆带通噪声 snap，低通 8 kHz                          |
+| mg-poke.wav                                         | 戳 / 扎（茶针）                         | 高 click + D6→A4 快速下滑 blip                                 |
+| mg-scrape.wav                                       | 顺纹推 / 刮（茶刀）                     | 方波调幅带通噪声 + 微升调 D5                                   |
+| mg-ratchet.wav                                      | 拧进（茶锥）/ 晃一晃                    | 三下升调木块 tick（75 ms 间隔）                                |
+| mg-flutter.wav                                      | 展开（茶巾 / 卷轴 / 竹帘）              | 带通 swoosh × 11 Hz 抖动调幅                                   |
+| mg-snap.wav                                         | 压封口                                  | A5 木块 tok + 高通 click                                       |
+
+> 用法：动画声是主层；写实 CC0 物件录音（下表）作辅层，用 `mgLayer()` 在同一帧低 ~10 dB 垫一层质感；纯图形动作只用动画声。
+
 ## 物件音效
 
 | 文件                | 用途                     | 来源（作者 · 标题）                                                                  | 链接                                   | 许可证  |

@@ -1,5 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { foley } from "@/remotion/shared/sfx-lib";
+import { mg, mgLayer } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -70,18 +70,24 @@ export const WORD = { x: 540, y: 700, size: 230 };
 export const TOP_WORD = { x: 540, y: 330, size: 220 };
 export const CAKE = { x: 540, y: 980, r: 250 };
 
-// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
-// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
+// ---------------- 音效（动画风为主、写实为辅：mograph 主层 + mgLayer 下垫 ~-10 dB 物件录音；≤1 下 / 0.4 秒，叠层除外；打在接触 / 落定帧） ----------------
+// 第 20 期不开底噪（ambience 关）。有音高的 ding 都在 D 大调五声里，按句子往上走。
 export function sfxHits(_staggerFrames: number) {
   return [
-    foley("clothUnroll", CLOTH_AT + 2, { volume: 0.7 }), // 茶巾铺开
-    // 三件工具：只给用途动作配音（落下不配）
-    foley("needlePierce", USE_AT[0] + 4, { volume: 0.85, variant: 0 }), // 茶针扎缝
-    foley("needleScrape", USE_AT[1] + 2, { volume: 0.45 }), // 茶刀顺纹推（刮声压低）
-    foley("needlePierce", USE_AT[2] + 1, { volume: 0.75, variant: 1, rate: 0.9 }), // 茶锥拧进（另一变体、略低沉）
-    // 菜刀 / 徒手挨叉：朱砂标记不配音
-    foley("cakeThud", CAKE_AT + 10, { volume: 0.7 }), // 一块饼落下
-    foley("cakeCrack", BREAK_AT), // 硬掰：碎
-    foley("leafScatter", BREAK_AT + 5, { volume: 0.5 }), // 碎叶四散（附属声，跟在后面、减半）
+    ...mgLayer("flutter", "clothUnroll", CLOTH_AT + 2, { volume: 0.6 }), // 茶巾铺开
+    // 三件工具：落定 + 大字给 ding（D5 / E5 / F#5），用途动作给动画声 + 下垫写实
+    mg("dingD5", TOOL_AT[0] + 8, { volume: 0.4 }), // 茶针落定 +「找缝」
+    ...mgLayer("poke", "needlePierce", USE_AT[0] + 4, { volume: 0.85, underVariant: 0 }), // 扎缝
+    mg("dingE5", TOOL_AT[1] + 8, { volume: 0.4 }), // 茶刀落定 +「顺纹」
+    ...mgLayer("scrape", "needleScrape", USE_AT[1] + 2, { volume: 0.6 }), // 顺纹推
+    mg("dingFs5", TOOL_AT[2] + 8, { volume: 0.4 }), // 茶锥落定 +「压紧」
+    ...mgLayer("ratchet", "needlePierce", USE_AT[2] + 1, { volume: 0.75, underVariant: 1 }), // 拧进
+    mg("dingA5", NO_AT, { volume: 0.4 }), // 「别用」
+    mg("swish", CLEAVER_X_AT, { volume: 0.5 }), // 菜刀挨叉（菜刀落下离叉 4 帧，不单配）
+    mg("swish", HAND_X_AT, { volume: 0.45 }), // 手挨叉
+    ...mgLayer("thump", "cakeThud", CAKE_AT + 10, { volume: 0.7 }), // 一块饼落下
+    ...mgLayer("crunch", "cakeCrack", BREAK_AT, { volume: 0.9 }), // 硬掰：碎
+    mg("dingD4", BREAK_AT + 1, { volume: 0.4 }), // 「碎」（低一档，和 crunch 叠成一下）
+    ...mgLayer("sparkle", "leafScatter", BREAK_AT + 6, { volume: 0.45, under: 0.5 }), // 碎叶四散
   ];
 }
