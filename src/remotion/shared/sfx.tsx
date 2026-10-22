@@ -1,17 +1,24 @@
 import { Audio, Sequence, useVideoConfig } from "remotion";
-import { envelopeAt, resolveHit, type SfxHit } from "./sfx-lib";
+import { SFX_DURATIONS } from "./sfx-durations";
+import { envelopeAt, oneShotFrames, resolveHit, type SfxHit } from "./sfx-lib";
 
 export type { SfxHit } from "./sfx-lib";
 
 /** 预览用音效轨：每条 hit 的增益 / 变速 / 循环 / 淡入淡出与导出混音（src/lib/sfx-mix.ts）同源 */
 export function SfxTrack({ hits }: { hits: SfxHit[] }) {
-  const { durationInFrames } = useVideoConfig();
+  const { durationInFrames, fps } = useVideoConfig();
   return (
     <>
       {hits.map((hit, i) => {
         const r = resolveHit(hit, durationInFrames);
         const key = `${hit.src}-${hit.at}-${i}`;
-        const len = r.until != null ? Math.max(1, r.until - r.from) : undefined;
+        // 单次音效：播完即卸载（按文件时长），同时挂载的 <Audio> 才不会超过 Player 的共享标签上限
+        const len =
+          r.until != null
+            ? Math.max(1, r.until - r.from)
+            : r.loop
+              ? undefined
+              : oneShotFrames(r.src, r.rate, fps, SFX_DURATIONS);
         if (r.loop) {
           // 环境底：在 Sequence 里循环；volume 回调的帧号相对 Sequence 起点
           return (

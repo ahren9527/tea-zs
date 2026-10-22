@@ -53,6 +53,7 @@ import {
   DROP_AT,
   DROP_DUR,
   JAR,
+  KEY_WORD,
   JAR_AT,
   KEY_AT,
   KEY_MARK_AT,
@@ -79,10 +80,10 @@ function beatCamera(frame: number) {
     drift: 6,
     focus: [
       { at: CHUNK_AT, dur: 30, x: CHUNK_HOME.x, y: CHUNK_HOME.y + 60, zoom: 1.06, pull: 0.25 },
-      { at: JAR_AT - 6, dur: 24, x: 600, y: 1060, zoom: 1.0, pull: 0.25 },
-      { at: DAYS_AT - 4, dur: 20, x: 600, y: 940, zoom: 0.98, pull: 0.2 },
+      { at: JAR_AT - 6, dur: 24, x: JAR.x, y: 1060, zoom: 1.0, pull: 0.25 },
+      { at: DAYS_AT - 4, dur: 20, x: JAR.x, y: 940, zoom: 0.98, pull: 0.2 },
       { at: AROMA_AT, dur: 40, x: JAR.x, y: JAR.base - JAR.h - 80, zoom: 1.08, pull: 0.3 },
-      { at: KEY_AT - 6, dur: 30, x: 500, y: 980, zoom: 1.03, pull: 0.2 },
+      { at: KEY_AT - 6, dur: 30, x: JAR.x, y: 980, zoom: 1.03, pull: 0.2 },
     ],
   });
   for (const [at, amp] of [
@@ -552,24 +553,33 @@ function drawTextBand(
       const txt = t(params, "key");
       const fs = fitSize(txt, 250, 600, 1.06) * fontScale;
       const pose = lightFloat(l, { rise: 16, sway: 1.2, seed: 9 });
-      inkText(ctx, txt, 250, 820 + pose.y, fs, easeOutCubic(progress(l, 0, 18)), 183, {
-        color: pal.ink,
-        weight: 900,
-        font: SONG,
-        vertical: true,
-        wash: 0.035,
-      });
+      inkText(
+        ctx,
+        txt,
+        KEY_WORD.x,
+        KEY_WORD.y + pose.y,
+        fs,
+        easeOutCubic(progress(l, 0, 18)),
+        183,
+        {
+          color: pal.ink,
+          weight: 900,
+          font: SONG,
+          vertical: true,
+          wash: 0.035,
+        },
+      );
       const ml = frame - KEY_MARK_AT;
       if (ml > 0) {
         const n = Math.max(1, Array.from(txt).length);
         const half = ((n - 1) * fs * 1.06) / 2 + fs * 0.45;
-        const x = 250 + fs * 0.62 + 20;
+        const x = KEY_WORD.x + fs * 0.62 + 20;
         drawBrushStroke(
           ctx,
           [
-            { x: x + 4, y: 820 - half + pose.y },
-            { x: x - 4, y: 820 + pose.y },
-            { x: x + 2, y: 820 + half + pose.y },
+            { x: x + 4, y: KEY_WORD.y - half + pose.y },
+            { x: x - 4, y: KEY_WORD.y + pose.y },
+            { x: x + 2, y: KEY_WORD.y + half + pose.y },
           ],
           easeOutCubic(progress(ml, 0, 16)),
           { width: 14, color: pal.cinnabar, seed: 186, tail: 0.4, jitter: 0.25 },

@@ -278,6 +278,26 @@ export function resolveHit(hit: SfxHit, clipFrames: number): ResolvedHit {
   };
 }
 
+/** 时长表里没有的文件按这么长算（秒；现有最长的单次音效约 4.2 秒） */
+export const ONE_SHOT_FALLBACK_SEC = 6;
+
+/**
+ * 预览里一条单次音效该挂载多少帧：文件时长 ÷ 变速 + 几帧余量。
+ * durations = sfx-durations.ts 的 SFX_DURATIONS（由 scripts/sfx/durations.mjs 生成）。
+ * 播完就卸载 <Audio>，否则整段越积越多，超过 Player 的 numberOfSharedAudioTags 会直接抛错、画面变空白。
+ */
+export function oneShotFrames(
+  src: string,
+  rate: number,
+  fps: number,
+  durations: Record<string, number>,
+  padFrames = 6,
+): number {
+  const name = src.replace(/^.*\//, "").replace(/\.wav$/i, "");
+  const sec = durations[name] ?? ONE_SHOT_FALLBACK_SEC;
+  return Math.max(1, Math.ceil((sec / Math.max(0.01, rate)) * fps) + padFrames);
+}
+
 /** 帧 f 处的包络（0–1），只看淡入淡出；预览 volume 回调与导出的增益曲线用同一个函数 */
 export function envelopeAt(r: ResolvedHit, frame: number): number {
   const local = frame - r.from;

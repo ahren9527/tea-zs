@@ -15,6 +15,8 @@ import { drawSeal, type SealOpts } from "./seal";
 import { brushOutline, type BrushOpts } from "./stroke";
 import { drawGrain, drawRicePaper, drawVignette, drawWindowLight } from "./texture";
 
+const reportedDrawErrors = new Set<string>();
+
 /**
  * 每帧调用一次 draw(ctx, frame) 的全屏画布（1080×1920，随 Player 缩放）。
  * fontsReady：字体分片加载完成后的 Promise，完成后会重画一次（canvas 不会自己等字体）。
@@ -48,7 +50,19 @@ export function FxCanvas({
     ctx.globalCompositeOperation = "source-over";
     ctx.filter = "none";
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    draw(ctx, frame);
+    try {
+      draw(ctx, frame);
+    } catch (err) {
+      // 某一帧抛错不能把画布永久弄坏：把 draw 里没配对的 save() 全部弹掉（多余的 restore 是空操作），
+      // 清掉残留的 clip / 变换，下一帧照常画。同一个错误只报一次。
+      for (let i = 0; i < 64; i++) ctx.restore();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      const key = String((err as Error)?.message ?? err);
+      if (!reportedDrawErrors.has(key)) {
+        reportedDrawErrors.add(key);
+        console.error(`[FxCanvas] 第 ${frame} 帧绘制出错（后续帧继续画）：`, err);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frame, tick, draw, ...deps]);
   return <canvas ref={ref} width={WIDTH} height={HEIGHT} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", ...style }} />;

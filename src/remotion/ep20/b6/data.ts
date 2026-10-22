@@ -64,10 +64,14 @@ export const KEY_MARK_AT = voAt("少不了") - 4; // 「干醒」旁一道朱砂
 // ---------------- 版式（底部 300px 留给字幕） ----------------
 /** 顶部焦点大字位（一周量 → 先别急 → 避光 → 3–7天 依次占同一个位置，前一个退掉下一个才来） */
 export const HERO = { x: 540, y: 340, size: 200 };
-export const JAR = { x: 650, base: 1430, h: 420 };
-export const CHUNK_HOME = { x: 590, y: 760, scale: 1.1 };
+/** 罐子一组（罐、盖、茶块、香气、影子）水平居中在 x = 540 */
+export const JAR = { x: 540, base: 1430, h: 420 };
+export const CHUNK_HOME = { x: 540, y: 760, scale: 1.1 };
 export const CUP = { x: 880, y: 1000 };
-export const TALLY = { x0: 340, y: 660, step: 82 };
+/** 一天一划：7 笔以 x = 540 为中心（x0 = 540 − 3 × step） */
+export const TALLY = { x0: 294, y: 660, step: 82 };
+/** 收尾「干醒」竖排大字：放在居中罐子的左上方（罐口以上、香气左侧），不压罐身 */
+export const KEY_WORD = { x: 210, y: 680 };
 
 // ---------------- 音效（动画风为主、写实为辅：mograph 主层 + mgLayer 下垫 ~-10 dB 物件录音；≤1 下 / 0.4 秒，叠层除外；打在接触 / 落定帧） ----------------
 // 第 20 期不开底噪（ambience 关）。有音高的 ding 都在 D 大调五声里，按句子往上走。
