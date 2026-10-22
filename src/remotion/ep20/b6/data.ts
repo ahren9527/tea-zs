@@ -66,12 +66,21 @@ export const KEY_MARK_AT = voAt("少不了") - 4; // 「干醒」旁一道朱砂
 export const HERO = { x: 540, y: 340, size: 200 };
 /** 罐子一组（罐、盖、茶块、香气、影子）水平居中在 x = 540 */
 export const JAR = { x: 540, base: 1430, h: 420 };
+/**
+ * 「干醒」出来时罐子一组弹到右边让位（字左罐右）：弹簧带一点过冲再落定（约 0.4 秒到位、0.55 秒过冲顶、~0.9 秒稳住）。
+ * 之前一直居中；「干醒」之后不再退场，所以不弹回。
+ */
+export const JAR_ASIDE = {
+  at: KEY_AT - 2,
+  dx: 160,
+  spring: { stiffness: 90, damping: 11.5, mass: 1 },
+};
 export const CHUNK_HOME = { x: 540, y: 760, scale: 1.1 };
 export const CUP = { x: 880, y: 1000 };
 /** 一天一划：7 笔以 x = 540 为中心（x0 = 540 − 3 × step） */
 export const TALLY = { x0: 294, y: 660, step: 82 };
-/** 收尾「干醒」竖排大字：放在居中罐子的左上方（罐口以上、香气左侧），不压罐身 */
-export const KEY_WORD = { x: 210, y: 680 };
+/** 收尾「干醒」竖排大字：放在罐子让出来的左边，竖向和罐身上半对齐（不悬在高处） */
+export const KEY_WORD = { x: 225, y: 1120 };
 
 // ---------------- 音效（动画风为主、写实为辅：mograph 主层 + mgLayer 下垫 ~-10 dB 物件录音；≤1 下 / 0.4 秒，叠层除外；打在接触 / 落定帧） ----------------
 // 第 20 期不开底噪（ambience 关）。有音高的 ding 都在 D 大调五声里，按句子往上走。

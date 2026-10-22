@@ -53,6 +53,7 @@ import {
   DROP_AT,
   DROP_DUR,
   JAR,
+  JAR_ASIDE,
   KEY_WORD,
   JAR_AT,
   KEY_AT,
@@ -95,6 +96,11 @@ function beatCamera(frame: number) {
     cam.y -= k.y;
   }
   return cam;
+}
+
+/** 罐子一组的水平让位（px）：「干醒」出来前为 0（居中），出来时弹到右边、过冲一点再落定 */
+function jarAside(frame: number) {
+  return JAR_ASIDE.dx * springValue(frame - JAR_ASIDE.at, JAR_ASIDE.spring);
 }
 
 /** 避光 + 昼夜交替的暗度（0..1） */
@@ -207,6 +213,10 @@ function drawSubject(
   // ---- 茶杯（凑过来又退开） ----
   drawCupStory(ctx, frame, pal);
 
+  // 罐子一组（罐、影子、茶块、盖、香气）整体随「干醒」让位右移；之前 aside = 0，画面不变
+  ctx.save();
+  ctx.translate(jarAside(frame), 0);
+
   // ---- 罐 ----
   const jl = frame - JAR_AT;
   let lidLift = 0;
@@ -305,6 +315,8 @@ function drawSubject(
       1.2 * s,
     );
   }
+
+  ctx.restore();
 
   // ---- 一天一划：三实四虚 ----
   const dl = frame - DAYS_AT;
@@ -546,7 +558,7 @@ function drawTextBand(
       ctx.restore();
     }
   }
-  // 干醒（竖排大字，左侧）；说到「少不了」时旁边一道朱砂竖笔，不加字
+  // 干醒（竖排大字，罐子让出的左侧，和罐身上半对齐）；说到「少不了」时旁边一道朱砂竖笔，不加字
   {
     const l = frame - KEY_AT;
     if (l > 0) {
