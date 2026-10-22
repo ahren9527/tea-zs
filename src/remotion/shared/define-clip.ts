@@ -3,6 +3,10 @@
  *   src/remotion/epNN/<节拍>/index.ts   ← export default defineClip({...})
  * catalog.ts 用 import.meta.glob 自动发现，不需要在任何地方登记。
  */
+import { createElement, type ComponentType } from "react";
+import { AbsoluteFill } from "remotion";
+import { SfxTrack } from "./sfx";
+import { roomBed, type AmbienceBed } from "./sfx-lib";
 import type { ClipDef } from "./types";
 
 export type KeyframeMarker = {
@@ -48,10 +52,34 @@ export type ClipInput = Omit<ClipModule, "folder" | "fields" | "markers"> & {
   folder?: string;
   fields?: ClipTextSchema[];
   markers?: KeyframeMarker[];
+  /**
+   * 可选：整拍的茶室底噪（循环、淡入淡出，-40 LUFS）。
+   * true = 默认（room-tone.wav，-40 LUFS，淡入 20 帧 / 淡出 24 帧）；也可给 { volume, fadeIn, fadeOut, at, until, src }。
+   * 预览与导出都会自动加上，不需要再写进 sfxHits（别重复）。
+   */
+  ambience?: boolean | AmbienceBed;
 };
 
 export function defineClip(def: ClipInput): ClipModule {
-  return { folder: "", fields: [], markers: [], ...def };
+  const { ambience, ...rest } = def;
+  const clip: ClipModule = { folder: "", fields: [], markers: [], ...rest };
+  if (!ambience) return clip;
+  const bed = roomBed(ambience === true ? {} : ambience);
+  const baseSfx = clip.sfx;
+  const BaseComp = clip.Comp as ComponentType<Record<string, unknown>>;
+  const WithBed = (props: Record<string, unknown>) =>
+    createElement(
+      AbsoluteFill,
+      null,
+      createElement(BaseComp, props),
+      createElement(SfxTrack, { hits: [bed] }),
+    );
+  WithBed.displayName = `WithRoomBed(${clip.id})`;
+  return {
+    ...clip,
+    Comp: WithBed,
+    sfx: (staggerFrames: number) => [...(baseSfx?.(staggerFrames) ?? []), bed],
+  };
 }
 
 /** 可选的期元信息：src/remotion/epNN/episode.ts ← export default defineEpisode({...}) */
