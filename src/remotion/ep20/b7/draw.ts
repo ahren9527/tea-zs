@@ -28,10 +28,9 @@ import {
   traceLeaf,
   type FxPalette,
   type Pt,
-} from "@/remotion/shared/fx";
+} from "../kit/fx";
 import { SEAL_FONT, type AnimParams } from "@/remotion/shared/theme";
 import {
-  KAI,
   SONG,
   allTextsOf,
   beginFrame,
@@ -50,11 +49,11 @@ import { drawJar, drawTeaNeedle, paperColor } from "../kit/objects";
 import {
   BOX,
   BOX_AT,
+  BYE,
   BYE_HIT,
   CAKE,
   CAKE_AT,
   CHAR_FRAMES,
-  COMMENT_AT,
   C_OUT,
   GOLD1_AT,
   GOLD2_AT,
@@ -67,6 +66,7 @@ import {
   NEW_JAR,
   OLD_JAR,
   OPEN_AT,
+  OPT_COLS,
   OPT1_AT,
   OPT2_AT,
   PACKET_OUT,
@@ -76,6 +76,7 @@ import {
   SEAL_PRESS,
   SHAKE_AT,
   SPLIT_AT,
+  TEASER,
   TEXT,
   WRAP_AT,
   type TextKey,
@@ -92,7 +93,7 @@ function beatCamera(frame: number) {
     focus: [
       { at: WRAP_AT - 6, dur: 20, x: CAKE.x, y: CAKE.y, zoom: 1.08, pull: 0.3 },
       { at: PACKET_OUT, dur: 20, x: 540, y: 900, zoom: 1.0, pull: 0.2 },
-      { at: PIECES_AT, dur: 24, x: 560, y: 1020, zoom: 1.02, pull: 0.2 },
+      { at: PIECES_AT, dur: 24, x: 540, y: 900, zoom: 1.0, pull: 0.2 },
       { at: JAR1_AT - 6, dur: 24, x: 540, y: 1100, zoom: 1.0, pull: 0.2 },
       { at: BOX_AT, dur: 20, x: 540, y: 1200, zoom: 1.08, pull: 0.3 },
       { at: SPLIT_AT, dur: 26, x: 540, y: 1020, zoom: 1.0, pull: 0.2 },
@@ -444,7 +445,9 @@ const PIECE_POS = [
   { x: 430, y: 1000, r: -0.9 },
   { x: 220, y: 1090, r: 2.2 },
 ];
-const NEEDLE_TIP = { x: 560, y: 1180 };
+/** 碎饼整体下移到左列字下面；茶针尖放到右列字下面 */
+const PIECES_SHIFT = { x: 0, y: 270 };
+const NEEDLE_TIP = { x: 570, y: 1345 };
 
 function drawCommentPhase(
   ctx: CanvasRenderingContext2D,
@@ -458,7 +461,9 @@ function drawCommentPhase(
   if (out >= 1) return;
   ctx.save();
   ctx.globalAlpha = 1 - out;
-  // 碎饼三块 + 碎叶
+  // 碎饼三块 + 碎叶（左列「饼碎了」下面）
+  ctx.save();
+  ctx.translate(PIECES_SHIFT.x, PIECES_SHIFT.y);
   PIECES.forEach((poly, i) => {
     const pose = heavyLand(frame - (PIECES_AT + i * 3), { drop: 120, fall: 8, squash: 0.06 });
     if (pose.alpha <= 0) return;
@@ -497,6 +502,7 @@ function drawCommentPhase(
       ctx.fill();
     }
   }
+  ctx.restore();
   // 茶针 + 针尖一滴朱砂
   const nl = frame - NEEDLE_AT;
   if (nl > 0) {
@@ -525,25 +531,47 @@ function drawCommentPhase(
       ctx.fill();
     }
   }
-  // 两个选项：说到时各被毛笔圈住
-  const opts: [TextKey, number, number, number][] = [
-    ["opt1", OPT1_AT, 330, 1290],
-    ["opt2", OPT2_AT, 790, 930],
+  // 两列竖排大字（像 B5 的条幅）：说到时各被一道朱砂竖圈圈住
+  const opts: [TextKey, number][] = [
+    ["opt1", OPT1_AT],
+    ["opt2", OPT2_AT],
   ];
-  opts.forEach(([key, at, x, y], i) => {
+  opts.forEach(([key, at], ci) => {
     const l = frame - (at - 2);
     if (l <= 0) return;
     const txt = t(params, key);
-    const fs = fitSize(txt, 100, 340) * fontScale;
-    const pose = lightFloat(l, { rise: 12, sway: 1, seed: i });
-    inkText(ctx, txt, x, y + pose.y, fs, easeOutCubic(progress(l, 0, 12)), 240 + i, {
-      color: pal.ink,
-      weight: 900,
-      font: SONG,
-      wash: 0.025,
+    const cs = chars(txt);
+    const fs = fitSize(txt, OPT_COLS.size, 600, 1.06) * fontScale;
+    const step = Math.min(OPT_COLS.step, fs * 1.06);
+    const x = OPT_COLS.x[ci];
+    cs.forEach((ch, k) => {
+      const cl = l - k * CHAR_FRAMES;
+      if (cl <= -2) return;
+      const land = heavyLand(cl + 2, { drop: 26, fall: 3, squash: 0.08 });
+      ctx.save();
+      ctx.translate(x, OPT_COLS.y + k * step + land.y);
+      ctx.scale(land.scaleX, land.scaleY);
+      inkText(ctx, ch, 0, 0, fs, easeOutCubic(progress(cl, 0, 10)), 240 + ci * 10 + k, {
+        color: pal.ink,
+        weight: 900,
+        font: SONG,
+        wash: 0.03,
+      });
+      ctx.restore();
     });
-    const w = chars(txt).length * fs * 0.62;
-    brushRing(ctx, x, y + pose.y, w + 36, fs * 0.82, progress(l, 6, 22), pal.cinnabar, 250 + i, 7);
+    const cy = OPT_COLS.y + ((cs.length - 1) * step) / 2;
+    const ry = ((cs.length - 1) * step) / 2 + fs * 0.75;
+    brushRing(
+      ctx,
+      x,
+      cy,
+      fs * 0.82,
+      ry,
+      progress(l, 8 + cs.length * CHAR_FRAMES, 30 + cs.length * CHAR_FRAMES),
+      pal.cinnabar,
+      250 + ci,
+      8,
+    );
   });
   ctx.restore();
 }
@@ -587,7 +615,7 @@ function drawTeaserPhase(
   });
   if (boxA > 0) drawBox(ctx, pal, boxA, "front");
   // 「会出什么事？」：一笔朱砂问号
-  if (sh > 0 && frame < SPLIT_AT + 10) {
+  if (sh > 0 && frame < SPLIT_AT + 16) {
     const a = 1 - easeInOutCubic(progress(frame, SPLIT_AT - 4, SPLIT_AT + 10));
     const q: Pt[] = [
       { x: 500, y: 860 },
@@ -622,7 +650,7 @@ function drawTeaserPhase(
       [
         { x: 542, y: 960 },
         { x: 538, y: 1200 },
-        { x: 541, y: JAR_BASE + 16 },
+        { x: 541, y: JAR_BASE - 10 },
       ],
       split,
       { width: 9, color: pal.bamboo, seed: 270, tail: 0.25, dry: 0.5, dryColor: pal.paper },
@@ -633,9 +661,9 @@ function drawTeaserPhase(
   if (bl > 0) {
     drawSeal(ctx, {
       text: t(params, "bye"),
-      x: 880,
-      y: 1520,
-      size: 150 * fontScale ** 0.5,
+      x: BYE.x,
+      y: BYE.y,
+      size: BYE.size * fontScale ** 0.5,
       pose: sealPress(bl, { lift: 8, press: 4, height: 70, rot: 0.06 }),
       color: pal.cinnabar,
       paper: pal.paper,
@@ -711,10 +739,10 @@ function drawTextBand(
     const a = life(frame, OPEN_AT, PACKET_OUT + 2, 12, 12);
     if (a > 0) {
       const txt = t(params, "open");
-      const fs = fitSize(txt, 120, 600) * fontScale;
+      const fs = fitSize(txt, 190, 900) * fontScale;
       ctx.save();
       ctx.globalAlpha = a;
-      inkText(ctx, txt, 540, 380, fs, easeOutCubic(progress(frame - OPEN_AT, 0, 12)), 301, {
+      inkText(ctx, txt, 540, 290, fs, easeOutCubic(progress(frame - OPEN_AT, 0, 12)), 301, {
         color: pal.ink,
         weight: 900,
         font: SONG,
@@ -723,72 +751,30 @@ function drawTextBand(
       ctx.restore();
     }
   }
-  // 评论区说说 + 指向评论区的一笔
-  {
-    const a = life(frame, COMMENT_AT, C_OUT, 12, 12);
-    if (a > 0) {
-      const txt = t(params, "comment");
-      const fs = fitSize(txt, 76, 640) * fontScale;
-      const l = frame - COMMENT_AT;
-      ctx.save();
-      ctx.globalAlpha = a;
-      inkText(ctx, txt, 480, 420, fs, easeOutCubic(progress(l, 0, 14)), 303, {
-        color: pal.ink,
-        weight: 700,
-        font: KAI,
-        spacing: 1.08,
-      });
-      const w = (chars(txt).length * fs * 1.08) / 2;
-      drawBrushStroke(
-        ctx,
-        [
-          { x: 480 + w + 20, y: 410 },
-          { x: 480 + w + 100, y: 470 },
-          { x: 480 + w + 140, y: 610 },
-        ],
-        easeInOutCubic(progress(l, 8, 22)),
-        { width: 7, color: pal.cinnabar, seed: 305, tail: 0.5 },
-      );
-      // 箭头
-      const hp = easeOutCubic(progress(l, 20, 26));
-      if (hp > 0) {
-        const tip = { x: 480 + w + 140, y: 610 };
-        drawBrushStroke(
-          ctx,
-          [{ x: tip.x - 26, y: tip.y - 22 }, tip, { x: tip.x + 18, y: tip.y - 30 }],
-          hp,
-          { width: 6, color: pal.cinnabar, seed: 307, tail: 0.4 },
-        );
-      }
-      ctx.restore();
-    }
-  }
-  // 新茶老茶 / 要不要分开放？（副标题在「下期见」盖章后退淡）
+  // 新茶老茶 / 要不要分开放？—— 两行大字，出来后一直留到结尾
   {
     const l = frame - (JAR1_AT + 2);
     if (l > 0) {
       const txt = t(params, "teaser");
-      const fs = fitSize(txt, 150, 820) * fontScale;
+      const fs = fitSize(txt, TEASER.size, 900) * fontScale;
       const pose = lightFloat(l, { rise: 14, sway: 1, seed: 6 });
-      inkText(ctx, txt, 540, 360 + pose.y, fs, easeOutCubic(progress(l, 0, 16)), 309, {
+      inkText(ctx, txt, 540, TEASER.y + pose.y, fs, easeOutCubic(progress(l, 0, 16)), 309, {
         color: pal.ink,
         weight: 900,
         font: SONG,
         wash: 0.03,
       });
       const sl = frame - (SPLIT_AT + 2);
-      const subA = 1 - easeInOutCubic(progress(frame, BYE_HIT - 8, BYE_HIT + 6));
-      if (sl > 0 && subA > 0) {
+      if (sl > 0) {
         const sub = t(params, "teaserSub");
-        const sfs = fitSize(sub, 68, 760) * fontScale;
-        ctx.save();
-        ctx.globalAlpha = subA;
-        inkText(ctx, sub, 540, 520, sfs, easeOutCubic(progress(sl, 0, 14)), 311, {
+        const sfs = fitSize(sub, TEASER.subSize, 960) * fontScale;
+        const sp = lightFloat(sl, { rise: 14, sway: 1, seed: 7 });
+        inkText(ctx, sub, 540, TEASER.subY + sp.y, sfs, easeOutCubic(progress(sl, 0, 14)), 311, {
           color: pal.cinnabar,
-          weight: 700,
-          font: KAI,
+          weight: 900,
+          font: SONG,
+          wash: 0.03,
         });
-        ctx.restore();
       }
     }
   }

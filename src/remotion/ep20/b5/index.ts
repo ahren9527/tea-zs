@@ -10,7 +10,7 @@ export default defineClip({
   episode: 20,
   code: "B5",
   title: "口诀",
-  note: "宣纸条幅 · 顺纹借力 / 够喝一周 逐字晕开 · 朱印「快取快封」砸下 · 5秒（成片 53–57s）",
+  note: "宣纸条幅 · 顺纹借力 / 够喝一周 逐字晕开 · 朱印「快取快封」砸下 · 约6.6秒",
   exportName: "正上茶舍_20_B5_口诀.mp4",
   Comp,
   draw,

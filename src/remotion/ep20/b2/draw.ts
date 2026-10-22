@@ -3,7 +3,8 @@
  * A 俯视桌面：棉纸饼落下 → 一角被揭起（别撕）→ 朱砂叉住 → 纸抚平（留着）
  * B 铝箔袋从上滑下套住饼、封口压合；袋面上留一圈虚线示意里面那层棉纸（层次用物讲）
  * C 袋子「侧倒」成侧视，落到屋角的矮架上：竹帘落下挡住窗光（避光）、架腿伸长离地、架子离墙
- * D 镜头推近袋子，暖光像呼吸：转化稳 / 风险低
+ * D 镜头推近袋子，暖光像呼吸：转化稳
+ * 文字只有大字：棉纸 → 别撕 → 铝箔袋 轮流占同一处；避光 / 离地 / 离墙 三行逐行落下；收尾一个「转化稳」
  */
 import {
   TAU,
@@ -28,10 +29,9 @@ import {
   SPRINGS,
   type FxPalette,
   type Pt,
-} from "@/remotion/shared/fx";
+} from "../kit/fx";
 import { STAGE, type AnimParams } from "@/remotion/shared/theme";
 import {
-  KAI,
   SONG,
   allTextsOf,
   beginFrame,
@@ -56,17 +56,17 @@ import {
   CAKE_DROP_AT,
   CAKE_FALL,
   CALM_AT,
-  CALM_SUB_AT,
-  COND_AT,
   CROSS_AT,
   DARK_AT,
   FLOOR_AT,
+  HERO,
   KEEP_AT,
   LENGTH,
   PACK,
   PAPER_LABEL_AT,
   PUSH_AT,
   ROOM,
+  ROOM_WORDS,
   SEAL_AT,
   SHELF,
   TEAR_AT,
@@ -166,7 +166,7 @@ function drawSubject(
     ctx.translate(cx, cy);
     ctx.scale(sx, sy);
     ctx.translate(-CAKE.x, -CAKE.y);
-    drawTopView(ctx, frame, pal, params, fontScale);
+    drawTopView(ctx, frame, pal);
     ctx.restore();
   }
   // ---- C/D：侧视的袋子 ----
@@ -205,13 +205,7 @@ function drawSubject(
   }
 }
 
-function drawTopView(
-  ctx: CanvasRenderingContext2D,
-  frame: number,
-  pal: FxPalette,
-  params: AnimParams,
-  fontScale: number,
-) {
+function drawTopView(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalette) {
   // 饼
   const land = heavyLand(frame - CAKE_DROP_AT, { drop: 160, fall: CAKE_FALL, squash: 0.045 });
   const peelOpen = easeOutCubic(progress(frame, TEAR_AT, TEAR_AT + 8)) * 0.42;
@@ -277,70 +271,6 @@ function drawTopView(
       ctx.restore();
     }
   }
-  // 标注：棉纸（引线指到饼边 / 袋上的虚线圈）
-  const pl = frame - PAPER_LABEL_AT;
-  if (pl > 0) {
-    const a = Math.PI * 1.08;
-    const tip = {
-      x: CAKE.x + Math.cos(a) * CAKE.r * 0.96,
-      y: CAKE.y + Math.sin(a) * CAKE.r * 0.96,
-    };
-    const lx = 118;
-    const ly = 560;
-    const txt = t(params, "paper");
-    const fs = fitSize(txt, 54, 230) * fontScale;
-    const lp = easeInOutCubic(progress(pl, 4, 20));
-    drawBrushStroke(
-      ctx,
-      [
-        { x: lx + 6, y: ly + (Array.from(txt).length * fs * 1.06) / 2 + 14 },
-        { x: lx + 40, y: tip.y - 30 },
-        tip,
-      ],
-      lp,
-      { width: 3.2, color: pal.inkSoft, seed: 4, tail: 0.6, head: 0.05 },
-    );
-    drawDot(ctx, tip, 6 * lp, pal.cinnabar);
-    inkText(ctx, txt, lx, ly, fs, easeOutCubic(progress(pl, 0, 16)), 61, {
-      color: pal.ink,
-      weight: 700,
-      vertical: true,
-      font: KAI,
-    });
-  }
-  // 标注：铝箔袋
-  const bl = frame - (BAG_DONE - 2);
-  if (bl > 0) {
-    // 和「棉纸」同一套版式：字在上方，引线从字底出发斜向下指进袋角，线不穿字
-    const tip = { x: CAKE.x + BAG.w / 2 - 46, y: CAKE.y + 250 };
-    const lx = 984;
-    const txt = t(params, "bag");
-    const fs = fitSize(txt, 54, 300) * fontScale;
-    const half = (Array.from(txt).length * fs * 1.06) / 2;
-    const ly = tip.y - 150 - half;
-    const lp = easeInOutCubic(progress(bl, 4, 18));
-    drawBrushStroke(
-      ctx,
-      [{ x: lx - 6, y: ly + half + 14 }, { x: lx - 40, y: tip.y - 30 }, tip],
-      lp,
-      { width: 3.2, color: pal.inkSoft, seed: 8, tail: 0.6, head: 0.05 },
-    );
-    drawDot(ctx, tip, 6 * lp, pal.cinnabar);
-    inkText(ctx, txt, lx, ly, fs, easeOutCubic(progress(bl, 0, 16)), 67, {
-      color: pal.ink,
-      weight: 700,
-      vertical: true,
-      font: KAI,
-    });
-  }
-}
-
-function drawDot(ctx: CanvasRenderingContext2D, p: Pt, r: number, color: string) {
-  if (r <= 0.2) return;
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, r, 0, TAU);
-  ctx.fill();
 }
 
 /** 揭起翻到饼外的一角棉纸（局部坐标：饼心为原点） */
@@ -651,31 +581,18 @@ function drawRoom(
   drawShelf(ctx, pal, st);
   ctx.restore();
 
-  // ---- 六个字 + 标尺 ----
+  // ---- 标尺（只跟着当下那个字出现，下一个字落下时退掉）----
   const out = 1 - easeInOutCubic(progress(frame, WORDS_OUT, WORDS_OUT + 16));
   if (out <= 0) return;
   ctx.save();
   ctx.globalAlpha = out;
-  // 避光
-  {
-    const l = frame - DARK_AT;
-    if (l > 0) {
-      const txt = t(params, "dark");
-      const fs = fitSize(txt, 124, 420) * fontScale;
-      const pose = lightFloat(l, { rise: 12, sway: 1.2, seed: 1 });
-      inkText(ctx, txt, 680, 500 + pose.y, fs, easeOutCubic(progress(l, 2, 16)), 81, {
-        color: pal.ink,
-        weight: 900,
-        font: SONG,
-        wash: 0.03,
-      });
-    }
-  }
-  // 离地：竖向标尺（架板底 → 地面）
   {
     const l = frame - FLOOR_AT;
-    if (l > 0) {
+    const fade = 1 - easeInOutCubic(progress(frame, WALL_AT + 2, WALL_AT + 14));
+    if (l > 0 && fade > 0) {
       const mx = st.left + SHELF.w * 0.5;
+      ctx.save();
+      ctx.globalAlpha *= fade;
       gapMarker(
         ctx,
         { x: mx, y: st.plankTop + 26 },
@@ -683,19 +600,11 @@ function drawRoom(
         easeOutCubic(progress(l, 4, 18)),
         pal.cinnabar,
         41,
-        18,
+        22,
       );
-      const txt = t(params, "floor");
-      const fs = fitSize(txt, 108, 300) * fontScale;
-      inkText(ctx, txt, st.left - 150, 1316, fs, easeOutCubic(progress(l, 2, 16)), 83, {
-        color: pal.ink,
-        weight: 900,
-        font: SONG,
-        wash: 0.03,
-      });
+      ctx.restore();
     }
   }
-  // 离墙：横向标尺（架子右端 → 墙）+ 竖排写在墙上
   {
     const l = frame - WALL_AT;
     if (l > 0) {
@@ -707,29 +616,13 @@ function drawRoom(
         easeOutCubic(progress(l, 6, 20)),
         pal.cinnabar,
         45,
-        22,
-      );
-      const txt = t(params, "wall");
-      const fs = fitSize(txt, 100, 420, 1.06) * fontScale;
-      inkText(
-        ctx,
-        txt,
-        W + (STAGE.width - W) / 2 + 2,
-        820,
-        Math.min(fs, (STAGE.width - W) * 0.78),
-        easeOutCubic(progress(l, 2, 16)),
-        85,
-        {
-          color: pal.ink,
-          weight: 900,
-          font: SONG,
-          vertical: true,
-          wash: 0.03,
-        },
+        26,
       );
     }
   }
   ctx.restore();
+  void params;
+  void fontScale;
 }
 
 function drawWindow(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalette, blind: number) {
@@ -852,7 +745,35 @@ function drawShelf(ctx: CanvasRenderingContext2D, pal: FxPalette, st: ReturnType
   ctx.fillRect(x0, top, x1 - x0, 3);
 }
 
-// ---------------- 文字带 ----------------
+// ---------------- 文字带：任一时刻只有一个焦点大字 ----------------
+/** 一个焦点大字：轻浮入场、墨晕开；out 之后墨退 */
+function heroWord(
+  ctx: CanvasRenderingContext2D,
+  frame: number,
+  txt: string,
+  at: number,
+  out: number,
+  x: number,
+  y: number,
+  fs: number,
+  seed: number,
+  color: string,
+) {
+  const a = life(frame, at, out, 10, 10);
+  if (a <= 0) return;
+  const l = frame - at;
+  const pose = lightFloat(l, { rise: 16, sway: 1, seed });
+  ctx.save();
+  ctx.globalAlpha = a;
+  inkText(ctx, txt, x, y + pose.y, fs, easeOutCubic(progress(l, 0, 14)), seed, {
+    color,
+    weight: 900,
+    font: SONG,
+    wash: 0.035,
+  });
+  ctx.restore();
+}
+
 function drawTextBand(
   ctx: CanvasRenderingContext2D,
   frame: number,
@@ -860,86 +781,91 @@ function drawTextBand(
   params: AnimParams,
   fontScale: number,
 ) {
-  // 别撕（大）+ 留着（小，竖排）
+  const size = (k: TextKey, base: number, max: number) =>
+    fitSize(t(params, k), base, max) * fontScale;
+  // 俯视段：棉纸 → 别撕 → 铝箔袋，同一个位置轮流出现
+  heroWord(
+    ctx,
+    frame,
+    t(params, "paper"),
+    PAPER_LABEL_AT,
+    CROSS_AT - 8,
+    HERO.x,
+    HERO.y,
+    size("paper", HERO.size, 900),
+    89,
+    pal.ink,
+  );
+  heroWord(
+    ctx,
+    frame,
+    t(params, "noTear"),
+    CROSS_AT,
+    BAG_AT + 4,
+    HERO.x,
+    HERO.y,
+    size("noTear", HERO.size + 20, 900),
+    91,
+    pal.cinnabar,
+  );
+  heroWord(
+    ctx,
+    frame,
+    t(params, "bag"),
+    BAG_DONE - 2,
+    TILT_AT - 4,
+    HERO.x,
+    HERO.y,
+    size("bag", HERO.size, 900),
+    93,
+    pal.ink,
+  );
+
+  // 屋角段：避光 / 离地 / 离墙 三行逐行落下，新落下的那行是焦点、前面的退成淡墨
   {
-    const a = life(frame, CROSS_AT, BAG_AT + 4, 12, 12);
-    if (a > 0) {
-      const txt = t(params, "noTear");
-      const fs = fitSize(txt, 168, 560) * fontScale;
-      ctx.save();
-      ctx.globalAlpha = a;
-      const l = frame - CROSS_AT;
-      const pose = lightFloat(l, { rise: 10, sway: 0, seed: 2 });
-      inkText(ctx, txt, 470, 330 + pose.y, fs, easeOutCubic(progress(l, 0, 12)), 91, {
-        color: pal.cinnabar,
-        weight: 900,
-        font: SONG,
-        wash: 0.04,
-      });
-      const kl = frame - KEEP_AT;
-      if (kl > 0) {
-        const k = t(params, "keep");
-        const kfs = fitSize(k, 62, 260) * fontScale;
-        inkText(ctx, k, 790, 330, kfs, easeOutCubic(progress(kl, 0, 14)), 93, {
+    const out = 1 - easeInOutCubic(progress(frame, WORDS_OUT, WORDS_OUT + 16));
+    if (out > 0) {
+      const rows: [TextKey, number][] = [
+        ["dark", DARK_AT],
+        ["floor", FLOOR_AT],
+        ["wall", WALL_AT],
+      ];
+      rows.forEach(([key, at], i) => {
+        const l = frame - at;
+        if (l <= -2) return;
+        const next = rows[i + 1]?.[1];
+        const dim = next === undefined ? 0 : easeInOutCubic(progress(frame, next, next + 10));
+        const land = heavyLand(l + 2, { drop: 30, fall: 4, squash: 0.08 });
+        const txt = t(params, key);
+        const fs = fitSize(txt, ROOM_WORDS.size, 520) * fontScale;
+        ctx.save();
+        ctx.globalAlpha = out * (1 - 0.55 * dim);
+        ctx.translate(ROOM_WORDS.x, ROOM_WORDS.y + i * ROOM_WORDS.step + land.y);
+        ctx.scale(land.scaleX, land.scaleY);
+        inkText(ctx, txt, 0, 0, fs, easeOutCubic(progress(l, 0, 12)), 81 + i * 2, {
           color: pal.ink,
-          weight: 700,
-          font: KAI,
-          vertical: true,
+          weight: 900,
+          font: SONG,
+          wash: 0.03,
         });
-      }
-      ctx.restore();
-    }
-  }
-  // 无异味 · 不受潮
-  {
-    const a = life(frame, COND_AT, CALM_AT - 6, 14, 12);
-    if (a > 0) {
-      const txt = t(params, "cond");
-      const fs = fitSize(txt, 60, 820) * fontScale;
-      ctx.save();
-      ctx.globalAlpha = a;
-      inkText(ctx, txt, 580, 850, fs, easeOutCubic(progress(frame - COND_AT, 0, 16)), 95, {
-        color: pal.inkSoft,
-        weight: 600,
-        font: KAI,
+        ctx.restore();
       });
-      ctx.restore();
     }
   }
-  // 转化稳（大）+ 风险低（小）+ 一道平稳的竹青横笔
+
+  // 收尾：只留一个「转化稳」
   {
     const l = frame - CALM_AT;
     if (l > 0) {
       const txt = t(params, "calm");
-      const fs = fitSize(txt, 170, 760) * fontScale;
+      const fs = fitSize(txt, 230, 860) * fontScale;
       const pose = lightFloat(l, { rise: 14, sway: 1.2, seed: 4 });
-      inkText(ctx, txt, 540, 380 + pose.y, fs, easeOutCubic(progress(l, 0, 18)), 97, {
+      inkText(ctx, txt, 560, 640 + pose.y, fs, easeOutCubic(progress(l, 0, 18)), 97, {
         color: pal.ink,
         weight: 900,
         font: SONG,
         wash: 0.035,
       });
-      const sl = frame - CALM_SUB_AT;
-      if (sl > 0) {
-        const sub = t(params, "calmSub");
-        const sfs = fitSize(sub, 60, 400) * fontScale;
-        drawBrushStroke(
-          ctx,
-          [
-            { x: 340, y: 512 },
-            { x: 540, y: 508 },
-            { x: 740, y: 512 },
-          ],
-          easeInOutCubic(progress(sl, 0, 18)),
-          { width: 6, color: pal.bamboo, seed: 99, tail: 0.3, dry: 0.5, dryColor: pal.paper },
-        );
-        inkText(ctx, sub, 540, 580, sfs, easeOutCubic(progress(sl, 4, 18)), 99, {
-          color: pal.inkSoft,
-          weight: 600,
-          font: KAI,
-          spacing: 1.3,
-        });
-      }
     }
   }
 }

@@ -1,14 +1,14 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { makeVoAt } from "../kit/draw-kit";
+import { makeVoAt, voSeconds } from "../kit/draw-kit";
 
 /**
- * 第 20 期 B1「存·撬·醒」（成片 0–10s 开场的最后一句，约 4.8 秒）
+ * 第 20 期 B1「存·撬·醒」（约 6.2 秒）
  * 前面两句（好茶饼怕撬坏、撬一块塞回去香照样跑）交给 AI 场景视频；这一拍只接
  * 「今天一口气讲完：茶饼怎么存、怎么撬、怎么醒」：三件小物先落位，存 / 撬 / 醒 三个大字随口播砸下，竖排成一列。
  */
 export const SCRIPT = "今天一口气讲完：茶饼怎么存、怎么撬、怎么醒。";
-/** 语速（字/秒）。18 字 ≈ 4.0 秒 */
-export const CHARS_PER_SEC = 4.5;
+/** 语速（字/秒）。18 字 ≈ 4.7 秒（客户要求放慢：原 4.5） */
+export const CHARS_PER_SEC = 3.8;
 /** 口播在本片段里的起点（秒）。配音整体偏移只改这里 */
 export const VO_START_SEC = 0.1;
 export const voAt = makeVoAt(SCRIPT, CHARS_PER_SEC, VO_START_SEC);
@@ -22,7 +22,9 @@ export const TEXT = {
 export type TextKey = keyof typeof TEXT;
 
 // ---------------- 时间轴（帧） ----------------
-export const LENGTH = framesOf(4.8);
+/** 口播结束后再停 END_HOLD_SEC 秒（含收尾动作 + 约 0.7 秒留白，方便剪映里剪/加速） */
+export const END_HOLD_SEC = 1.4;
+export const LENGTH = framesOf(VO_START_SEC + voSeconds(SCRIPT, CHARS_PER_SEC) + END_HOLD_SEC);
 export const SPINE_AT = framesOf(0.05); // 竹青竖线生长
 /** 三个字：物先到（提前 OBJ_LEAD 帧），字随口播砸下 */
 export const OBJ_LEAD = 11;

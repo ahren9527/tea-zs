@@ -22,7 +22,7 @@ export default defineClip({
   episode: 20,
   code: "B6",
   title: "醒",
-  note: "一周量茶块 · 先别急喝 · 落进紫砂罐盖好 · 避光 · 一天一划 3–7 天 · 香气升起 · 干醒 · 14.6秒（成片 57–71s）",
+  note: "一周量茶块 · 先别急喝 · 落进紫砂罐盖好 · 避光 · 一天一划 3–7 天 · 香气升起 · 干醒 · 约17.9秒",
   exportName: "正上茶舍_20_B6_醒.mp4",
   Comp,
   draw,

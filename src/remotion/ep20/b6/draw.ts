@@ -17,12 +17,13 @@ import {
   lightFloat,
   mixHex,
   progress,
+  progressRaw,
   rgba,
   springValue,
   steamWisps,
   type FxPalette,
   type Pt,
-} from "@/remotion/shared/fx";
+} from "../kit/fx";
 import { STAGE, type AnimParams } from "@/remotion/shared/theme";
 import {
   KAI,
@@ -275,8 +276,8 @@ function drawSubject(
       const period = 54;
       const local = (al + k * 18) % period;
       const cycleN = Math.floor((al + k * 18) / period);
-      const grow = easeOutCubic(progress(local, 0, 26));
-      const fade = 1 - progress(local, 30, period);
+      const grow = easeOutCubic(progressRaw(local, 0, 26));
+      const fade = 1 - progressRaw(local, 30, period); // 循环动画：不放慢
       const x0 = JAR.x - 50 + k * 50;
       const y0 = mouthY - 60 - local * 1.6;
       const amp = 22 + 6 * k;

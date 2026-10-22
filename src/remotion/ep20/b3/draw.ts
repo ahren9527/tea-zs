@@ -1,7 +1,7 @@
 /**
  * 第 20 期 B3「工具」逐帧画布（1080×1920）。导出走这里；Comp.tsx 的预览也直接调用它。
- * 茶巾从左铺开 → 茶针 / 茶刀 / 茶锥依次落下，各做一下自己的动作（扎缝 / 顺纹推 / 拧）→
- * 工具退开，菜刀与一只手先后落下、各挨一笔朱砂叉 → 一块饼落下、裂纹生长、碎开、碎叶四散。
+ * 茶巾从左铺开 → 茶针 / 茶刀 / 茶锥一次一件落在正中，做一下自己的动作（扎缝 / 顺纹推 / 拧），上方一个大字 →
+ * 菜刀居中挨朱砂叉、退开，一只手居中挨叉 → 一块饼落下、裂纹生长、碎开、碎叶四散，一个大字「碎」。
  */
 import {
   TAU,
@@ -28,10 +28,9 @@ import {
   traceLeaf,
   type FxPalette,
   type Pt,
-} from "@/remotion/shared/fx";
+} from "../kit/fx";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
-  KAI,
   SONG,
   allTextsOf,
   beginFrame,
@@ -57,22 +56,25 @@ import {
   CRACK_AT,
   HAND_AT,
   HAND_X_AT,
-  LABEL_X,
   LENGTH,
   NO_AT,
   TEXT,
   TOOLS_OUT,
   TOOL_AT,
-  TOOL_TIP_X,
+  TOOL_LEN,
+  TOOL_SCALE,
   TOOL_Y,
+  TOP_WORD,
   USE_AT,
-  WASTE_AT,
+  WORD,
   type TextKey,
 } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const TOOL_ROT = [-0.035, 0.03, -0.02];
-const TOOL_SCALE = 1.25;
+/** 第 i 件工具什么时候退开：下一件落下时（最后一件在「别用」前） */
+const toolOut = (i: number) => (i < 2 ? TOOL_AT[i + 1] + 2 : TOOLS_OUT);
+const tipX = (i: number) => 540 - (TOOL_LEN[i] * TOOL_SCALE) / 2;
 
 function beatCamera(frame: number) {
   const cam = cameraAt(frame, LENGTH, {
@@ -80,9 +82,7 @@ function beatCamera(frame: number) {
     to: 1.05,
     drift: 6,
     focus: [
-      { at: TOOL_AT[0] - 6, dur: 16, x: 540, y: TOOL_Y[0] + 40, zoom: 1.04, pull: 0.2 },
-      { at: TOOL_AT[1] - 6, dur: 16, x: 540, y: TOOL_Y[1], zoom: 1.04, pull: 0.2 },
-      { at: TOOL_AT[2] - 6, dur: 16, x: 540, y: TOOL_Y[2] - 40, zoom: 1.04, pull: 0.2 },
+      { at: TOOL_AT[0] - 6, dur: 16, x: 540, y: 900, zoom: 1.04, pull: 0.2 },
       { at: TOOLS_OUT, dur: 18, x: 540, y: 960, zoom: 1.0, pull: 0.2 },
       { at: BREAK_AT - 10, dur: 20, x: 540, y: CAKE.y, zoom: 1.1, pull: 0.3 },
     ],
@@ -108,7 +108,7 @@ export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: Ani
   const cam = beatCamera(frame);
   renderLayers(ctx, frame, pal, cam, {
     leaves: 4,
-    subject: (p) => drawSubject(ctx, frame, p, params, fontScale),
+    subject: (p) => drawSubject(ctx, frame, p),
     text: (p) => drawTextBand(ctx, frame, p, params, fontScale),
   });
 }
@@ -207,22 +207,17 @@ function drawCloth(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalette)
 }
 
 // ---------------- 主体 ----------------
-function drawSubject(
-  ctx: CanvasRenderingContext2D,
-  frame: number,
-  pal: FxPalette,
-  params: AnimParams,
-  fontScale: number,
-) {
+function drawSubject(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalette) {
   drawCloth(ctx, frame, pal);
 
-  // 三件工具 + 名字/用途
-  const out = easeInOutCubic(progress(frame, TOOLS_OUT, TOOLS_OUT + 14));
-  if (out < 1) {
+  // 三件工具：一次一件，下一件落下时上一件往左上滑走、淡出
+  for (let i = 0; i < 3; i++) {
+    const out = easeInOutCubic(progress(frame, toolOut(i), toolOut(i) + 12));
+    if (out >= 1) continue;
     ctx.save();
     ctx.globalAlpha = 1 - out;
-    ctx.translate(-60 * out, -40 * out);
-    for (let i = 0; i < 3; i++) drawTool(ctx, frame, pal, params, fontScale, i);
+    ctx.translate(-120 * out, -50 * out);
+    drawTool(ctx, frame, pal, i);
     ctx.restore();
   }
 
@@ -231,26 +226,34 @@ function drawSubject(
   if (wrongOut < 1 && frame > CLEAVER_AT) {
     ctx.save();
     ctx.globalAlpha = 1 - wrongOut;
-    // 菜刀：重落
-    const cl = heavyLand(frame - CLEAVER_AT, { drop: 150, fall: 9, squash: 0.03 });
-    ctx.save();
-    ctx.globalAlpha *= cl.alpha;
-    ctx.translate(200, 780 + cl.y);
-    ctx.rotate(-0.1);
-    ctx.scale(1.45, 1.45);
-    drawCleaver(ctx, pal, clamp01(-cl.y / 150));
-    ctx.restore();
-    brushCross(ctx, 420, 790, 250, progress(frame - CLEAVER_X_AT, 0, 9), pal.cinnabar, 41, 18);
-    // 手：从右下伸进来
+    // 菜刀：居中重落、挨叉；手伸进来时往左滑走
+    const cleaverOut = easeInOutCubic(progress(frame, HAND_AT - 2, HAND_AT + 10));
+    if (cleaverOut < 1) {
+      const cl = heavyLand(frame - CLEAVER_AT, { drop: 150, fall: 9, squash: 0.03 });
+      ctx.save();
+      ctx.globalAlpha *= 1 - cleaverOut;
+      ctx.translate(-160 * cleaverOut, 0);
+      ctx.save();
+      ctx.globalAlpha *= cl.alpha;
+      ctx.translate(200, 960 + cl.y);
+      ctx.rotate(-0.1);
+      ctx.scale(1.45, 1.45);
+      drawCleaver(ctx, pal, clamp01(-cl.y / 150));
+      ctx.restore();
+      brushCross(ctx, 430, 960, 280, progress(frame - CLEAVER_X_AT, 0, 9), pal.cinnabar, 41, 20);
+      ctx.restore();
+    }
+    // 手：从右下伸到正中
     const hl = frame - HAND_AT;
     if (hl > 0) {
       const s = springValue(hl, { stiffness: 150, damping: 16, mass: 1 });
       ctx.save();
-      ctx.translate(600 + (1 - s) * 260, 1210 + (1 - s) * 260);
-      ctx.rotate(-0.32 + (1 - s) * 0.3);
+      ctx.translate(540 + (1 - s) * 320, 1000 + (1 - s) * 300);
+      ctx.rotate(-0.22 + (1 - s) * 0.3);
+      ctx.scale(1.25, 1.25);
       drawHand(ctx, pal, easeInOutCubic(progress(hl, 0, 16)), frame);
       ctx.restore();
-      brushCross(ctx, 600, 1180, 230, progress(frame - HAND_X_AT, 0, 9), pal.cinnabar, 45, 18);
+      brushCross(ctx, 540, 980, 280, progress(frame - HAND_X_AT, 0, 9), pal.cinnabar, 45, 20);
     }
     ctx.restore();
   }
@@ -259,14 +262,7 @@ function drawSubject(
   if (frame > CAKE_AT) drawBreakingCake(ctx, frame, pal);
 }
 
-function drawTool(
-  ctx: CanvasRenderingContext2D,
-  frame: number,
-  pal: FxPalette,
-  params: AnimParams,
-  fontScale: number,
-  i: number,
-) {
+function drawTool(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalette, i: number) {
   const l = frame - TOOL_AT[i];
   if (l <= 0) return;
   const pose = heavyLand(l, { drop: 110, fall: 8, squash: 0.02 });
@@ -281,7 +277,8 @@ function drawTool(
       dx = -10 * Math.sin(easeInOutSine(progress(u, 0, 14)) * Math.PI);
     }
   }
-  const y = TOOL_Y[i];
+  const y = TOOL_Y;
+  const TOOL_TIP_X = tipX(i);
   ctx.save();
   ctx.globalAlpha *= pose.alpha;
   ctx.translate(TOOL_TIP_X + dx, y + pose.y);
@@ -308,26 +305,6 @@ function drawTool(
       { width: 5, color: pal.bamboo, seed: 60 + i, tail: 0.4 },
     );
     ctx.restore();
-  }
-  // 名字（小，朱砂）+ 用途（大，墨）
-  const name = t(params, (["n1", "n2", "n3"] as const)[i]);
-  const use = t(params, (["u1", "u2", "u3"] as const)[i]);
-  const nfs = fitSize(name, 46, 200) * fontScale;
-  const ufs = fitSize(use, 104, 290) * fontScale;
-  inkText(ctx, name, LABEL_X, y - 72, nfs, easeOutCubic(progress(l, 4, 16)), 70 + i, {
-    color: pal.cinnabar,
-    weight: 700,
-    font: KAI,
-    spacing: 1.25,
-  });
-  if (u > -4) {
-    const fp = lightFloat(u + 4, { rise: 10, sway: 1, seed: i });
-    inkText(ctx, use, LABEL_X, y + 22 + fp.y, ufs, easeOutCubic(progress(u, -2, 12)), 74 + i, {
-      color: pal.ink,
-      weight: 900,
-      font: SONG,
-      wash: 0.025,
-    });
   }
 }
 
@@ -545,7 +522,7 @@ function drawLeafBurst(ctx: CanvasRenderingContext2D, l: number, pal: FxPalette)
   }
 }
 
-// ---------------- 文字带 ----------------
+// ---------------- 文字带：任一时刻只有一个大字 ----------------
 function drawTextBand(
   ctx: CanvasRenderingContext2D,
   frame: number,
@@ -553,34 +530,70 @@ function drawTextBand(
   params: AnimParams,
   fontScale: number,
 ) {
+  // 每件工具一个大字（工具落定就晕开，下一件落下时退）
+  (["u1", "u2", "u3"] as const).forEach((key, i) => {
+    const at = Math.min(USE_AT[i] - 4, TOOL_AT[i] + 10);
+    const a = life(frame, at, toolOut(i), 10, 12);
+    if (a <= 0) return;
+    const txt = t(params, key);
+    const fs = fitSize(txt, WORD.size, 820) * fontScale;
+    const fp = lightFloat(frame - at, { rise: 16, sway: 1, seed: i });
+    ctx.save();
+    ctx.globalAlpha = a;
+    inkText(
+      ctx,
+      txt,
+      WORD.x,
+      WORD.y + fp.y,
+      fs,
+      easeOutCubic(progress(frame - at, 0, 14)),
+      74 + i,
+      {
+        color: pal.ink,
+        weight: 900,
+        font: SONG,
+        wash: 0.03,
+      },
+    );
+    ctx.restore();
+  });
   // 别用（朱砂大字）
   {
     const a = life(frame, NO_AT, CAKE_AT - 2, 10, 10);
     if (a > 0) {
       const txt = t(params, "no");
-      const fs = fitSize(txt, 156, 520) * fontScale;
+      const fs = fitSize(txt, TOP_WORD.size, 820) * fontScale;
       const pose = lightFloat(frame - NO_AT, { rise: 10, sway: 0, seed: 3 });
       ctx.save();
       ctx.globalAlpha = a;
-      inkText(ctx, txt, 540, 330 + pose.y, fs, easeOutCubic(progress(frame - NO_AT, 0, 12)), 101, {
-        color: pal.cinnabar,
-        weight: 900,
-        font: SONG,
-        wash: 0.04,
-      });
+      inkText(
+        ctx,
+        txt,
+        TOP_WORD.x,
+        TOP_WORD.y + pose.y,
+        fs,
+        easeOutCubic(progress(frame - NO_AT, 0, 12)),
+        101,
+        {
+          color: pal.cinnabar,
+          weight: 900,
+          font: SONG,
+          wash: 0.04,
+        },
+      );
       ctx.restore();
     }
   }
-  // 碎（单字，偏右上）+ 白压了（竖排小字，左侧）
+  // 碎（单字，正上方，砸下）
   {
     const l = frame - BREAK_AT;
     if (l > 0) {
       const txt = t(params, "broke");
-      const fs = fitSize(txt, 250, 520) * fontScale;
+      const fs = fitSize(txt, 300, 820) * fontScale;
       const pose = heavyLand(l + 4, { drop: 50, fall: 4, squash: 0.06 });
       ctx.save();
-      ctx.translate(810, 470 + pose.y);
-      ctx.rotate(0.06);
+      ctx.translate(TOP_WORD.x, TOP_WORD.y + 40 + pose.y);
+      ctx.rotate(0.04);
       ctx.scale(pose.scaleX, pose.scaleY);
       inkText(ctx, txt, 0, 0, fs, easeOutCubic(progress(l, 0, 10)), 103, {
         color: pal.cinnabar,
@@ -589,18 +602,6 @@ function drawTextBand(
         wash: 0.04,
       });
       ctx.restore();
-      const wl = frame - WASTE_AT;
-      if (wl > 0) {
-        const w = t(params, "waste");
-        const wfs = fitSize(w, 76, 360, 1.06) * fontScale;
-        inkText(ctx, w, 150, 980, wfs, easeOutCubic(progress(wl, 0, 14)), 105, {
-          color: pal.ink,
-          weight: 700,
-          font: KAI,
-          vertical: true,
-          wash: 0.03,
-        });
-      }
     }
   }
 }

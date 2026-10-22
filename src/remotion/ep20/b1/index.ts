@@ -10,7 +10,7 @@ export default defineClip({
   episode: 20,
   code: "B1",
   title: "存·撬·醒",
-  note: "开场尾句：棉纸饼 / 茶针 / 紫砂罐先落位，「存 撬 醒」随口播砸下竖排一列 · 4.8秒（成片约 6–10s）",
+  note: "开场尾句：棉纸饼 / 茶针 / 紫砂罐先落位，「存 撬 醒」随口播砸下竖排一列 · 约6.2秒",
   exportName: "正上茶舍_20_B1_存撬醒.mp4",
   Comp,
   draw,

@@ -21,7 +21,7 @@ import {
   sealPress,
   type FxPalette,
   type Pt,
-} from "@/remotion/shared/fx";
+} from "../kit/fx";
 import { SEAL_FONT, type AnimParams } from "@/remotion/shared/theme";
 import {
   SONG,

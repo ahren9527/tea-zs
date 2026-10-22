@@ -15,7 +15,7 @@ import {
   springValue,
   steamWisps,
   type FxPalette,
-} from "@/remotion/shared/fx";
+} from "../kit/fx";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
   SONG,

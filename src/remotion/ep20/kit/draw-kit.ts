@@ -27,7 +27,8 @@ import {
   type Camera,
   type FxPalette,
   type Pt,
-} from "@/remotion/shared/fx";
+  TEMPO,
+} from "./fx";
 import { FONT_SONG, FPS, STAGE, framesOf, type AnimParams } from "@/remotion/shared/theme";
 import { TPL_FONT } from "@/templates/fonts";
 
@@ -285,7 +286,8 @@ export function mixColor(a: string, b: string, t: number) {
 
 /** 0→1→0 的显隐（进 inDur 帧，出 outDur 帧），用于一句话的字幕卡 */
 export function life(frame: number, at: number, out: number, inDur = 14, outDur = 12) {
-  if (frame < at || frame > out + outDur) return 0;
+  // progress 已按 TEMPO 放慢，退场窗口要按放慢后的长度判断
+  if (frame < at || frame > out + outDur * TEMPO) return 0;
   return (
     easeOutCubic(progress(frame, at, at + inDur)) *
     (1 - easeInOutCubic(progress(frame, out, out + outDur)))
