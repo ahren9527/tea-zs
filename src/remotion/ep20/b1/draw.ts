@@ -1,6 +1,6 @@
 /**
  * 第 20 期 B1「存·撬·醒」逐帧画布（1080×1920）。导出走这里；Comp.tsx 的预览也直接调用它。
- * 一条竹青竖线从上往下长出来当「目录」，三件小物（棉纸饼 / 茶针 / 紫砂罐）依次落位，
+ * 一条竹青竖线从上往下长出来当「目录」（不加小字，画面只留三字三物），三件小物（棉纸饼 / 茶针 / 紫砂罐）依次落位，
  * 存 / 撬 / 醒 随口播重重砸下（加速下落 + 压扁回弹 + 墨晕），镜头跟着往下走。
  */
 import {
@@ -11,7 +11,6 @@ import {
   easeInOutCubic,
   easeOutCubic,
   heavyLand,
-  lightFloat,
   progress,
   springValue,
   steamWisps,
@@ -19,7 +18,6 @@ import {
 } from "@/remotion/shared/fx";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
-  KAI,
   SONG,
   allTextsOf,
   beginFrame,
@@ -34,7 +32,6 @@ import {
   CHAR_X,
   DROP,
   HITS,
-  LEAD_AT,
   LENGTH,
   OBJ_LEAD,
   OBJ_X,
@@ -73,7 +70,6 @@ export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: Ani
   renderLayers(ctx, frame, pal, cam, {
     leaves: 5,
     subject: (p) => drawSubject(ctx, frame, p, params, fontScale),
-    text: (p) => drawLead(ctx, frame, p, params, fontScale),
   });
 }
 
@@ -196,27 +192,6 @@ function drawSubject(
       tp,
       { width: 9, color: pal.cinnabar, seed: 10 + i, tail: 0.5 },
     );
-  });
-}
-
-function drawLead(
-  ctx: CanvasRenderingContext2D,
-  frame: number,
-  pal: FxPalette,
-  params: AnimParams,
-  fontScale: number,
-) {
-  const l = frame - LEAD_AT;
-  if (l <= 0) return;
-  const txt = t(params, "lead");
-  const fs = fitSize(txt, 56, 360) * fontScale;
-  const pose = lightFloat(l, { rise: 14, sway: 1.5, seed: 1 });
-  inkText(ctx, txt, SPINE_X - 92, 640 + pose.y, fs, easeOutCubic(progress(l, 0, 18)), 31, {
-    color: pal.inkSoft,
-    weight: 500,
-    vertical: true,
-    font: KAI,
-    wash: 0.04,
   });
 }
 

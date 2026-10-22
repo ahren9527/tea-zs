@@ -311,19 +311,17 @@ function drawTopView(
   // 标注：铝箔袋
   const bl = frame - (BAG_DONE - 2);
   if (bl > 0) {
-    const tip = { x: CAKE.x + BAG.w / 2 - 8, y: CAKE.y + 260 };
+    // 和「棉纸」同一套版式：字在上方，引线从字底出发斜向下指进袋角，线不穿字
+    const tip = { x: CAKE.x + BAG.w / 2 - 46, y: CAKE.y + 250 };
     const lx = 984;
-    const ly = 1060;
     const txt = t(params, "bag");
     const fs = fitSize(txt, 54, 300) * fontScale;
+    const half = (Array.from(txt).length * fs * 1.06) / 2;
+    const ly = tip.y - 150 - half;
     const lp = easeInOutCubic(progress(bl, 4, 18));
     drawBrushStroke(
       ctx,
-      [
-        { x: lx - 4, y: ly - (Array.from(txt).length * fs * 1.06) / 2 - 16 },
-        { x: lx - 30, y: tip.y + 10 },
-        tip,
-      ],
+      [{ x: lx - 6, y: ly + half + 14 }, { x: lx - 40, y: tip.y - 30 }, tip],
       lp,
       { width: 3.2, color: pal.inkSoft, seed: 8, tail: 0.6, head: 0.05 },
     );

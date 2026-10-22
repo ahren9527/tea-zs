@@ -15,7 +15,6 @@ export const voAt = makeVoAt(SCRIPT, CHARS_PER_SEC, VO_START_SEC);
 
 // ---------------- 默认文案（面板可改） ----------------
 export const TEXT = {
-  lead: "一口气讲完",
   c1: "存",
   c2: "撬",
   c3: "醒",
@@ -25,7 +24,6 @@ export type TextKey = keyof typeof TEXT;
 // ---------------- 时间轴（帧） ----------------
 export const LENGTH = framesOf(4.8);
 export const SPINE_AT = framesOf(0.05); // 竹青竖线生长
-export const LEAD_AT = voAt("一口气") - 2; // 小字「一口气讲完」
 /** 三个字：物先到（提前 OBJ_LEAD 帧），字随口播砸下 */
 export const OBJ_LEAD = 11;
 export const HITS = [voAt("存"), voAt("撬"), voAt("醒")] as const;
@@ -41,7 +39,6 @@ export const CHAR_SIZE = 300;
 // ---------------- 音效（public/tea/sfx/） ----------------
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/paper.wav", at: LEAD_AT, volume: 0.3 },
     { src: "tea/sfx/wood.wav", at: HITS[0] - OBJ_LEAD + 9, volume: 0.3 },
     { src: "tea/sfx/wood-stamp.wav", at: HITS[0], volume: 0.5 },
     { src: "tea/sfx/tok.wav", at: HITS[1] - OBJ_LEAD + 8, volume: 0.36 },
