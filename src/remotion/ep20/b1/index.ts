@@ -1,7 +1,7 @@
 import { defineClip } from "@/remotion/shared/define-clip";
 import { ensureFonts } from "@/templates/fonts";
 import { sec } from "../kit/draw-kit";
-import { HITS, LENGTH, TEXT, sfxHits } from "./data";
+import { HITS, FILM_NOTE, LENGTH, VO, TEXT, sfxHits } from "./data";
 import { Comp } from "./Comp";
 import { allTexts, draw } from "./draw";
 
@@ -10,12 +10,13 @@ export default defineClip({
   episode: 20,
   code: "B1",
   title: "存·撬·醒",
-  note: "开场尾句：棉纸饼 / 茶针 / 紫砂罐先落位，「存 撬 醒」随口播砸下竖排一列 · 约6.2秒",
+  note: "开场尾句：棉纸饼 / 茶针 / 紫砂罐先落位，「存 撬 醒」随口播砸下竖排一列 · " + FILM_NOTE,
   exportName: "正上茶舍_20_B1_存撬醒.mp4",
   Comp,
   draw,
   duration: () => LENGTH,
   sfx: sfxHits,
+  refVo: { src: "tea/vo/ep20.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
   markers: [
     { frame: HITS[0], timeSec: sec(HITS[0]), label: "存", tag: "存", type: "stamp" },

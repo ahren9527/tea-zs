@@ -24,6 +24,8 @@ import { SchemaForm } from "@/components/studio/schema-form";
 import { TemplatePicker } from "@/components/studio/template-picker";
 import { ExportDialog } from "@/components/export-dialog";
 import { RemotionStage } from "@/components/remotion-stage";
+import { RefVoAudio } from "@/components/ref-vo-audio";
+import { refVoOf } from "@/remotion/shared/define-clip";
 import { PlayerTimeline } from "@/components/studio/player-timeline";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { STATIC_MODE } from "@/lib/static-mode";
@@ -64,6 +66,8 @@ function Home() {
   const [playId, setPlayId] = useState(1);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isLoop, setIsLoop] = useState(true);
+  /** 参考口播（只在预览里放，导出不带） */
+  const [refVoOn, setRefVoOn] = useState(false);
   const [tab, setTab] = useState<"content" | "timing">("content");
   const [picker, setPicker] = useState<null | "add" | "change">(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -393,6 +397,22 @@ function Home() {
               onLoopToggle={() => setIsLoop((v) => !v)}
               onReplay={replay}
             />
+          )}
+          {resolved && refVoOf(resolved.clip) && (
+            <div className="flex items-center gap-2 text-xs text-chrome-muted">
+              <button
+                type="button"
+                aria-pressed={refVoOn}
+                onClick={() => setRefVoOn((v) => !v)}
+                className={`rounded-md border px-2.5 py-1 font-medium ${refVoOn ? "border-moss-fg/50 bg-moss/40 text-moss-fg" : "border-chrome-line text-chrome-muted hover:text-chrome-fg"}`}
+              >
+                参考口播 {refVoOn ? "开" : "关"}
+              </button>
+              <span className="truncate">
+                同步播放马老师口播 {refVoOf(resolved.clip)!.startSec.toFixed(1)}s 起的这一段 · 只在预览里，导出不带
+              </span>
+              <RefVoAudio player={player} refVo={refVoOf(resolved.clip)} enabled={refVoOn} playbackRate={playbackRate} />
+            </div>
           )}
         </section>
 

@@ -1,5 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { makeVoAt, voSeconds } from "../kit/draw-kit";
+import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
  * 第 20 期 B3「工具」（约 15.0 秒）
@@ -11,11 +11,20 @@ import { makeVoAt, voSeconds } from "../kit/draw-kit";
  */
 export const SCRIPT =
   "再说撬。茶针，找松散的缝下手；茶刀，顺着纹理走；茶锥，专治压得特别紧的饼。别用菜刀，也别上手掰。硬砍硬掰，叶片一碎，饼就白压了。";
-/** 语速（字/秒）。52 字 ≈ 13.7 秒（客户要求放慢：原 4.5） */
+/** 退路语速（字/秒）：真实口播里找不到某个词时（比如改了 SCRIPT）才按它推算 */
 export const CHARS_PER_SEC = 3.8;
-/** 口播在本片段里的起点（秒）。配音整体偏移只改这里 */
-export const VO_START_SEC = 0;
-export const voAt = makeVoAt(SCRIPT, CHARS_PER_SEC, VO_START_SEC);
+/** 片段起点比第一个字提前多少秒（物件先落定） */
+export const LEAD_SEC = 0.5;
+/** 口播整体偏移（秒，正数 = 字往后挪）。听着字和画面差一点就只改这里 */
+export const OFFSET_SEC = 0;
+/** 按马老师真实口播（ASR 逐字时间）对齐 */
+export const VO = makeVoAtFromTimes("b3", {
+  script: SCRIPT,
+  leadSec: LEAD_SEC,
+  offsetSec: OFFSET_SEC,
+  fallbackCps: CHARS_PER_SEC,
+});
+export const voAt = VO.voAt;
 
 // ---------------- 默认文案（面板可改） ----------------
 export const TEXT = {
@@ -30,19 +39,21 @@ export type TextKey = keyof typeof TEXT;
 // ---------------- 时间轴（帧） ----------------
 /** 口播结束后再停 END_HOLD_SEC 秒（含收尾动作 + 约 0.7 秒留白，方便剪映里剪/加速） */
 export const END_HOLD_SEC = 1.35;
-export const LENGTH = framesOf(VO_START_SEC + voSeconds(SCRIPT, CHARS_PER_SEC) + END_HOLD_SEC);
+export const LENGTH = VO.lengthOf(END_HOLD_SEC);
+/** 在成片里的位置（写进面板 note） */
+export const FILM_NOTE = VO.filmNote(END_HOLD_SEC);
 export const CLOTH_AT = framesOf(0.05); // 茶巾铺开
 /** 三件工具：落下（名字随口播）→ 用途动作 */
 export const TOOL_AT = [voAt("茶针") - 7, voAt("茶刀") - 7, voAt("茶锥") - 7] as const;
 export const USE_AT = [voAt("松散"), voAt("纹理"), voAt("压得")] as const;
-export const TOOLS_OUT = voAt("别用") - 4; // 三件工具退开
+export const TOOLS_OUT = voAt("别用") - 14; // 三件工具退开（「别用菜刀」连得紧，先腾干净）
 export const NO_AT = voAt("别用"); // 「别用」
 export const CLEAVER_AT = voAt("菜刀") - 8;
 export const CLEAVER_X_AT = voAt("菜刀") + 5;
 export const HAND_AT = voAt("上手") - 6;
 export const HAND_X_AT = voAt("掰") + 2;
 export const CAKE_AT = voAt("硬掰") - 4; // 一块饼落下（手上的叉看清后再换）
-export const CRACK_AT = voAt("叶片"); // 裂纹生长
+export const CRACK_AT = voAt("叶片") - 18; // 裂纹先长（真实口播「叶片一碎」很快，裂和碎至少隔 0.6 秒）
 export const BREAK_AT = voAt("一碎"); // 碎开、碎叶四散
 export const WASTE_AT = voAt("白压"); // 「饼就白压了」（碎叶落定）
 

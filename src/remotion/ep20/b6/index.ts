@@ -8,6 +8,8 @@ import {
   DROP_AT,
   JAR_AT,
   KEY_AT,
+  FILM_NOTE,
+  VO,
   LENGTH,
   LID_CLOSE_AT,
   TEXT,
@@ -22,12 +24,15 @@ export default defineClip({
   episode: 20,
   code: "B6",
   title: "醒",
-  note: "一周量茶块 · 先别急喝 · 落进紫砂罐盖好 · 避光 · 一天一划 3–7 天 · 香气升起 · 干醒 · 约17.9秒",
+  note:
+    "一周量茶块 · 先别急喝 · 落进紫砂罐盖好 · 避光 · 一天一划 3–7 天 · 香气升起 · 干醒 · " +
+    FILM_NOTE,
   exportName: "正上茶舍_20_B6_醒.mp4",
   Comp,
   draw,
   duration: () => LENGTH,
   sfx: sfxHits,
+  refVo: { src: "tea/vo/ep20.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
   markers: [
     { frame: WAIT_AT, timeSec: sec(WAIT_AT), label: "先别急", tag: "拦", type: "punchline" },
@@ -40,13 +45,11 @@ export default defineClip({
     { frame: KEY_AT, timeSec: sec(KEY_AT), label: "干醒", tag: "干醒", type: "punchline" },
   ],
   fields: [
-    { key: "portion", label: "分量（竖排）", default: TEXT.portion, placeholder: TEXT.portion },
+    { key: "portion", label: "分量（顶部大字）", default: TEXT.portion, placeholder: TEXT.portion },
     { key: "wait", label: "拦一句", default: TEXT.wait, placeholder: TEXT.wait },
-    { key: "jar", label: "罐子标注", default: TEXT.jar, placeholder: TEXT.jar },
     { key: "dark", label: "避光", default: TEXT.dark, placeholder: TEXT.dark },
     { key: "daysNum", label: "天数（数字）", default: TEXT.daysNum, placeholder: TEXT.daysNum },
     { key: "daysUnit", label: "天数单位", default: TEXT.daysUnit, placeholder: TEXT.daysUnit },
     { key: "key", label: "关键词（竖排大字）", default: TEXT.key, placeholder: TEXT.key },
-    { key: "keySub", label: "关键词小字", default: TEXT.keySub, placeholder: TEXT.keySub },
   ],
 });

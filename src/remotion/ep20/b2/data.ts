@@ -1,5 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { makeVoAt, voSeconds } from "../kit/draw-kit";
+import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
  * 第 20 期 B2「存」（约 16.5 秒）
@@ -9,11 +9,20 @@ import { makeVoAt, voSeconds } from "../kit/draw-kit";
  */
 export const SCRIPT =
   "饼茶自带一层棉纸，别撕，留着。外面再套密封袋或铝箔袋。放哪？就六个字：避光，离地，离墙。只要没异味、不受潮，整饼密封存着，转化稳了，风险也低了。";
-/** 语速（字/秒）。58 字 ≈ 15.3 秒（客户要求放慢：原 4.5） */
+/** 退路语速（字/秒）：真实口播里找不到某个词时（比如改了 SCRIPT）才按它推算 */
 export const CHARS_PER_SEC = 3.8;
-/** 口播在本片段里的起点（秒）。配音整体偏移只改这里 */
-export const VO_START_SEC = 0;
-export const voAt = makeVoAt(SCRIPT, CHARS_PER_SEC, VO_START_SEC);
+/** 片段起点比第一个字提前多少秒（物件先落定） */
+export const LEAD_SEC = 0.5;
+/** 口播整体偏移（秒，正数 = 字往后挪）。听着字和画面差一点就只改这里 */
+export const OFFSET_SEC = 0;
+/** 按马老师真实口播（ASR 逐字时间）对齐 */
+export const VO = makeVoAtFromTimes("b2", {
+  script: SCRIPT,
+  leadSec: LEAD_SEC,
+  offsetSec: OFFSET_SEC,
+  fallbackCps: CHARS_PER_SEC,
+});
+export const voAt = VO.voAt;
 
 // ---------------- 默认文案（面板可改） ----------------
 export const TEXT = {
@@ -30,13 +39,16 @@ export type TextKey = keyof typeof TEXT;
 // ---------------- 时间轴（帧） ----------------
 /** 口播结束后再停 END_HOLD_SEC 秒（含收尾动作 + 约 0.7 秒留白，方便剪映里剪/加速） */
 export const END_HOLD_SEC = 1.2;
-export const LENGTH = framesOf(VO_START_SEC + voSeconds(SCRIPT, CHARS_PER_SEC) + END_HOLD_SEC);
+export const LENGTH = VO.lengthOf(END_HOLD_SEC);
+/** 在成片里的位置（写进面板 note） */
+export const FILM_NOTE = VO.filmNote(END_HOLD_SEC);
 export const CAKE_DROP_AT = framesOf(0.1);
 export const CAKE_FALL = 11;
 export const PAPER_LABEL_AT = voAt("棉纸") - 8; // 大字「棉纸」（「别撕」落下时退掉）
 export const TEAR_AT = voAt("别撕") - 6; // 纸被揭起一角
 export const CROSS_AT = voAt("别撕") + 1; // 朱砂叉 + 「别撕」
-export const KEEP_AT = voAt("留着"); // 纸抚平 + 「留着」
+/** 纸抚平（口播里「别撕，留着」连得很紧：至少让叉先停 0.6 秒） */
+export const KEEP_AT = Math.max(voAt("留着"), CROSS_AT + 18);
 export const BAG_AT = voAt("外面") - 2; // 铝箔袋从上滑下
 export const BAG_DONE = voAt("密封袋") + 8;
 export const SEAL_AT = voAt("铝箔袋") + 2; // 封口压合

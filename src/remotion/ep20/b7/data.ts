@@ -1,5 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
-import { makeVoAt, voSeconds } from "../kit/draw-kit";
+import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
  * 第 20 期 B7「收尾」（约 20.9 秒）
@@ -13,12 +13,21 @@ import { makeVoAt, voSeconds } from "../kit/draw-kit";
  */
 export const SCRIPT =
   "整饼这边，撬完马上包好，密封放回去，别敞着。撬时不伤叶，醒后才更香。说到撬饼，你出过什么糗？饼碎了还是扎到手了？评论区说说。新茶老茶塞一个箱子，会出什么事？要分开放吗？下期见。";
-/** 语速（字/秒）。74 字 ≈ 19.5 秒（客户要求放慢：原 4.5） */
+/** 退路语速（字/秒）：真实口播里找不到某个词时（比如改了 SCRIPT）才按它推算 */
 export const CHARS_PER_SEC = 3.8;
-/** 口播在本片段里的起点（秒）。配音整体偏移只改这里 */
-export const VO_START_SEC = 0;
-export const voAt = makeVoAt(SCRIPT, CHARS_PER_SEC, VO_START_SEC);
-export const CHAR_FRAMES = framesOf(1 / CHARS_PER_SEC);
+/** 片段起点比第一个字提前多少秒（物件先落定） */
+export const LEAD_SEC = 0.5;
+/** 口播整体偏移（秒，正数 = 字往后挪）。听着字和画面差一点就只改这里 */
+export const OFFSET_SEC = 0;
+/** 按马老师真实口播（ASR 逐字时间）对齐 */
+export const VO = makeVoAtFromTimes("b7", {
+  script: SCRIPT,
+  leadSec: LEAD_SEC,
+  offsetSec: OFFSET_SEC,
+  fallbackCps: CHARS_PER_SEC,
+});
+export const voAt = VO.voAt;
+export const CHAR_FRAMES = framesOf(1 / VO.cps);
 
 // ---------------- 默认文案（面板可改） ----------------
 export const TEXT = {
@@ -37,7 +46,9 @@ export type TextKey = keyof typeof TEXT;
 // ---------------- 时间轴（帧） ----------------
 /** 口播结束后再停 END_HOLD_SEC 秒（含收尾动作 + 约 0.7 秒留白，方便剪映里剪/加速） */
 export const END_HOLD_SEC = 1.45;
-export const LENGTH = framesOf(VO_START_SEC + voSeconds(SCRIPT, CHARS_PER_SEC) + END_HOLD_SEC);
+export const LENGTH = VO.lengthOf(END_HOLD_SEC);
+/** 在成片里的位置（写进面板 note） */
+export const FILM_NOTE = VO.filmNote(END_HOLD_SEC);
 // A 包好封上
 export const CAKE_AT = framesOf(0.05);
 export const WRAP_AT = voAt("包好") - 8; // 四角依次折起

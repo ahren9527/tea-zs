@@ -1,7 +1,7 @@
 import { defineClip } from "@/remotion/shared/define-clip";
 import { ensureFonts } from "@/templates/fonts";
 import { sec } from "../kit/draw-kit";
-import { LENGTH, P1_AT, P2_AT, SEAL_HIT, SHEET_AT, TEXT, sfxHits } from "./data";
+import { FILM_NOTE, LENGTH, VO, P1_AT, P2_AT, SEAL_HIT, SHEET_AT, TEXT, sfxHits } from "./data";
 import { Comp } from "./Comp";
 import { allTexts, draw } from "./draw";
 
@@ -10,12 +10,13 @@ export default defineClip({
   episode: 20,
   code: "B5",
   title: "口诀",
-  note: "宣纸条幅 · 顺纹借力 / 够喝一周 逐字晕开 · 朱印「快取快封」砸下 · 约6.6秒",
+  note: "宣纸条幅 · 顺纹借力 / 够喝一周 逐字晕开 · 朱印「快取快封」砸下 · " + FILM_NOTE,
   exportName: "正上茶舍_20_B5_口诀.mp4",
   Comp,
   draw,
   duration: () => LENGTH,
   sfx: sfxHits,
+  refVo: { src: "tea/vo/ep20.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
   markers: [
     { frame: SHEET_AT, timeSec: sec(SHEET_AT), label: "条幅落定", tag: "入场", type: "intro" },

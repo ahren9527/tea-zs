@@ -7,6 +7,8 @@ import {
   COMMENT_AT,
   GOLD1_AT,
   JAR1_AT,
+  FILM_NOTE,
+  VO,
   LENGTH,
   OPT1_AT,
   OPT2_AT,
@@ -24,12 +26,15 @@ export default defineClip({
   episode: 20,
   code: "B7",
   title: "收尾",
-  note: "整饼包好盖「封」· 金句竖排「撬时不伤叶 / 醒后才更香」· 两列竖排「饼碎了 / 扎到手」· 下期：新茶老茶 / 要不要分开放？· 朱印下期见 · 约20.9秒",
+  note:
+    "整饼包好盖「封」· 金句竖排「撬时不伤叶 / 醒后才更香」· 两列竖排「饼碎了 / 扎到手」· 下期：新茶老茶 / 要不要分开放？· 朱印下期见 · " +
+    FILM_NOTE,
   exportName: "正上茶舍_20_B7_收尾.mp4",
   Comp,
   draw,
   duration: () => LENGTH,
   sfx: sfxHits,
+  refVo: { src: "tea/vo/ep20.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
   markers: [
     { frame: WRAP_AT, timeSec: sec(WRAP_AT), label: "包好", tag: "包", type: "action" },

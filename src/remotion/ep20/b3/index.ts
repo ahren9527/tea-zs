@@ -5,6 +5,8 @@ import {
   BREAK_AT,
   CLEAVER_X_AT,
   HAND_X_AT,
+  FILM_NOTE,
+  VO,
   LENGTH,
   NO_AT,
   TEXT,
@@ -20,12 +22,15 @@ export default defineClip({
   episode: 20,
   code: "B3",
   title: "工具",
-  note: "茶巾正中一次一件：茶针找缝 / 茶刀顺纹 / 茶锥压紧 · 别用：菜刀、徒手依次挨朱砂叉 · 饼碎叶散「碎」 · 约15.0秒",
+  note:
+    "茶巾正中一次一件：茶针找缝 / 茶刀顺纹 / 茶锥压紧 · 别用：菜刀、徒手依次挨朱砂叉 · 饼碎叶散「碎」 · " +
+    FILM_NOTE,
   exportName: "正上茶舍_20_B3_工具.mp4",
   Comp,
   draw,
   duration: () => LENGTH,
   sfx: sfxHits,
+  refVo: { src: "tea/vo/ep20.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
   markers: [
     { frame: TOOL_AT[0], timeSec: sec(TOOL_AT[0]), label: "茶针", tag: "茶针", type: "action" },

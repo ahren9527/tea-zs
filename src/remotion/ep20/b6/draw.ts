@@ -2,6 +2,7 @@
  * 第 20 期 B6「醒」逐帧画布（1080×1920）。导出走这里；Comp.tsx 的预览也直接调用它。
  * 茶块浮着（一周量）→ 茶杯凑过来、朱砂一笔拦回（先别急）→ 紫砂罐落下、掀盖、茶块划弧落进罐口、盖子重落 →
  * 暗影从左扫过（避光）→ 昼夜明暗交替、墨笔一天一划（三实四虚：3–7 天）→ 盖子掀开一线、香气升起 → 「干醒」。
+ * 文字只用顶部一个焦点位（一次一个大字）+ 最后的竖排「干醒」，没有小字。
  */
 import {
   cameraAt,
@@ -26,7 +27,6 @@ import {
 } from "../kit/fx";
 import { STAGE, type AnimParams } from "@/remotion/shared/theme";
 import {
-  KAI,
   SONG,
   allTextsOf,
   beginFrame,
@@ -54,9 +54,9 @@ import {
   DROP_DUR,
   JAR,
   JAR_AT,
-  JAR_LABEL_AT,
   KEY_AT,
-  KEY_SUB_AT,
+  KEY_MARK_AT,
+  HERO,
   LENGTH,
   LID_CLOSE_AT,
   LID_UP_AT,
@@ -429,6 +429,37 @@ function drawCupStory(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalet
 }
 
 // ---------------- 文字带 ----------------
+/** 顶部焦点位的一行大字（横排），退场在 out 开始、按放慢后的时长淡完 */
+function heroWord(
+  ctx: CanvasRenderingContext2D,
+  frame: number,
+  txt: string,
+  at: number,
+  out: number,
+  size: number,
+  seed: number,
+  color: string,
+  fontScale: number,
+) {
+  const a = life(frame, at, out, 12, OUT_DUR);
+  if (a <= 0) return;
+  const fs = fitSize(txt, size, 820) * fontScale;
+  const pose = lightFloat(frame - at, { rise: 12, sway: 1, seed });
+  ctx.save();
+  ctx.globalAlpha = a;
+  inkText(ctx, txt, HERO.x, HERO.y + pose.y, fs, easeOutCubic(progress(frame - at, 0, 14)), seed, {
+    color,
+    weight: 900,
+    font: SONG,
+    wash: 0.03,
+  });
+  ctx.restore();
+}
+
+/** 大字退场帧数（放慢前）；下一个大字到来前 OUT_LEAD 帧就开始退，保证同一时刻只有一个 */
+const OUT_DUR = 10;
+const OUT_LEAD = Math.round(OUT_DUR * 1.3) + 1;
+
 function drawTextBand(
   ctx: CanvasRenderingContext2D,
   frame: number,
@@ -436,119 +467,90 @@ function drawTextBand(
   params: AnimParams,
   fontScale: number,
 ) {
-  // 一周量（竖排，左侧）
+  // 顶部焦点位：一周量 → 先别急 → 避光 → 3–7天，前一个退掉下一个才来
+  heroWord(
+    ctx,
+    frame,
+    t(params, "portion"),
+    PORTION_AT,
+    WAIT_AT - OUT_LEAD,
+    HERO.size,
+    171,
+    pal.ink,
+    fontScale,
+  );
+  heroWord(
+    ctx,
+    frame,
+    t(params, "wait"),
+    WAIT_AT,
+    CUP_OUT + 4,
+    HERO.size + 10,
+    173,
+    pal.cinnabar,
+    fontScale,
+  );
+  heroWord(
+    ctx,
+    frame,
+    t(params, "dark"),
+    DARK_AT,
+    DAYS_AT - OUT_LEAD,
+    HERO.size + 10,
+    177,
+    pal.ink,
+    fontScale,
+  );
+  // 3–7 天（数字和「天」都是大字，整组居中）
   {
-    const a = life(frame, PORTION_AT, DROP_AT, 14, 12);
-    if (a > 0) {
-      const txt = t(params, "portion");
-      const fs = fitSize(txt, 76, 330, 1.06) * fontScale;
-      const pose = lightFloat(frame - PORTION_AT, { rise: 12, sway: 1.5, seed: 1 });
-      ctx.save();
-      ctx.globalAlpha = a;
-      inkText(
-        ctx,
-        txt,
-        200,
-        700 + pose.y,
-        fs,
-        easeOutCubic(progress(frame - PORTION_AT, 0, 16)),
-        171,
-        { color: pal.ink, weight: 700, font: KAI, vertical: true },
-      );
-      ctx.restore();
-    }
-  }
-  // 先别急
-  {
-    const a = life(frame, WAIT_AT, CUP_OUT + 4, 10, 12);
-    if (a > 0) {
-      const txt = t(params, "wait");
-      const fs = fitSize(txt, 140, 600) * fontScale;
-      ctx.save();
-      ctx.globalAlpha = a;
-      inkText(ctx, txt, 560, 340, fs, easeOutCubic(progress(frame - WAIT_AT, 0, 12)), 173, {
-        color: pal.cinnabar,
-        weight: 900,
-        font: SONG,
-        wash: 0.02,
-      });
-      ctx.restore();
-    }
-  }
-  // 陶罐 · 紫砂罐（罐子左侧，小字）
-  {
-    const a = life(frame, JAR_LABEL_AT, DARK_AT + 4, 14, 12);
-    if (a > 0) {
-      const txt = t(params, "jar");
-      const fs = fitSize(txt, 52, 560, 1.06) * fontScale;
-      ctx.save();
-      ctx.globalAlpha = a;
-      inkText(ctx, txt, 210, 1150, fs, easeOutCubic(progress(frame - JAR_LABEL_AT, 0, 16)), 175, {
-        color: pal.inkSoft,
-        weight: 600,
-        font: KAI,
-        vertical: true,
-      });
-      ctx.restore();
-    }
-  }
-  // 避光
-  {
-    const a = life(frame, DARK_AT + 4, DAYS_AT + 2, 12, 10);
-    if (a > 0) {
-      const txt = t(params, "dark");
-      const fs = fitSize(txt, 140, 600) * fontScale;
-      ctx.save();
-      ctx.globalAlpha = a;
-      inkText(ctx, txt, 540, 360, fs, easeOutCubic(progress(frame - DARK_AT - 4, 0, 12)), 177, {
-        color: pal.ink,
-        weight: 900,
-        font: SONG,
-        wash: 0.03,
-      });
-      ctx.restore();
-    }
-  }
-  // 3–7 天
-  {
-    const a = life(frame, DAYS_AT + 4, AROMA_AT + 14, 12, 14);
+    const at = DAYS_AT;
+    const a = life(frame, at, AROMA_AT + 14, 12, 14);
     if (a > 0) {
       const num = t(params, "daysNum");
       const unit = t(params, "daysUnit");
-      const fs = fitSize(num, 170, 520, 0.62) * fontScale;
-      const pose = lightFloat(frame - DAYS_AT - 4, { rise: 12, sway: 1, seed: 7 });
+      const fs = fitSize(num, 230, 560, 0.62) * fontScale;
+      const ufs = Math.max(150, fs * 0.8);
+      const nw = Array.from(num).length * fs * 0.6;
+      const uw = Array.from(unit).length * ufs;
+      const gap = 24;
+      const x0 = HERO.x - (nw + gap + uw) / 2;
+      const pose = lightFloat(frame - at, { rise: 12, sway: 1, seed: 7 });
       ctx.save();
       ctx.globalAlpha = a;
       inkText(
         ctx,
         num,
-        500,
-        380 + pose.y,
+        x0 + nw / 2,
+        HERO.y + 10 + pose.y,
         fs,
-        easeOutCubic(progress(frame - DAYS_AT - 4, 0, 14)),
+        easeOutCubic(progress(frame - at, 0, 14)),
         179,
-        { color: pal.ink, weight: 900, font: SONG, wash: 0.03 },
+        {
+          color: pal.ink,
+          weight: 900,
+          font: SONG,
+          wash: 0.03,
+        },
       );
-      const nw = Array.from(num).length * fs * 0.6;
       inkText(
         ctx,
         unit,
-        500 + nw / 2 + 60,
-        420 + pose.y,
-        fs * 0.42,
-        easeOutCubic(progress(frame - DAYS_AT - 4, 6, 18)),
+        x0 + nw + gap + uw / 2,
+        HERO.y + 10 + fs * 0.06 + pose.y,
+        ufs,
+        easeOutCubic(progress(frame - at, 6, 18)),
         181,
-        { color: pal.inkSoft, weight: 700, font: KAI },
+        { color: pal.ink, weight: 900, font: SONG },
       );
       ctx.restore();
     }
   }
-  // 干醒（竖排大字，左侧）+ 小字
+  // 干醒（竖排大字，左侧）；说到「少不了」时旁边一道朱砂竖笔，不加字
   {
     const l = frame - KEY_AT;
     if (l > 0) {
       const txt = t(params, "key");
-      const fs = fitSize(txt, 230, 560, 1.06) * fontScale;
+      const fs = fitSize(txt, 250, 600, 1.06) * fontScale;
       const pose = lightFloat(l, { rise: 16, sway: 1.2, seed: 9 });
       inkText(ctx, txt, 250, 820 + pose.y, fs, easeOutCubic(progress(l, 0, 18)), 183, {
         color: pal.ink,
@@ -557,19 +559,20 @@ function drawTextBand(
         vertical: true,
         wash: 0.035,
       });
-      const sl = frame - KEY_SUB_AT;
-      if (sl > 0) {
-        const sub = t(params, "keySub");
-        const sfs = fitSize(sub, 54, 420, 1.06) * fontScale;
-        inkText(
+      const ml = frame - KEY_MARK_AT;
+      if (ml > 0) {
+        const n = Math.max(1, Array.from(txt).length);
+        const half = ((n - 1) * fs * 1.06) / 2 + fs * 0.45;
+        const x = 250 + fs * 0.62 + 20;
+        drawBrushStroke(
           ctx,
-          sub,
-          250 + fs * 0.62 + 34,
-          820 + fs * 0.35,
-          sfs,
-          easeOutCubic(progress(sl, 0, 16)),
-          185,
-          { color: pal.cinnabar, weight: 700, font: KAI, vertical: true },
+          [
+            { x: x + 4, y: 820 - half + pose.y },
+            { x: x - 4, y: 820 + pose.y },
+            { x: x + 2, y: 820 + half + pose.y },
+          ],
+          easeOutCubic(progress(ml, 0, 16)),
+          { width: 14, color: pal.cinnabar, seed: 186, tail: 0.4, jitter: 0.25 },
         );
       }
     }

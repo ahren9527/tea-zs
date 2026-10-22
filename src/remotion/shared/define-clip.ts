@@ -29,7 +29,19 @@ export type ClipModule = ClipDef & {
   markers: KeyframeMarker[];
   /** 可选：同一期里的排序（默认按 code 自然排序：B1 < B2 < B4-1 < B10） */
   order?: number;
+  /**
+   * 可选：参考口播（只在面板预览里同步播放，永远不进导出）。
+   * src 相对 public/，startSec = 本片段第 0 帧对应整条口播的秒数。
+   */
+  refVo?: RefVo;
 };
+
+export type RefVo = { src: string; startSec: number };
+
+/** 取片段的参考口播（模板片段 / 旧片段没有就是 undefined） */
+export function refVoOf(clip: ClipDef | undefined | null): RefVo | undefined {
+  return (clip as (ClipDef & { refVo?: RefVo }) | undefined | null)?.refVo;
+}
 
 export type ClipInput = Omit<ClipModule, "folder" | "fields" | "markers"> & {
   /** 默认由 catalog 按文件夹路径自动填 */
