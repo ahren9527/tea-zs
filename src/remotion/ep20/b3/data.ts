@@ -1,4 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
+import { foley } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -69,18 +70,18 @@ export const WORD = { x: 540, y: 700, size: 230 };
 export const TOP_WORD = { x: 540, y: 330, size: 220 };
 export const CAKE = { x: 540, y: 980, r: 250 };
 
-// ---------------- 音效（public/tea/sfx/） ----------------
+// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
+// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/paper.wav", at: CLOTH_AT + 2, volume: 0.3 },
-    { src: "tea/sfx/tok.wav", at: TOOL_AT[0] + 8, volume: 0.42 },
-    { src: "tea/sfx/tok.wav", at: TOOL_AT[1] + 8, volume: 0.46 },
-    { src: "tea/sfx/wood.wav", at: TOOL_AT[2] + 8, volume: 0.42 },
-    { src: "tea/sfx/wood-stamp.wav", at: CLEAVER_AT + 9, volume: 0.48 },
-    { src: "tea/sfx/stamp.wav", at: CLEAVER_X_AT, volume: 0.4 },
-    { src: "tea/sfx/stamp.wav", at: HAND_X_AT, volume: 0.4 },
-    { src: "tea/sfx/wood.wav", at: CAKE_AT + 10, volume: 0.4 },
-    { src: "tea/sfx/tea-rustle-hiss.wav", at: CRACK_AT, volume: 0.38 },
-    { src: "tea/sfx/pop3.wav", at: BREAK_AT, volume: 0.5 },
+    foley("clothUnroll", CLOTH_AT + 2, { volume: 0.7 }), // 茶巾铺开
+    // 三件工具：只给用途动作配音（落下不配）
+    foley("needlePierce", USE_AT[0] + 4, { volume: 0.85, variant: 0 }), // 茶针扎缝
+    foley("needleScrape", USE_AT[1] + 2, { volume: 0.45 }), // 茶刀顺纹推（刮声压低）
+    foley("needlePierce", USE_AT[2] + 1, { volume: 0.75, variant: 1, rate: 0.9 }), // 茶锥拧进（另一变体、略低沉）
+    // 菜刀 / 徒手挨叉：朱砂标记不配音
+    foley("cakeThud", CAKE_AT + 10, { volume: 0.7 }), // 一块饼落下
+    foley("cakeCrack", BREAK_AT), // 硬掰：碎
+    foley("leafScatter", BREAK_AT + 5, { volume: 0.5 }), // 碎叶四散（附属声，跟在后面、减半）
   ];
 }

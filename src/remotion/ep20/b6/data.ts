@@ -1,4 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
+import { foley } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -68,18 +69,15 @@ export const CHUNK_HOME = { x: 590, y: 760, scale: 1.1 };
 export const CUP = { x: 880, y: 1000 };
 export const TALLY = { x0: 340, y: 660, step: 82 };
 
-// ---------------- 音效（public/tea/sfx/） ----------------
+// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
+// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/tea-rustle-hiss.wav", at: CHUNK_AT + 2, volume: 0.24 },
-    { src: "tea/sfx/stamp.wav", at: WAIT_AT + 4, volume: 0.36 },
-    { src: "tea/sfx/wood.wav", at: JAR_AT + 9, volume: 0.42 },
-    { src: "tea/sfx/pop1.wav", at: DROP_AT + DROP_DUR, volume: 0.42 },
-    { src: "tea/sfx/wood-lock.wav", at: LID_CLOSE_AT + 5, volume: 0.56 },
-    { src: "tea/sfx/abacus-slide.wav", at: DARK_AT, volume: 0.3 },
-    { src: "tea/sfx/scale-a.wav", at: DAYS_AT + 2, volume: 0.24 },
-    { src: "tea/sfx/scale-b.wav", at: DAYS_AT + DAY_FRAMES * 2 + 2, volume: 0.24 },
-    { src: "tea/sfx/ethereal-breeze.wav", at: AROMA_AT, volume: 0.36 },
-    { src: "tea/sfx/celadon-chime.wav", at: KEY_AT + 2, volume: 0.34 },
+    // 茶块浮入 / 茶杯被朱砂拦回：不配音
+    foley("jarLid", JAR_AT + 9, { volume: 0.45, variant: 1 }), // 紫砂罐落定（轻碰）
+    foley("cakeThud", DROP_AT + DROP_DUR, { volume: 0.5 }), // 茶块落进罐里（闷、轻）
+    foley("jarLid", LID_CLOSE_AT + 5, { volume: 0.95, variant: 0 }), // 盖子重落（主动作）
+    // 暗影 / 一天一划 / 香气 / 「干醒」：不配音，留给口播
+    foley("jarLid", WAKE_AT + 2, { volume: 0.3, variant: 1, rate: 1.06 }), // 盖子掀开一线（极轻）
   ];
 }

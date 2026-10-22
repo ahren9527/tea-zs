@@ -1,4 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
+import { brandHit, foley } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -54,12 +55,14 @@ export const COL_Y = [700, 860] as const;
 export const COL_SIZE = 138;
 export const SEAL_POS = { x: 336, y: 1210, size: 290 };
 
-// ---------------- 音效（public/tea/sfx/） ----------------
+// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
+// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/paper.wav", at: SHEET_AT + 4, volume: 0.34 },
-    { src: "tea/sfx/wood-stamp.wav", at: P1_AT + 2, volume: 0.4 },
-    { src: "tea/sfx/wood-stamp.wav", at: P2_AT + 2, volume: 0.42 },
-    { src: "tea/sfx/stamp.wav", at: SEAL_HIT, volume: 0.66 },
+    foley("scrollUnroll", SHEET_AT + 1, { volume: 0.6 }), // 条幅落定
+    foley("paperweight", SHEET_AT + 17, { volume: 0.75 }), // 镇纸压住（两根只配第一根）
+    // 口诀一 / 二逐字晕开：文字不配音
+    foley("sealWood", SEAL_HIT, { volume: 0.9 }), // 朱印「快取快封」砸下（接触帧）
+    brandHit(SEAL_HIT + 2), // 品牌声（本期两次之一：口诀落印）
   ];
 }

@@ -1,4 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
+import { foley } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -72,19 +73,16 @@ export const HERO = { x: 540, y: 330, size: 200 };
 /** 屋角段：避光 / 离地 / 离墙 三行大字，在窗右侧逐行落下 */
 export const ROOM_WORDS = { x: 690, y: 450, size: 170, step: 196 };
 
-// ---------------- 音效（public/tea/sfx/） ----------------
+// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
+// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/wood.wav", at: CAKE_DROP_AT + CAKE_FALL, volume: 0.34 },
-    { src: "tea/sfx/paper.wav", at: TEAR_AT, volume: 0.44 },
-    { src: "tea/sfx/stamp.wav", at: CROSS_AT, volume: 0.42 },
-    { src: "tea/sfx/paper.wav", at: KEEP_AT, volume: 0.3 },
-    { src: "tea/sfx/tea-rustle-hiss.wav", at: BAG_AT, volume: 0.3 },
-    { src: "tea/sfx/airtight-seal.wav", at: SEAL_AT, volume: 0.5 },
-    { src: "tea/sfx/ethereal-breeze.wav", at: TILT_AT, volume: 0.22 },
-    { src: "tea/sfx/abacus-slide.wav", at: DARK_AT, volume: 0.36 },
-    { src: "tea/sfx/wood.wav", at: FLOOR_AT + 3, volume: 0.36 },
-    { src: "tea/sfx/slider-settle.wav", at: WALL_AT + 3, volume: 0.36 },
-    { src: "tea/sfx/celadon-chime.wav", at: CALM_AT, volume: 0.3 },
+    foley("cakeThud", CAKE_DROP_AT + CAKE_FALL, { volume: 0.85 }), // 棉纸饼落桌
+    foley("paperTear", TEAR_AT + 2, { volume: 0.7 }), // 想撕：纸被揭起一角（朱砂叉不配音）
+    foley("paperRustle", KEEP_AT, { volume: 0.55 }), // 纸抚平
+    foley("foilCrinkle", BAG_AT + 4, { volume: 0.7 }), // 铝箔袋滑下套住
+    foley("foilSeal", SEAL_AT, { volume: 0.9 }), // 封口一压
+    foley("whoosh", TILT_AT, { volume: 0.3 }), // 唯一一次大镜头：侧倒拉远进屋角
+    foley("scrollUnroll", DARK_AT, { volume: 0.45 }), // 竹帘落下（避光）；离地 / 离墙标尺与大字不配音
   ];
 }

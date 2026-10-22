@@ -1,4 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
+import { foley } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -49,14 +50,13 @@ export const ROW_Y = [470, 860, 1250] as const;
 export const OBJ_X = 818;
 export const CHAR_SIZE = 300;
 
-// ---------------- 音效（public/tea/sfx/） ----------------
+// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
+// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/wood.wav", at: HITS[0] - OBJ_LEAD + 9, volume: 0.3 },
-    { src: "tea/sfx/wood-stamp.wav", at: HITS[0], volume: 0.5 },
-    { src: "tea/sfx/tok.wav", at: HITS[1] - OBJ_LEAD + 8, volume: 0.36 },
-    { src: "tea/sfx/wood-stamp.wav", at: HITS[1], volume: 0.52 },
-    { src: "tea/sfx/wood-lock.wav", at: HITS[2] - OBJ_LEAD + 9, volume: 0.34 },
-    { src: "tea/sfx/stamp.wav", at: HITS[2], volume: 0.58 },
+    // 一字一物：棉纸饼落桌 / 茶针扎下 / 紫砂罐落定（物先到 OBJ_LEAD 帧，落定在大字砸下前 2–3 帧）
+    foley("cakeThud", HITS[0] - OBJ_LEAD + 9, { volume: 0.9 }),
+    foley("needlePierce", HITS[1] - OBJ_LEAD + 8, { volume: 0.75 }),
+    foley("jarLid", HITS[2] - OBJ_LEAD + 9, { volume: 0.8 }),
   ];
 }

@@ -32,6 +32,7 @@ export default defineClip({
   draw,
   duration: () => LENGTH,
   sfx: sfxHits,
+  ambience: true, // 整拍极低的茶室底噪（-40 LUFS），sfxHits 里不再写 roomBed()
   refVo: { src: "tea/vo/ep20.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
   markers: [

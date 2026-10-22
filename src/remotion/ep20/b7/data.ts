@@ -1,4 +1,5 @@
 import { framesOf } from "@/remotion/shared/theme";
+import { brandHit, foley } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
@@ -88,22 +89,18 @@ export const OPT_COLS = { x: [300, 780] as const, y: 470, size: 170, step: 180 }
 export const TEASER = { y: 340, size: 180, subY: 560, subSize: 130 };
 export const BYE = { x: 540, y: 1510, size: 210 };
 
-// ---------------- 音效（public/tea/sfx/） ----------------
+// ---------------- 音效（新物件库 sfx-lib；高级、克制：只给主动作，≤1 下 / 0.5 秒，打在接触帧） ----------------
+// 底噪在 index.ts 的 defineClip({ ambience }) 里开，这里不要再写 roomBed()。
 export function sfxHits(_staggerFrames: number) {
   return [
-    { src: "tea/sfx/wood.wav", at: CAKE_AT + 10, volume: 0.34 },
-    { src: "tea/sfx/paper.wav", at: WRAP_AT, volume: 0.44 },
-    { src: "tea/sfx/stamp.wav", at: SEAL_HIT, volume: 0.56 },
-    { src: "tea/sfx/paper.wav", at: GOLD1_AT, volume: 0.3 },
-    { src: "tea/sfx/celadon-chime.wav", at: GOLD2_AT + 10, volume: 0.32 },
-    { src: "tea/sfx/pop2.wav", at: PIECES_AT + 8, volume: 0.36 },
-    { src: "tea/sfx/tok.wav", at: NEEDLE_AT + 8, volume: 0.36 },
-    { src: "tea/sfx/ding.wav", at: OPT1_AT + 4, volume: 0.3 },
-    { src: "tea/sfx/ding.wav", at: OPT2_AT + 4, volume: 0.3 },
-    { src: "tea/sfx/wood.wav", at: JAR1_AT + 9, volume: 0.34 },
-    { src: "tea/sfx/wood.wav", at: JAR2_AT + 9, volume: 0.38 },
-    { src: "tea/sfx/wood-lock.wav", at: BOX_AT + 10, volume: 0.4 },
-    { src: "tea/sfx/slider-settle.wav", at: SPLIT_AT + 4, volume: 0.34 },
-    { src: "tea/sfx/stamp.wav", at: BYE_HIT, volume: 0.5 },
+    foley("cakeThud", CAKE_AT + 10, { volume: 0.8 }), // 缺角整饼落下
+    foley("paperRustle", WRAP_AT + 2, { volume: 0.65 }), // 棉纸四角折起包好
+    foley("sealWood", SEAL_HIT, { volume: 0.85 }), // 朱印「封」
+    brandHit(GOLD1_AT + 2), // 品牌声（本期两次之二：金句「撬时不伤叶 / 醒后才更香」，余韵盖住两句）
+    foley("leafScatter", PIECES_AT + 8, { volume: 0.4 }), // 碎饼落下（茶针 / 毛笔圈不配音）
+    foley("jarLid", JAR1_AT + 9, { volume: 0.45, variant: 0 }), // 新茶罐落定
+    foley("jarLid", JAR2_AT + 9, { volume: 0.5, variant: 1 }), // 老茶罐落定
+    foley("paperweight", BOX_AT + 10, { volume: 0.6 }), // 塞进木箱挤在一起（木面一闷）
+    foley("sealWood", BYE_HIT, { volume: 0.8 }), // 「下期见」落印（木印，不用品牌声）
   ];
 }
