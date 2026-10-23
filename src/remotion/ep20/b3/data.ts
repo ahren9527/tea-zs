@@ -5,7 +5,7 @@ import { makeVoAtFromTimes } from "../kit/vo";
 /**
  * 第 20 期 B3「工具」（约 15.0 秒）
  * 茶巾正中一次只放一件工具（茶针 / 茶刀 / 茶锥），落定后做一下自己的动作（扎缝 / 顺纹推 / 拧），
- * 上方只写一个大字（找缝 / 顺纹 / 压紧）；下一件落下时上一件连字一起退开。
+ * 上方只写一个大字（找缝 / 顺纹 / 专治紧饼）；下一件落下时上一件连字一起退开。
  * 「别用菜刀，也别上手掰」：大字「别用」，菜刀居中挨叉 → 退开 → 一只手居中挨叉；
  * 「硬砍硬掰，叶片一碎」：一块饼落下、裂开、碎叶四散，只有一个大字「碎」。
  * 版式原则（老板反馈）：不放小字；任一时刻只有一个焦点。
@@ -31,7 +31,7 @@ export const voAt = VO.voAt;
 export const TEXT = {
   u1: "找缝",
   u2: "顺纹",
-  u3: "压紧",
+  u3: "专治紧饼",
   no: "别用",
   broke: "碎",
 };
@@ -80,7 +80,7 @@ export function sfxHits(_staggerFrames: number) {
     ...mgLayer("poke", "needlePierce", USE_AT[0] + 4, { volume: 0.85, underVariant: 0 }), // 扎缝
     mg("dingE5", TOOL_AT[1] + 8, { volume: 0.4 }), // 茶刀落定 +「顺纹」
     ...mgLayer("scrape", "needleScrape", USE_AT[1] + 2, { volume: 0.6 }), // 顺纹推
-    mg("dingFs5", TOOL_AT[2] + 8, { volume: 0.4 }), // 茶锥落定 +「压紧」
+    mg("dingFs5", TOOL_AT[2] + 8, { volume: 0.4 }), // 茶锥落定 +「专治紧饼」
     ...mgLayer("ratchet", "needlePierce", USE_AT[2] + 1, { volume: 0.75, underVariant: 1 }), // 拧进
     mg("dingA5", NO_AT, { volume: 0.4 }), // 「别用」
     mg("swish", CLEAVER_X_AT, { volume: 0.5 }), // 菜刀挨叉（菜刀落下离叉 4 帧，不单配）
