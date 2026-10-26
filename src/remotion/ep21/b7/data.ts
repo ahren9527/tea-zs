@@ -52,7 +52,7 @@ export const VOTE_IN = GOLD_OUT + 8;
 export const OPT1_AT = voAt("混放派") - 2;
 export const OPT2_AT = voAt("分区派") - 2;
 // 两个选项都圈好后再停约 1 秒，到「三层包装法」前才退场
-export const VOTE_OUT = voAt("三层包装法") - 16;
+export const VOTE_OUT = voAt("三层包装法") - 12;
 
 // C 下期预告「三层包装法」
 export const TEASER_AT = voAt("三层包装法") - 4;
