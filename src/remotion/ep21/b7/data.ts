@@ -4,12 +4,12 @@ import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
  * 第 21 期 B7「收尾」（约 12.1 秒）
- * A 金句竖排对联：「年份分开装 / 香气不打架」（配 brandSignature 古筝+轻铃）
+ * A 金句竖排对联：「年份分开放 / 香气不打架」（配 brandSignature 古筝+轻铃）
  * B 二选一投票：「混放派 / 分区派」两列大字 + 下方混放/分区茶格示意，说到时毛笔圈住
  * C 下期预告：大字「三层包装法」+ 蜜韵茶饼三层护茶结构逐层包裹 → 抽掉一层出问号 → 朱印「下期见」
  */
 export const SCRIPT =
-  "年份分开装，香气不打架。你家茶柜是混放派，还是分区派？下期我们聊三层包装法，到底是哪三层？少一层会如何？下期见。";
+  "年份分开放，香气不打架。你家茶柜是混放派，还是分区派？下期我们聊三层包装法，到底是哪三层？少一层会如何？下期见。";
 export const CHARS_PER_SEC = 4.5;
 export const LEAD_SEC = 0.4;
 export const OFFSET_SEC = 0;
@@ -27,7 +27,7 @@ export const REVEAL_STEP = Math.min(CHAR_FRAMES, 5);
 
 // ---------------- 默认文案（面板可改） ----------------
 export const TEXT = {
-  gold1: "年份分开装",
+  gold1: "年份分开放",
   gold2: "香气不打架",
   opt1: "混放派",
   opt2: "分区派",
@@ -42,7 +42,7 @@ export const LENGTH = VO.lengthOf(END_HOLD_SEC);
 export const FILM_NOTE = VO.filmNote(END_HOLD_SEC);
 
 // A 金句
-export const GOLD1_AT = voAt("年份分开装") - 2;
+export const GOLD1_AT = voAt("年份分开放") - 2;
 export const GOLD2_AT = voAt("香气不打架") - 2;
 // 金句两联要完整同屏停留一会儿：一直留到说「混放派」前，再交给投票
 export const GOLD_OUT = voAt("混放派") - 16;
@@ -79,7 +79,7 @@ export const BYE_SEAL = { x: 540, y: 1430, size: 180 };
 export function sfxHits(_staggerFrames: number) {
   return [
     // A 金句
-    mg("dingE5", GOLD1_AT, { volume: 0.38 }), // 「年份分开装」
+    mg("dingE5", GOLD1_AT, { volume: 0.38 }), // 「年份分开放」
     ...brandSignature(GOLD2_AT + 2), // 「香气不打架」品牌签名（古筝 A4 + 轻铃 D6）
 
     // B 评论区投票

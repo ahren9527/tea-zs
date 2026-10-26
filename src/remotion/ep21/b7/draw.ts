@@ -1,6 +1,6 @@
 /**
  * 第 21 期 B7「收尾」逐帧画布（1080×1920）。
- * A 金句竖排对联「年份分开装 / 香气不打架」逐字晕开，旁配完整白茶芽叶与柔润茶香
+ * A 金句竖排对联「年份分开放 / 香气不打架」逐字晕开，旁配完整白茶芽叶与柔润茶香
  * B 二选一投票「混放派 / 分区派」两列竖排大字 + 下方混放茶格 vs 分区茶格，说到时毛笔圈住
  * C 下期预告：大字「三层包装法」+ 中心蜜韵茶饼外围三层包装环依次合拢 → 抽掉一层冒出朱砂问号 → 落印「下期见」
  */
@@ -102,7 +102,7 @@ export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: Ani
   });
 }
 
-// ================= A：金句「年份分开装，香气不打架」 =================
+// ================= A：金句「年份分开放，香气不打架」 =================
 function drawGoldPhase(
   ctx: CanvasRenderingContext2D,
   frame: number,
@@ -166,7 +166,7 @@ function drawGoldPhase(
     }
   });
 
-  // 两联之间一道竹青竖线（「年份分开装」呼应分界）
+  // 两联之间一道竹青竖线（「年份分开放」呼应分界）
   const lp = easeInOutCubic(progress(frame, GOLD1_AT + 6, GOLD2_AT + 18));
   drawBrushStroke(
     ctx,

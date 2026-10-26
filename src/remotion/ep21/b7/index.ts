@@ -23,7 +23,7 @@ export default defineClip({
   code: "B7",
   title: "收尾",
   note:
-    "金句「年份分开装，香气不打架」（古筝+轻铃）→ 投票「混放派 / 分区派」→ 下期预告「三层包装法」+ 印「下期见」 · " +
+    "金句「年份分开放，香气不打架」（古筝+轻铃）→ 投票「混放派 / 分区派」→ 下期预告「三层包装法」+ 印「下期见」 · " +
     FILM_NOTE,
   exportName: "正上茶舍_21_B7_收尾.mp4",
   Comp,
@@ -35,7 +35,7 @@ export default defineClip({
     {
       frame: GOLD1_AT,
       timeSec: sec(GOLD1_AT),
-      label: "年份分开装",
+      label: "年份分开放",
       tag: "金句上",
       type: "punchline",
     },
