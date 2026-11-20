@@ -22,7 +22,7 @@ import { CAKE_R, CAKE_SIL, paintCakeTexture } from "./cake";
 import { KAI, SONG, fillText, softShadow, tracePoly } from "./draw-kit";
 import { EMBLEM_GREEN, drawBrandEmblem } from "./emblem";
 
-const HEI = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
+const HEI = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Serif SC", sans-serif';
 
 // ============================================================================
 // 1. 正上茶舍「素雪 · 白牡丹-白茶」300g 实物还原茶饼
@@ -31,8 +31,8 @@ const HEI = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
 function drawSnowflake(c: CanvasRenderingContext2D, x: number, y: number, r: number) {
   c.save();
   c.translate(x, y);
-  c.strokeStyle = "#1f7a4d";
-  c.lineWidth = 2.4;
+  c.strokeStyle = "#1d4a33";
+  c.lineWidth = Math.max(2, r * 0.12);
   c.lineCap = "round";
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * TAU;
@@ -106,148 +106,327 @@ function paintSuxueWrapper(c: CanvasRenderingContext2D, pal: FxPalette, seed: nu
     c.stroke();
   }
 
-  // 外圈细淡金绿波折边饰（还原实拍纸面曲线框）
+  // ── 以下按实拍包装纸（uploads/素雪.webp）逐项还原，坐标以 R 为单位 ──
+
+  // 外圈墨绿细折线（包装纸上那道尖齿状的线框，从左侧绕过顶部到右下）
   c.save();
-  c.strokeStyle = rgba("#2f684e", 0.34);
-  c.lineWidth = 2.2;
+  c.strokeStyle = rgba("#55603f", 0.42);
+  c.lineWidth = 1.5;
+  c.lineJoin = "miter";
   c.beginPath();
-  for (let i = 0; i <= 48; i++) {
-    const a = (i / 48) * TAU;
-    const rr2 = R * (0.88 + 0.024 * Math.sin(i * 2.5));
+  const teeth = 10;
+  const a0 = Math.PI * 0.86;
+  const a1 = Math.PI * 2.32;
+  for (let i = 0; i <= teeth * 2; i++) {
+    const t = i / (teeth * 2);
+    const a = a0 + (a1 - a0) * t + (hash01(i, 41) - 0.5) * 0.05;
+    const tip = i % 2 === 0;
+    const rr2 = R * (tip ? 0.94 + 0.04 * hash01(i, 43) : 0.7 + 0.1 * hash01(i, 47));
     const px = Math.cos(a) * rr2;
     const py = Math.sin(a) * rr2;
     if (i === 0) c.moveTo(px, py);
     else c.lineTo(px, py);
   }
-  c.closePath();
   c.stroke();
   c.restore();
 
-  // 左上淡灰线描古塔剪影
+  const lineGray = rgba("#7d7d77", 0.27);
+  const lineGrayLt = rgba("#8f8f88", 0.18);
+
+  // 左上：淡灰线描楼阁（四层飞檐塔 + 下方殿宇与松枝）
   c.save();
-  c.strokeStyle = rgba("#8c8b85", 0.24);
-  c.lineWidth = 1.6;
-  const tx = -R * 0.42;
-  const ty = -R * 0.26;
-  for (let lvl = 0; lvl < 4; lvl++) {
-    const w = 52 - lvl * 9;
-    const y = ty - lvl * 24;
+  c.strokeStyle = lineGray;
+  c.lineWidth = 1.5;
+  c.lineJoin = "round";
+  const px0 = -R * 0.47;
+  const tiers = [
+    { y: -R * 0.24, w: R * 0.16 },
+    { y: -R * 0.38, w: R * 0.135 },
+    { y: -R * 0.51, w: R * 0.11 },
+    { y: -R * 0.62, w: R * 0.085 },
+  ];
+  tiers.forEach((t, i) => {
+    const h = R * (i === 3 ? 0.07 : 0.1);
+    // 飞檐（两端上翘）
     c.beginPath();
-    c.moveTo(tx - w, y);
-    c.quadraticCurveTo(tx, y - 10, tx + w, y);
-    c.lineTo(tx + w * 0.72, y - 18);
-    c.lineTo(tx - w * 0.72, y - 18);
+    c.moveTo(px0 - t.w * 1.18, t.y - R * 0.035);
+    c.quadraticCurveTo(px0 - t.w * 0.9, t.y, px0 - t.w * 0.55, t.y - R * 0.005);
+    c.lineTo(px0 + t.w * 0.55, t.y - R * 0.005);
+    c.quadraticCurveTo(px0 + t.w * 0.9, t.y, px0 + t.w * 1.18, t.y - R * 0.035);
+    c.lineTo(px0 + t.w * 0.62, t.y - R * 0.045);
+    c.lineTo(px0 - t.w * 0.62, t.y - R * 0.045);
     c.closePath();
     c.stroke();
-  }
+    // 塔身与窗格
+    c.strokeRect(px0 - t.w * 0.62, t.y + R * 0.005, t.w * 1.24, h - R * 0.02);
+    const cols = 4;
+    for (let k = 1; k < cols; k++) {
+      const x = px0 - t.w * 0.62 + (t.w * 1.24 * k) / cols;
+      c.beginPath();
+      c.moveTo(x, t.y + R * 0.01);
+      c.lineTo(x, t.y + h - R * 0.02);
+      c.stroke();
+    }
+  });
+  // 塔刹
   c.beginPath();
-  c.moveTo(tx, ty - 96);
-  c.lineTo(tx, ty - 118);
+  c.moveTo(px0, -R * 0.665);
+  c.lineTo(px0, -R * 0.74);
   c.stroke();
+  c.beginPath();
+  c.arc(px0, -R * 0.7, R * 0.012, 0, TAU * 0.9995);
+  c.stroke();
+  // 下方殿宇屋脊与台基
+  c.strokeStyle = lineGrayLt;
+  c.beginPath();
+  c.moveTo(-R * 0.86, -R * 0.08);
+  c.quadraticCurveTo(-R * 0.72, -R * 0.12, -R * 0.62, -R * 0.15);
+  c.lineTo(-R * 0.32, -R * 0.15);
+  c.quadraticCurveTo(-R * 0.24, -R * 0.12, -R * 0.18, -R * 0.1);
+  c.moveTo(-R * 0.84, -R * 0.02);
+  c.lineTo(-R * 0.2, -R * 0.02);
+  c.moveTo(-R * 0.82, R * 0.05);
+  c.lineTo(-R * 0.3, R * 0.05);
+  c.stroke();
+  for (let k = 0; k < 10; k++) {
+    const x = -R * 0.8 + k * R * 0.055;
+    c.beginPath();
+    c.moveTo(x, -R * 0.02);
+    c.lineTo(x, R * 0.05);
+    c.stroke();
+  }
+  // 松枝（几簇短横笔）
+  const pr = rng(91 + seed);
+  for (let k = 0; k < 4; k++) {
+    const bx = -R * (0.74 - k * 0.04);
+    const by = -R * (0.3 - k * 0.05);
+    for (let j = 0; j < 5; j++) {
+      c.beginPath();
+      const yy = by + j * R * 0.014;
+      c.moveTo(bx - R * 0.05 * pr(), yy);
+      c.lineTo(bx + R * 0.05 * pr(), yy - R * 0.006);
+      c.stroke();
+    }
+  }
   c.restore();
 
-  // 右下淡灰牡丹花瓣暗纹
+  // 右侧：淡灰线描大牡丹（外圈大花瓣 + 内圈杯状花瓣 + 叶片）
   c.save();
-  c.strokeStyle = rgba("#8c8b85", 0.22);
-  c.lineWidth = 1.5;
-  for (let p = 0; p < 7; p++) {
-    const a = -0.3 + p * 0.42;
+  c.strokeStyle = lineGray;
+  c.lineWidth = 1.4;
+  c.lineCap = "round";
+  const fx0 = R * 0.62;
+  const fy0 = R * 0.14;
+  const petalArc = (cx: number, cy: number, rx: number, ry: number, rot: number, scallops: number) => {
+    // 一片花瓣：上缘是几段小波浪，下缘收向花心
+    c.save();
+    c.translate(cx, cy);
+    c.rotate(rot);
     c.beginPath();
-    c.ellipse(
-      R * 0.48 + Math.cos(a) * 34,
-      R * 0.22 + Math.sin(a) * 34,
-      36,
-      19,
-      a,
-      0,
-      TAU * 0.9995,
-    );
+    c.moveTo(-rx, 0);
+    for (let k = 0; k < scallops; k++) {
+      const x0 = -rx + (2 * rx * k) / scallops;
+      const x1 = -rx + (2 * rx * (k + 1)) / scallops;
+      const yy = -ry * Math.sin(Math.PI * ((k + 0.5) / scallops));
+      c.quadraticCurveTo((x0 + x1) / 2, yy - ry * 0.28, x1, -ry * Math.sin(Math.PI * ((k + 1) / scallops)));
+    }
+    c.quadraticCurveTo(rx * 0.4, ry * 0.5, 0, ry * 0.55);
+    c.quadraticCurveTo(-rx * 0.4, ry * 0.5, -rx, 0);
+    c.stroke();
+    // 花瓣脉络
+    c.beginPath();
+    for (let k = -1; k <= 1; k++) {
+      c.moveTo(k * rx * 0.15, ry * 0.4);
+      c.lineTo(k * rx * 0.45, -ry * 0.55);
+    }
+    c.stroke();
+    c.restore();
+  };
+  // 外圈
+  for (let k = 0; k < 6; k++) {
+    const a = -Math.PI / 2 + (k / 6) * TAU + 0.3;
+    petalArc(fx0 + Math.cos(a) * R * 0.17, fy0 + Math.sin(a) * R * 0.13, R * 0.13, R * 0.1, a + Math.PI / 2, 4);
+  }
+  // 内圈
+  for (let k = 0; k < 4; k++) {
+    const a = -Math.PI / 2 + (k / 4) * TAU;
+    petalArc(fx0 + Math.cos(a) * R * 0.07, fy0 + Math.sin(a) * R * 0.05, R * 0.08, R * 0.065, a + Math.PI / 2, 3);
+  }
+  // 叶片
+  c.strokeStyle = lineGrayLt;
+  for (const [lx, ly, la] of [
+    [R * 0.34, R * 0.38, 2.6],
+    [R * 0.78, R * 0.42, 0.75],
+  ] as const) {
+    c.beginPath();
+    c.ellipse(lx, ly, R * 0.14, R * 0.05, la, 0, TAU * 0.9995);
+    c.stroke();
+    c.beginPath();
+    c.moveTo(lx - Math.cos(la) * R * 0.13, ly - Math.sin(la) * R * 0.13);
+    c.lineTo(lx + Math.cos(la) * R * 0.13, ly + Math.sin(la) * R * 0.13);
     c.stroke();
   }
   c.restore();
 
-  // 底部淡灰远山剪影
+  // 底部：淡灰线描远山（几道山脊 + 皴纹）
   c.save();
-  c.fillStyle = rgba("#90938c", 0.22);
+  c.strokeStyle = lineGray;
+  c.lineWidth = 1.5;
+  const ridge = [
+    [-0.52, 0.6], [-0.4, 0.5], [-0.32, 0.54], [-0.22, 0.46], [-0.12, 0.52],
+    [-0.02, 0.48], [0.1, 0.43], [0.2, 0.5], [0.3, 0.47], [0.42, 0.58],
+  ];
   c.beginPath();
-  c.moveTo(-R * 0.56, R * 0.62);
-  c.lineTo(-R * 0.3, R * 0.47);
-  c.lineTo(-R * 0.1, R * 0.56);
-  c.lineTo(R * 0.08, R * 0.43);
-  c.lineTo(R * 0.28, R * 0.54);
-  c.lineTo(R * 0.52, R * 0.62);
-  c.closePath();
-  c.fill();
-  c.restore();
-
-  // 顶部「正上茶舍」Logo + 品牌字
-  drawBrandEmblem(c, 0, -R * 0.765, R * 0.25);
-  fillText(c, "正上茶舍", 0, -R * 0.57, 27, { color: EMBLEM_GREEN, weight: 900, font: SONG, spacing: 1.12 });
-
-  // 环绕翠绿飘逸曲线 + 右上绿雪花
-  c.save();
-  c.strokeStyle = rgba("#2ea365", 0.62);
-  c.lineWidth = 2.6;
-  c.beginPath();
-  c.moveTo(-R * 0.68, R * 0.06);
-  c.bezierCurveTo(-R * 0.42, -R * 0.42, R * 0.48, -R * 0.46, R * 0.56, -R * 0.1);
-  c.bezierCurveTo(R * 0.62, R * 0.16, -R * 0.12, R * 0.22, -R * 0.46, R * 0.12);
+  ridge.forEach(([x, y], i) => (i ? c.lineTo(x * R, y * R) : c.moveTo(x * R, y * R)));
   c.stroke();
+  c.strokeStyle = lineGrayLt;
+  for (let i = 1; i < ridge.length - 1; i++) {
+    const [x, y] = ridge[i];
+    for (let k = 0; k < 3; k++) {
+      c.beginPath();
+      c.moveTo(x * R + k * R * 0.012, y * R + R * 0.01);
+      c.lineTo(x * R + k * R * 0.02 - R * 0.025, y * R + R * 0.07);
+      c.stroke();
+    }
+  }
   c.restore();
-  drawSnowflake(c, R * 0.42, -R * 0.34, 21);
 
-  // 中心烫翠绿大字「素雪」
-  const jadeGrad = c.createLinearGradient(-R * 0.45, -R * 0.2, R * 0.45, R * 0.12);
-  jadeGrad.addColorStop(0, "#1c7a49");
-  jadeGrad.addColorStop(0.35, "#5ce096");
-  jadeGrad.addColorStop(0.55, "#15683d");
-  jadeGrad.addColorStop(0.82, "#4ed086");
-  jadeGrad.addColorStop(1, "#18643c");
+  // 顶部「正上茶舍」Logo + 品牌字（字间竖线）+ 拼音
+  drawBrandEmblem(c, -R * 0.08, -R * 0.86, R * 0.2);
+  {
+    const fs = R * 0.078;
+    const step = fs * 1.32;
+    const chs = ["正", "上", "茶", "舍"];
+    const by = -R * 0.705;
+    const bx = -R * 0.08;
+    chs.forEach((ch, i) => {
+      const x = bx + (i - 1.5) * step;
+      fillText(c, ch, x, by, fs, { color: EMBLEM_GREEN, weight: 900, font: HEI });
+      if (i < 3) {
+        c.fillStyle = EMBLEM_GREEN;
+        c.fillRect(x + step / 2 - 1.2, by - fs * 0.5, 2.4, fs);
+      }
+    });
+    fillText(c, "-zheng shang cha she-", bx, -R * 0.645, R * 0.036, {
+      color: EMBLEM_GREEN,
+      weight: 600,
+      font: `italic ${SONG}`,
+    });
+  }
+
+  // 环绕「素雪」的两道翠绿细飘带（左端起笔，绕过字顶，右端回旋后从字下扫回左侧）
   c.save();
-  c.shadowColor = rgba("#144c2e", 0.22);
-  c.shadowBlur = 4;
-  c.shadowOffsetY = 2;
+  c.lineCap = "round";
+  const swirl = (dy: number, color: string, w: number) => {
+    c.strokeStyle = color;
+    c.lineWidth = w;
+    c.beginPath();
+    c.moveTo(-R * 0.74, R * (0.06 + dy));
+    c.bezierCurveTo(-R * 0.5, -R * (0.24 - dy), R * 0.1, -R * (0.33 - dy), R * 0.56, -R * (0.34 - dy));
+    c.bezierCurveTo(R * 0.76, -R * (0.34 - dy), R * 0.72, -R * (0.12 - dy), R * 0.5, -R * (0.04 - dy));
+    c.bezierCurveTo(R * 0.2, R * (0.1 + dy), -R * 0.3, R * (0.12 + dy), -R * 0.72, R * (0.14 + dy));
+    c.stroke();
+  };
+  swirl(0, rgba("#25a85a", 0.75), 2.2);
+  swirl(0.025, rgba("#6fd99a", 0.55), 1.4);
+  c.restore();
+
+  // 右上雪花（墨绿，带一点浅绿）
+  drawSnowflake(c, R * 0.47, -R * 0.46, R * 0.07);
+
+  // 中心烫翠绿大字「素雪」（细笔画现代字形，镭射金属绿）
+  const jadeGrad = c.createLinearGradient(-R * 0.55, -R * 0.35, R * 0.45, R * 0.15);
+  jadeGrad.addColorStop(0, "#36c46e");
+  jadeGrad.addColorStop(0.3, "#9af2bb");
+  jadeGrad.addColorStop(0.48, "#16a04e");
+  jadeGrad.addColorStop(0.7, "#7ae8a4");
+  jadeGrad.addColorStop(1, "#139148");
+  c.save();
+  c.shadowColor = rgba("#0f5a30", 0.18);
+  c.shadowBlur = 3;
+  c.shadowOffsetY = 1.5;
   c.fillStyle = jadeGrad;
-  c.font = `700 132px ${SONG}`;
+  c.font = `500 ${Math.round(R * 0.46)}px ${HEI}`;
   c.textAlign = "center";
   c.textBaseline = "middle";
-  c.fillText("素雪", 2, -R * 0.06);
+  c.fillText("素", -R * 0.31, -R * 0.1);
+  c.fillText("雪", R * 0.17, -R * 0.1);
   c.restore();
 
-  // 左侧「一叶倾心」
-  fillText(c, "一叶", -R * 0.58, R * 0.22, 26, { color: "#1d6c44", weight: 700, font: KAI });
-  fillText(c, "倾心", -R * 0.54, R * 0.32, 26, { color: "#1d6c44", weight: 700, font: KAI });
+  // 左侧手写「一叶倾心」
+  fillText(c, "一叶", -R * 0.69, R * 0.25, R * 0.105, { color: "#22382b", weight: 400, font: KAI });
+  fillText(c, "倾心", -R * 0.62, R * 0.355, R * 0.105, { color: "#22382b", weight: 400, font: KAI });
 
-  // 中下「白牡丹-白茶」与净含量
-  fillText(c, "白牡丹-白茶", 0, R * 0.32, 34, { color: "#2b2a26", weight: 700, font: SONG, spacing: 1.05 });
-  fillText(c, "净含量:300克", 0, R * 0.62, 21, { color: "#3d3b36", weight: 600, font: HEI });
+  // 「白牡丹-白茶」
+  fillText(c, "白牡丹-白茶", -R * 0.04, R * 0.355, R * 0.1, { color: "#4a4944", weight: 700, font: SONG });
 
-  // 底部墨绿弧形丝带（两端翠绿燕尾）
-  c.save();
-  c.strokeStyle = "#3ba953";
-  c.lineWidth = 34;
-  c.lineCap = "butt";
-  c.beginPath();
-  c.arc(0, -R * 0.02, R * 0.78, Math.PI * 0.24, Math.PI * 0.76);
-  c.stroke();
-
-  c.strokeStyle = "#164d36";
-  c.lineWidth = 30;
-  c.beginPath();
-  c.arc(0, -R * 0.02, R * 0.78, Math.PI * 0.28, Math.PI * 0.72);
-  c.stroke();
-
-  c.strokeStyle = rgba("#e4cf9b", 0.72);
-  c.lineWidth = 2;
-  c.beginPath();
-  c.arc(0, -R * 0.02, R * 0.78 - 14, Math.PI * 0.28, Math.PI * 0.72);
-  c.stroke();
-  c.beginPath();
-  c.arc(0, -R * 0.02, R * 0.78 + 14, Math.PI * 0.28, Math.PI * 0.72);
-  c.stroke();
-
-  fillText(c, "SUXUE · WHITE TEA", 0, R * 0.76, 17, { color: "#f4efe4", weight: 700, font: HEI });
-  c.restore();
+  // 底部墨绿弧形丝带：两端翠绿燕尾 → 墨绿主带（上下细亮边）→ 白色英文
+  {
+    const cy = -R * 0.1;
+    const rMid = R * 0.9;
+    const half = R * 0.075;
+    const aL = Math.PI / 2 + 0.74;
+    const aR = Math.PI / 2 - 0.74;
+    // 燕尾：两端翠绿旗形，压在主带下面向外上方竖起，顶端剪出燕尾缺口
+    const flag = (sx: number) => {
+      const P = (x: number, y: number): [number, number] => [sx * x * R, y * R];
+      const body = [P(0.5, 0.7), P(0.66, 0.62), P(0.75, 0.43), P(0.69, 0.47), P(0.61, 0.41), P(0.52, 0.55)];
+      c.fillStyle = "#3cb54d";
+      c.beginPath();
+      body.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
+      c.closePath();
+      c.fill();
+      // 靠主带一侧的折痕暗面
+      const fold = [P(0.5, 0.7), P(0.58, 0.665), P(0.56, 0.56), P(0.52, 0.55)];
+      c.fillStyle = "#237a3a";
+      c.beginPath();
+      fold.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
+      c.closePath();
+      c.fill();
+    };
+    flag(-1);
+    flag(1);
+    // 主带
+    c.strokeStyle = "#174f37";
+    c.lineWidth = half * 2;
+    c.lineCap = "butt";
+    c.beginPath();
+    c.arc(0, cy, rMid, aR, aL);
+    c.stroke();
+    // 上下细亮边
+    c.strokeStyle = rgba("#d9f2df", 0.85);
+    c.lineWidth = 1.6;
+    for (const off of [-half + 4, half - 4]) {
+      c.beginPath();
+      c.arc(0, cy, rMid + off, aR + 0.01, aL - 0.01);
+      c.stroke();
+    }
+    // 英文沿弧排字（白色窄体粗字）
+    const label = "SUXUE-BAI MUDAN WHITE TEA";
+    const fs = R * 0.064;
+    c.save();
+    c.fillStyle = "#f6f7f2";
+    c.font = `800 ${Math.round(fs)}px ${HEI}`;
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    const widths = [...label].map((ch) => c.measureText(ch).width * 0.82);
+    const total = widths.reduce((s, w) => s + w, 0);
+    let acc = -total / 2;
+    [...label].forEach((ch, i) => {
+      const mid = acc + widths[i] / 2;
+      acc += widths[i];
+      const a = Math.PI / 2 - mid / rMid;
+      c.save();
+      c.translate(Math.cos(a) * rMid, cy + Math.sin(a) * rMid);
+      c.rotate(a - Math.PI / 2);
+      c.scale(0.82, 1);
+      c.fillText(ch, 0, 0);
+      c.restore();
+    });
+    c.restore();
+    // 净含量（主带上方白底处）
+    fillText(c, "净含量:300克", -R * 0.04, R * 0.665, R * 0.058, { color: "#1e1e1c", weight: 700, font: HEI });
+  }
 
   // 左上窗光微明暗体积感
   const vol = c.createRadialGradient(-R * 0.35, -R * 0.38, R * 0.05, 0, 0, R * 1.02);
