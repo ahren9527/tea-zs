@@ -4,6 +4,7 @@
  * 说到「三层 / 各管 / 一件事」：三团淡墨依次在纸上洇开（每一层各占一列）→
  * 「封住气」「挡住光」「护住形」毛笔楷书逐字落在各自那团墨里 → 左下朱印「三层护茶」。
  */
+import { getIconImage } from "@/remotion/shared/icon-cache";
 import {
   TAU,
   cameraAt,
@@ -89,9 +90,26 @@ export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: Ani
 }
 
 /* ───────── 远山薄雾（背景层，随镜头慢视差） ───────── */
+/** 远山：用户给的水墨远山图（透明底），未加载时退回程序画的山脊。 */
+export const MOUNT_SRC = "tea/ep22/b7-mountains.png";
+export const NODE_IMAGES = [MOUNT_SRC];
+
 function drawMountains(ctx: CanvasRenderingContext2D, frame: number, pal: FxPalette) {
   const a = easeOutCubic(progress(frame, MOUNT_AT, MOUNT_AT + 40));
   if (a <= 0) return;
+  const img = getIconImage(MOUNT_SRC);
+  if (img && img.complete && img.naturalWidth > 0) {
+    // 从下方淡入并缓缓上浮；整段极慢地横向漂移，像薄雾里看山
+    const w = 1080 * 1.03;
+    const h = (img.naturalHeight / img.naturalWidth) * w;
+    const drift = -14 * (frame / 260);
+    const rise = (1 - a) * 40;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.drawImage(img, (1080 - w) / 2 + 8 + drift, 1920 - h + 20 + rise, w, h);
+    ctx.restore();
+    return;
+  }
   const ink = mixHex(pal.ink, "#5d5a55", 0.4);
   const ridges = [
     { base: 1500, amp: 120, freq: 0.0032, seed: 11, alpha: 0.08, x0: -80 },

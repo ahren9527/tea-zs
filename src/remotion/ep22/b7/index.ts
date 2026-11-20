@@ -1,9 +1,10 @@
+import { preloadIconList } from "@/remotion/shared/icon-cache";
 import { defineClip } from "@/remotion/shared/define-clip";
 import { ensureFonts } from "@/templates/fonts";
 import { sec } from "../kit/draw-kit";
 import { FILM_NOTE, LENGTH, P1_AT, P2_AT, P3_AT, SEAL_HIT, TEXT, VO, sfxHits } from "./data";
 import { Comp } from "./Comp";
-import { BRUSH_FONT, allTexts, draw } from "./draw";
+import { BRUSH_FONT, MOUNT_SRC, allTexts, draw } from "./draw";
 
 export default defineClip({
   id: "ep22-b7",
@@ -20,6 +21,7 @@ export default defineClip({
   prepare: async (params) => {
     const text = allTexts(params);
     await ensureFonts(text);
+    await preloadIconList([MOUNT_SRC]);
     // 毛笔楷书（马善政，OFL）：canvas 不会自己触发字体下载，先手动加载
     if (typeof document !== "undefined" && document.fonts) {
       await Promise.race([

@@ -20,49 +20,13 @@ import {
 } from "@/remotion/shared/fx";
 import { CAKE_R, CAKE_SIL, paintCakeTexture } from "./cake";
 import { KAI, SONG, fillText, softShadow, tracePoly } from "./draw-kit";
+import { EMBLEM_GREEN, drawBrandEmblem } from "./emblem";
 
 const HEI = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
 
 // ============================================================================
 // 1. 正上茶舍「素雪 · 白牡丹-白茶」300g 实物还原茶饼
 // ============================================================================
-
-function drawZhengEmblem(c: CanvasRenderingContext2D, x: number, y: number, s: number) {
-  c.save();
-  c.translate(x, y);
-  c.scale(s, s);
-  c.strokeStyle = "#1f5a3e";
-  c.lineWidth = 4.2;
-  c.lineCap = "round";
-  c.lineJoin = "round";
-  // 茶杯/壶廓「正」字意象
-  c.beginPath();
-  c.moveTo(-26, -18);
-  c.lineTo(18, -18);
-  c.moveTo(-22, -18);
-  c.quadraticCurveTo(-24, 18, 0, 20);
-  c.quadraticCurveTo(22, 18, 22, -8);
-  c.stroke();
-  // 「正」内部横竖笔
-  c.beginPath();
-  c.moveTo(-12, -18);
-  c.lineTo(-12, 10);
-  c.moveTo(-12, -4);
-  c.lineTo(10, -4);
-  c.moveTo(0, -18);
-  c.lineTo(0, 12);
-  c.moveTo(-16, 12);
-  c.lineTo(14, 12);
-  c.stroke();
-  // 右上暖金茶烟一缕
-  c.strokeStyle = "#b5853a";
-  c.lineWidth = 3.2;
-  c.beginPath();
-  c.moveTo(16, -12);
-  c.bezierCurveTo(28, -20, 20, -30, 28, -34);
-  c.stroke();
-  c.restore();
-}
 
 function drawSnowflake(c: CanvasRenderingContext2D, x: number, y: number, r: number) {
   c.save();
@@ -217,8 +181,8 @@ function paintSuxueWrapper(c: CanvasRenderingContext2D, pal: FxPalette, seed: nu
   c.restore();
 
   // 顶部「正上茶舍」Logo + 品牌字
-  drawZhengEmblem(c, 0, -R * 0.76, 0.92);
-  fillText(c, "正上茶舍", 0, -R * 0.57, 27, { color: "#2b4638", weight: 700, font: SONG, spacing: 1.08 });
+  drawBrandEmblem(c, 0, -R * 0.765, R * 0.25);
+  fillText(c, "正上茶舍", 0, -R * 0.57, 27, { color: EMBLEM_GREEN, weight: 900, font: SONG, spacing: 1.12 });
 
   // 环绕翠绿飘逸曲线 + 右上绿雪花
   c.save();

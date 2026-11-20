@@ -231,7 +231,7 @@ function drawSubject(
     });
     ctx.restore();
 
-    brushRing(ctx, 226, 1095, 182, 92, progress(thL, 5, 19), pal.cinnabar, 67, 7);
+    brushRing(ctx, 222, 1095, 150, 86, progress(thL, 5, 19), pal.cinnabar, 67, 7);
 
     // 指向袋子加厚左侧热封边的放大厚度标尺（留在安全区底缘 1340 << 1620）
     const edgeX = bagCx - 290 * bagScale;

@@ -28,3 +28,8 @@ export function preloadIconList(paths: string[]): Promise<void> {
     ),
   ).then(() => undefined);
 }
+
+/** 离线渲染（node）时手动放入已解码的图片。 */
+export function setIconImage(src: string, img: HTMLImageElement) {
+  iconCache.set(src, img);
+}
