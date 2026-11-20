@@ -47,7 +47,8 @@ if (fontDir) {
     if (/wenkai/i.test(f)) {
       GlobalFonts.registerFromPath(p, "ZS WenKai");
       GlobalFonts.registerFromPath(p, "LXGW WenKai");
-    } else if (/serif/i.test(f)) GlobalFonts.registerFromPath(p, "Noto Serif SC");
+    } else if (/mashan/i.test(f)) GlobalFonts.registerFromPath(p, "Ma Shan Zheng");
+    else if (/serif/i.test(f)) GlobalFonts.registerFromPath(p, "Noto Serif SC");
   }
 }
 
