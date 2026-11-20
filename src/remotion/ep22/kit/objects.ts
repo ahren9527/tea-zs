@@ -519,48 +519,79 @@ export function drawPeBag(
   ctx.stroke();
 
   if (mode === "ziplock") {
-    // 拉链自封条（老化时中间裂开缝隙并冒出慢漏气丝）
+    // 拉链自封条（老化时中间裂开微缝、胶条微卷裂纹，并冒出慢漏气丝与淡潮气点）
     const zy = y0 + 54;
-    const gap = leak * 12;
-    ctx.strokeStyle = leak > 0.1 ? pal.cinnabar : mixHex(pal.tea, "#7b8c98", 0.5);
-    ctx.lineWidth = 5;
+    const gap = leak * 14;
+    const railColor = leak > 0.1 ? pal.cinnabar : mixHex(pal.tea, "#7b8c98", 0.5);
+
+    ctx.strokeStyle = railColor;
+    ctx.lineWidth = 5.2;
+    ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.moveTo(x0 + 14, zy - gap * 0.4);
-    ctx.quadraticCurveTo(0, zy - gap * 1.4, x0 + w - 14, zy - gap * 0.4);
+    ctx.moveTo(x0 + 14, zy - gap * 0.35);
+    ctx.quadraticCurveTo(0, zy - gap * 1.45, x0 + w - 14, zy - gap * 0.35);
     ctx.stroke();
 
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = 3.8;
     ctx.beginPath();
-    ctx.moveTo(x0 + 14, zy + 9 + gap * 0.4);
-    ctx.quadraticCurveTo(0, zy + 9 + gap * 1.2, x0 + w - 14, zy + 9 + gap * 0.4);
+    ctx.moveTo(x0 + 14, zy + 9 + gap * 0.35);
+    ctx.quadraticCurveTo(0, zy + 9 + gap * 1.35, x0 + w - 14, zy + 9 + gap * 0.35);
     ctx.stroke();
 
-    // 慢漏气波纹向上逸出
-    if (leak > 0.05) {
+    // 胶条老化细裂纹 + 暗缝阴影
+    if (leak > 0.08) {
       ctx.save();
-      ctx.strokeStyle = rgba(pal.cinnabar, 0.58 * leak);
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      for (let i = -1; i <= 1; i++) {
-        const bx = i * (w * 0.18);
-        const phase = ((frame * 0.045 + i * 0.37) % 1 + 1) % 1;
-        const rise = phase * 90;
-        const a = Math.sin(phase * Math.PI) * leak;
-        ctx.globalAlpha = a;
+      ctx.fillStyle = rgba("#3a1b16", 0.22 * leak);
+      ctx.beginPath();
+      ctx.ellipse(0, zy + 4, w * 0.28 * leak, Math.max(2, gap * 0.9), 0, 0, TAU * 0.9995);
+      ctx.fill();
+
+      ctx.strokeStyle = rgba(pal.cinnabar, 0.72 * leak);
+      ctx.lineWidth = 2.2;
+      for (const cx of [-w * 0.14, -w * 0.03, w * 0.09]) {
         ctx.beginPath();
-        ctx.moveTo(bx, zy - 6 - rise);
-        ctx.quadraticCurveTo(bx + 14, zy - 26 - rise, bx - 4, zy - 48 - rise);
+        ctx.moveTo(cx, zy - 7);
+        ctx.lineTo(cx + 4, zy + 2);
+        ctx.lineTo(cx - 2, zy + 11);
         ctx.stroke();
+      }
+
+      // 慢漏气波纹 + 逸散微粒向上飘出
+      ctx.lineCap = "round";
+      for (let i = -2; i <= 2; i++) {
+        const bx = i * (w * 0.13);
+        const phase = ((frame * 0.042 + (i + 2) * 0.23) % 1 + 1) % 1;
+        const rise = phase * 112;
+        const a = Math.sin(phase * Math.PI) * leak;
+        ctx.globalAlpha = a * 0.72;
+        ctx.strokeStyle = i % 2 === 0 ? pal.cinnabar : mixHex(pal.cinnabar, "#7e9cb0", 0.45);
+        ctx.lineWidth = i % 2 === 0 ? 3.2 : 2.4;
+        ctx.beginPath();
+        ctx.moveTo(bx, zy - 4 - rise);
+        ctx.quadraticCurveTo(bx + (i % 2 === 0 ? 15 : -13), zy - 26 - rise, bx + i * 4, zy - 52 - rise);
+        ctx.stroke();
+
+        // 顶端微弱气珠
+        ctx.fillStyle = rgba(pal.cinnabar, 0.55 * a);
+        ctx.beginPath();
+        ctx.arc(bx + i * 4, zy - 56 - rise, 2.8, 0, TAU * 0.9995);
+        ctx.fill();
       }
       ctx.restore();
     }
   } else {
-    // 平口袋顶口双层微张弧线
-    ctx.strokeStyle = rgba(pal.bamboo, 0.42);
-    ctx.lineWidth = 2.2;
+    // 平口袋顶口双层微张弧线 + 柔和内口阴影
+    ctx.strokeStyle = rgba(pal.bamboo, 0.48);
+    ctx.lineWidth = 2.4;
     ctx.beginPath();
     ctx.moveTo(x0 + 10, y0 + 8);
-    ctx.quadraticCurveTo(0, y0 + 18, x0 + w - 10, y0 + 8);
+    ctx.quadraticCurveTo(0, y0 + 20, x0 + w - 10, y0 + 8);
+    ctx.stroke();
+    ctx.strokeStyle = rgba("#ffffff", 0.55);
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 14, y0 + 5);
+    ctx.quadraticCurveTo(0, y0 + 14, x0 + w - 14, y0 + 5);
     ctx.stroke();
   }
 
@@ -568,7 +599,7 @@ export function drawPeBag(
 }
 
 // ============================================================================
-// 3. 鹅颈封口动画袋（挤气 → 拧麻花 → 折鹅颈 → 两道扎带）
+// 3. 鹅颈封口动画袋（挤气力学贴合 → 麻花绞紧 → 连续弯折鹅颈 → 双扎带勒腰闪光）
 // ============================================================================
 
 export type GooseneckOpts = {
@@ -592,29 +623,46 @@ export function drawGooseneckBag(
   opts: GooseneckOpts,
 ) {
   const { squeeze, twist, fold, tie1, tie2, frame } = opts;
-  // 袋身随挤气略收紧贴合茶饼（保留自然余量，绝不抽成真空死褶）
-  const bodyW = 470 - squeeze * 42;
-  const bodyH = 440 - squeeze * 22;
-  const bodyCy = 120;
-  const neckBaseY = bodyCy - bodyH / 2 + 12;
+  // 袋身随挤气贴合茶饼收缩（保留约一二成自然呼吸余量，绝不抽成真空死褶）
+  const bodyW = 482 - squeeze * 58;
+  const bodyH = 448 - squeeze * 28;
+  const bodyCy = 122;
+  const neckBaseY = bodyCy - bodyH / 2 + 14;
+  // 双扎带勒紧时整体略带紧实微缩回弹
+  const lockGrip = tie1 * 0.5 + tie2 * 0.5;
 
   ctx.save();
 
-  // 1) 袋身主体（含素雪棉纸茶饼）
+  // 1) 袋身主体（含素雪棉纸茶饼 + 贴合压褶与动态塑料反光）
   const bagPath = () => {
     const hw = bodyW / 2;
-    const topPinch = hw * (1 - twist * 0.78);
+    const topPinch = hw * (1 - twist * 0.8) + 18 * twist;
+    const shoulderDip = squeeze * 18 + twist * 14;
     ctx.moveTo(-topPinch, neckBaseY);
-    ctx.bezierCurveTo(-hw * 0.92, neckBaseY + 56, -hw, bodyCy - 40, -hw, bodyCy + bodyH * 0.34);
-    ctx.quadraticCurveTo(-hw, bodyCy + bodyH / 2, -hw + 26, bodyCy + bodyH / 2);
-    ctx.lineTo(hw - 26, bodyCy + bodyH / 2);
+    ctx.bezierCurveTo(
+      -hw * (0.94 - squeeze * 0.04),
+      neckBaseY + 46 + shoulderDip,
+      -hw,
+      bodyCy - 42,
+      -hw,
+      bodyCy + bodyH * 0.34,
+    );
+    ctx.quadraticCurveTo(-hw, bodyCy + bodyH / 2, -hw + 28, bodyCy + bodyH / 2);
+    ctx.lineTo(hw - 28, bodyCy + bodyH / 2);
     ctx.quadraticCurveTo(hw, bodyCy + bodyH / 2, hw, bodyCy + bodyH * 0.34);
-    ctx.bezierCurveTo(hw, bodyCy - 40, hw * 0.92, neckBaseY + 56, topPinch, neckBaseY);
+    ctx.bezierCurveTo(
+      hw,
+      bodyCy - 42,
+      hw * (0.94 - squeeze * 0.04),
+      neckBaseY + 46 + shoulderDip,
+      topPinch,
+      neckBaseY,
+    );
     ctx.closePath();
   };
 
-  softShadow(ctx, bagPath, { blur: 24, dx: 10, dy: 16, alpha: 0.16 });
-  ctx.fillStyle = rgba("#ffffff", pal.dark ? 0.14 : 0.32);
+  softShadow(ctx, bagPath, { blur: 26, dx: 11, dy: 18, alpha: 0.18 });
+  ctx.fillStyle = rgba("#ffffff", pal.dark ? 0.14 : 0.34);
   ctx.beginPath();
   bagPath();
   ctx.fill();
@@ -624,195 +672,370 @@ export function drawGooseneckBag(
   ctx.beginPath();
   bagPath();
   ctx.clip();
-  ctx.translate(0, bodyCy + 16);
+  ctx.translate(0, bodyCy + 14);
   drawSuxueCake(ctx, pal, 178, { seed: 22 });
-  ctx.restore();
 
-  // 前层 PE 高光罩
-  const sheen = ctx.createLinearGradient(-bodyW / 2, neckBaseY, bodyW / 2, bodyCy + bodyH / 2);
-  sheen.addColorStop(0, rgba("#ffffff", 0.38));
-  sheen.addColorStop(0.45, rgba("#eef5f0", 0.08));
-  sheen.addColorStop(0.7, rgba("#ffffff", 0.25));
-  sheen.addColorStop(1, rgba("#ffffff", 0.12));
-  ctx.fillStyle = sheen;
-  ctx.beginPath();
-  bagPath();
-  ctx.fill();
-
-  ctx.strokeStyle = rgba(pal.bamboo, 0.72);
-  ctx.lineWidth = 3.8;
-  ctx.beginPath();
-  bagPath();
-  ctx.stroke();
-
-  // 挤气时的柔和空气逸出线（挤出八九成）
-  if (squeeze > 0.05 && twist < 0.7) {
-    const airAlpha = Math.sin(clamp01(squeeze) * Math.PI) * (1 - twist);
+  // 挤气贴合后，塑料膜在茶饼肩部形成柔和放射折光褶皱
+  if (squeeze > 0.08) {
     ctx.save();
-    ctx.strokeStyle = rgba(pal.bamboo, 0.65 * airAlpha);
-    ctx.lineWidth = 4;
+    ctx.translate(0, -(bodyCy + 14));
+    ctx.strokeStyle = rgba("#ffffff", 0.42 * squeeze);
+    ctx.lineWidth = 3.2;
     ctx.lineCap = "round";
-    for (let i = -1; i <= 1; i++) {
-      const ph = ((frame * 0.06 + (i + 1) * 0.28) % 1 + 1) % 1;
-      const sx = i * 68;
-      const sy = neckBaseY - 24 - ph * 110;
-      ctx.globalAlpha = Math.sin(ph * Math.PI) * airAlpha;
-      ctx.beginPath();
-      ctx.moveTo(sx, sy + 42);
-      ctx.quadraticCurveTo(sx + i * 18, sy + 18, sx + i * 10, sy);
-      ctx.stroke();
+    for (const side of [-1, 1] as const) {
+      for (let k = 0; k < 3; k++) {
+        ctx.beginPath();
+        ctx.moveTo(side * (24 + k * 24), neckBaseY + 18 + k * 14);
+        ctx.quadraticCurveTo(
+          side * (88 + k * 28),
+          neckBaseY + 62 + k * 22,
+          side * (bodyW * 0.44 - k * 14),
+          bodyCy - 24 + k * 34,
+        );
+        ctx.stroke();
+      }
     }
     ctx.restore();
   }
 
-  // 2) 袋口颈部：未拧时是宽口 → 拧成麻花 → 对折成鹅颈 U 形
-  const neckW = (bodyW * 0.92) * (1 - twist * 0.84) + 36 * twist;
-  const neckH = 210;
+  // 前层 PE 高光罩 + 随挤气微移的斜向流光条
+  ctx.translate(0, -(bodyCy + 14));
+  const sweepShift = (squeeze * 28 + Math.sin(frame * 0.03) * 8);
+  const sheen = ctx.createLinearGradient(-bodyW / 2 + sweepShift, neckBaseY, bodyW / 2, bodyCy + bodyH / 2);
+  sheen.addColorStop(0, rgba("#ffffff", 0.44));
+  sheen.addColorStop(0.32, rgba("#eef5f0", 0.08));
+  sheen.addColorStop(0.56, rgba("#ffffff", 0.32));
+  sheen.addColorStop(0.78, rgba("#dcebe2", 0.08));
+  sheen.addColorStop(1, rgba("#ffffff", 0.16));
+  ctx.fillStyle = sheen;
+  ctx.fillRect(-bodyW, neckBaseY - 20, bodyW * 2, bodyH + 120);
+
+  // 斜向高光反光带
+  ctx.fillStyle = rgba("#ffffff", 0.22 + squeeze * 0.08);
+  ctx.beginPath();
+  ctx.moveTo(-bodyW * 0.34 + sweepShift, neckBaseY);
+  ctx.lineTo(-bodyW * 0.21 + sweepShift, neckBaseY);
+  ctx.lineTo(-bodyW * 0.44 + sweepShift, bodyCy + bodyH * 0.55);
+  ctx.lineTo(-bodyW * 0.56 + sweepShift, bodyCy + bodyH * 0.55);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // 加厚袋身外轮廓 + 侧边双线热封质感
+  ctx.strokeStyle = rgba(pal.bamboo, 0.76);
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  bagPath();
+  ctx.stroke();
+
+  // 挤气阶段：两侧柔和向内挤压提示弧 + 5 道渐细气流与微气泡向上排出
+  if (squeeze > 0.04 && twist < 0.75) {
+    const airAlpha = Math.sin(clamp01(squeeze) * Math.PI) * (1 - twist);
+    ctx.save();
+    // 两侧轻柔向内收拢的弧形压感提示（不画生硬大箭头，用克制水墨双弧）
+    const pressIn = squeeze * 26;
+    ctx.strokeStyle = rgba(pal.bamboo, 0.52 * airAlpha);
+    ctx.lineWidth = 4.2;
+    ctx.lineCap = "round";
+    for (const side of [-1, 1] as const) {
+      const px = side * (bodyW / 2 + 46 - pressIn);
+      ctx.beginPath();
+      ctx.arc(px + side * 26, bodyCy - 18, 56, side === -1 ? -0.45 : Math.PI - 0.45, side === -1 ? 0.45 : Math.PI + 0.45);
+      ctx.stroke();
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.arc(px + side * 44, bodyCy - 18, 44, side === -1 ? -0.35 : Math.PI - 0.35, side === -1 ? 0.35 : Math.PI + 0.35);
+      ctx.stroke();
+      ctx.lineWidth = 4.2;
+    }
+
+    // 5 道向袋口外逸出的柔和气流丝 + 顶珠
+    for (let i = -2; i <= 2; i++) {
+      const ph = ((frame * 0.068 + (i + 2) * 0.19) % 1 + 1) % 1;
+      const sx = i * 44 * (1 - squeeze * 0.22);
+      const sy = neckBaseY - 26 - ph * 140;
+      const a = Math.sin(ph * Math.PI) * airAlpha;
+      ctx.globalAlpha = a;
+      ctx.strokeStyle = pal.bamboo;
+      ctx.lineWidth = 3.8 - Math.abs(i) * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy + 52);
+      ctx.quadraticCurveTo(sx + i * 16, sy + 22, sx + i * 8, sy);
+      ctx.stroke();
+
+      ctx.fillStyle = rgba(pal.bamboo, 0.65);
+      ctx.beginPath();
+      ctx.arc(sx + i * 8, sy - 6, 3.2 - Math.abs(i) * 0.4, 0, TAU * 0.9995);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 2) 袋口颈部：连续演进（宽袋口 → 绞成麻花 → 平滑折弯成 U 形鹅颈 → 双扎带勒腰）
+  const neckW = bodyW * 0.9 * (1 - twist * 0.84) + 34 * twist;
+  const neckH = 224;
 
   if (fold < 0.02) {
-    // 向上展开 / 拧成麻花
+    // 宽口 → 麻花螺旋绞紧
     ctx.save();
-    const topW = neckW * (1 + (1 - twist) * 0.06);
+    const topFlare = neckW * (1 + (1 - twist) * 0.08 + twist * 0.52);
+    const waistW = neckW * (1 - twist * 0.24);
     const gNeck = ctx.createLinearGradient(-neckW, neckBaseY, neckW, neckBaseY - neckH);
-    gNeck.addColorStop(0, rgba("#ffffff", 0.44));
-    gNeck.addColorStop(0.5, rgba("#dfebe3", 0.56));
-    gNeck.addColorStop(1, rgba("#ffffff", 0.34));
+    gNeck.addColorStop(0, rgba("#ffffff", 0.48));
+    gNeck.addColorStop(0.45, rgba("#dcebe2", 0.64));
+    gNeck.addColorStop(0.75, rgba("#ffffff", 0.5));
+    gNeck.addColorStop(1, rgba("#e4efe8", 0.36));
     ctx.fillStyle = gNeck;
     ctx.beginPath();
-    ctx.moveTo(-neckW / 2, neckBaseY + 4);
-    ctx.bezierCurveTo(-neckW * 0.4, neckBaseY - neckH * 0.45, -topW * 0.52, neckBaseY - neckH * 0.78, -topW * 0.55, neckBaseY - neckH);
-    ctx.lineTo(topW * 0.55, neckBaseY - neckH);
-    ctx.bezierCurveTo(topW * 0.52, neckBaseY - neckH * 0.78, neckW * 0.4, neckBaseY - neckH * 0.45, neckW / 2, neckBaseY + 4);
+    ctx.moveTo(-neckW * 0.52, neckBaseY + 6);
+    ctx.bezierCurveTo(
+      -waistW * 0.48,
+      neckBaseY - neckH * 0.42,
+      -waistW * 0.44,
+      neckBaseY - neckH * 0.74,
+      -topFlare * 0.56,
+      neckBaseY - neckH,
+    );
+    ctx.lineTo(topFlare * 0.56, neckBaseY - neckH);
+    ctx.bezierCurveTo(
+      waistW * 0.44,
+      neckBaseY - neckH * 0.74,
+      waistW * 0.48,
+      neckBaseY - neckH * 0.42,
+      neckW * 0.52,
+      neckBaseY + 6,
+    );
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = rgba(pal.bamboo, 0.72);
-    ctx.lineWidth = 3.2;
+    ctx.strokeStyle = rgba(pal.bamboo, 0.76);
+    ctx.lineWidth = 3.4;
     ctx.stroke();
 
-    // 麻花螺旋纹
-    if (twist > 0.08) {
-      ctx.strokeStyle = rgba(pal.bamboo, 0.7 * twist);
-      ctx.lineWidth = 3.2;
-      for (let k = 0; k < 5; k++) {
-        const yy = neckBaseY - 26 - k * 34;
-        const hw = Math.max(16, neckW * 0.48);
+    // 拧麻花时的前后交错螺旋光影棱纹（带高光脊 + 压痕暗沟）
+    if (twist > 0.06) {
+      const twistShift = twist * 14;
+      for (let k = 0; k < 6; k++) {
+        const yy = neckBaseY - 22 - k * 32 - twistShift * 0.35;
+        if (yy < neckBaseY - neckH + 18) continue;
+        const hw = Math.max(15, waistW * 0.5);
+        // 暗折沟
+        ctx.strokeStyle = rgba(pal.bamboo, 0.68 * twist);
+        ctx.lineWidth = 3.6;
+        ctx.lineCap = "round";
         ctx.beginPath();
-        ctx.moveTo(-hw, yy + 10);
-        ctx.quadraticCurveTo(0, yy - 6, hw, yy - 12);
+        ctx.moveTo(-hw, yy + 11);
+        ctx.bezierCurveTo(-hw * 0.25, yy - 2, hw * 0.25, yy - 6, hw, yy - 13);
+        ctx.stroke();
+        // 高光脊
+        ctx.strokeStyle = rgba("#ffffff", 0.65 * twist);
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(-hw * 0.85, yy + 6);
+        ctx.quadraticCurveTo(0, yy - 6, hw * 0.85, yy - 16);
         ctx.stroke();
       }
     }
     ctx.restore();
   } else {
-    // 对折成鹅颈 U 形（左半向上、顶弯成鹅颈弧、右半向下贴合！）
+    // 连续弯折鹅颈 U 形：fold 0→1 时顶部麻花从竖直流畅弯曲 180° 贴向右侧下方！
     const bendH = 128;
-    const archR = 46 * fold;
-    const rightDrop = fold * 135;
+    const theta = fold * Math.PI; // 0 = 竖直向上, PI = 完全对折向下
+    const archR = 44;
+    const baseX = -18 * fold;
+    const pivotX = baseX + archR * Math.sin(theta * 0.5);
+    const pivotY = neckBaseY - bendH;
+    const tailLen = 122;
+
+    // 计算平滑折弯后的终点与切向
+    const arcCx = baseX + archR;
+    const arcCy = pivotY;
+    const endAngle = Math.PI + theta;
+    const arcEndX = arcCx + Math.cos(endAngle) * archR;
+    const arcEndY = arcCy + Math.sin(endAngle) * archR;
+    // 切线方向（顺时针旋转 90°）
+    const tanX = -Math.sin(endAngle);
+    const tanY = Math.cos(endAngle);
+    const tailEndX = arcEndX + tanX * (tailLen * (0.45 + 0.55 * fold));
+    const tailEndY = arcEndY + tanY * (tailLen * (0.45 + 0.55 * fold));
+
+    // 扎带勒紧时，鹅颈双管微微向中轴收束
+    const cinchScaleX = 1 - lockGrip * 0.08;
 
     ctx.save();
+    ctx.scale(cinchScaleX, 1);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    // 下段拧紧的鹅颈管
     const drawGoosePath = () => {
-      ctx.moveTo(-18 * fold, neckBaseY + 4);
-      ctx.lineTo(-18 * fold, neckBaseY - bendH);
-      ctx.bezierCurveTo(
-        -18 * fold,
-        neckBaseY - bendH - archR * 1.45,
-        archR * 1.5,
-        neckBaseY - bendH - archR * 1.45,
-        archR * 1.15,
-        neckBaseY - bendH + 14,
-      );
-      ctx.lineTo(archR * 0.85, neckBaseY - bendH + rightDrop);
+      ctx.moveTo(baseX, neckBaseY + 6);
+      ctx.lineTo(baseX, pivotY);
+      ctx.arc(arcCx, arcCy, archR, Math.PI, endAngle, false);
+      ctx.lineTo(tailEndX, tailEndY);
     };
 
-    // 厚管底层阴影与实体
-    ctx.strokeStyle = rgba(pal.bamboo, 0.76);
+    // 鹅颈软投影
+    softShadow(ctx, drawGoosePath, { blur: 16, dx: 6, dy: 10, alpha: 0.14 });
+
+    // 外描边（加厚 PE 轮廓）
+    ctx.strokeStyle = rgba(pal.bamboo, 0.8);
     ctx.lineWidth = 42;
     ctx.beginPath();
     drawGoosePath();
     ctx.stroke();
 
-    ctx.strokeStyle = rgba("#eef5f0", 0.9);
+    // 管体底色
+    ctx.strokeStyle = rgba("#e4efe8", 0.94);
     ctx.lineWidth = 34;
     ctx.beginPath();
     drawGoosePath();
     ctx.stroke();
 
-    // 鹅颈上的麻花斜纹
-    ctx.strokeStyle = rgba(pal.bamboo, 0.5);
+    // 管体中心立体高光脊（呈现塑料圆柱光泽）
+    ctx.strokeStyle = rgba("#ffffff", 0.62);
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    drawGoosePath();
+    ctx.stroke();
+
+    // 鹅颈双管的麻花斜棱纹
+    ctx.strokeStyle = rgba(pal.bamboo, 0.54);
     ctx.lineWidth = 2.8;
     for (let k = 0; k < 4; k++) {
-      const yy = neckBaseY - 20 - k * 28;
+      const yy = neckBaseY - 18 - k * 28;
       ctx.beginPath();
-      ctx.moveTo(-34 * fold, yy + 6);
-      ctx.lineTo(-2 * fold, yy - 8);
+      ctx.moveTo(baseX - 15, yy + 7);
+      ctx.lineTo(baseX + 15, yy - 7);
       ctx.stroke();
     }
-    for (let k = 0; k < 3; k++) {
-      const yy = neckBaseY - bendH + 34 + k * 28;
-      ctx.beginPath();
-      ctx.moveTo(archR * 0.65, yy - 6);
-      ctx.lineTo(archR * 1.25, yy + 6);
-      ctx.stroke();
+    if (fold > 0.45) {
+      const aTail = clamp01((fold - 0.45) * 2);
+      ctx.strokeStyle = rgba(pal.bamboo, 0.48 * aTail);
+      for (let k = 1; k <= 3; k++) {
+        const u = k * 0.25;
+        const px = arcEndX + tanX * tailLen * u;
+        const py = arcEndY + tanY * tailLen * u;
+        const nx = -tanY;
+        const ny = tanX;
+        ctx.beginPath();
+        ctx.moveTo(px - nx * 14 - tanX * 5, py - ny * 14 - tanY * 5);
+        ctx.lineTo(px + nx * 14 + tanX * 5, py + ny * 14 + tanY * 5);
+        ctx.stroke();
+      }
     }
 
-    // 鹅颈尾部散开的小伞口
-    const tx = archR * 0.85;
-    const ty = neckBaseY - bendH + rightDrop;
-    ctx.fillStyle = rgba("#eef5f0", 0.82);
-    ctx.strokeStyle = rgba(pal.bamboo, 0.72);
+    // 鹅颈尾部散开的小伞口（随切向自然旋转）
+    const fanAngle = Math.atan2(tanY, tanX) - Math.PI / 2;
+    ctx.save();
+    ctx.translate(tailEndX, tailEndY);
+    ctx.rotate(fanAngle);
+    ctx.fillStyle = rgba("#e8f2ec", 0.88);
+    ctx.strokeStyle = rgba(pal.bamboo, 0.76);
     ctx.lineWidth = 2.6;
     ctx.beginPath();
-    ctx.moveTo(tx - 16, ty - 6);
-    ctx.lineTo(tx - 34, ty + 32);
-    ctx.lineTo(tx + 34, ty + 28);
-    ctx.lineTo(tx + 16, ty - 6);
+    ctx.moveTo(-16, -4);
+    ctx.lineTo(-36, 36);
+    ctx.quadraticCurveTo(0, 44, 36, 32);
+    ctx.lineTo(16, -4);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
 
-    // 两道扎带（死死勒住鹅颈双管！）
-    const drawTie = (yy: number, p: number) => {
+    // 两道扎带（勒腰暗褶 + 齿纹带身 + 锁扣 + 锁紧瞬间高光星闪）
+    const drawTie = (yy: number, p: number, seedOffset: number) => {
       if (p <= 0.01) return;
-      const cinch = 1 - 0.14 * p;
-      const lx = -48 * cinch;
-      const rx = archR * 1.48 * cinch;
+      // 模拟瞬间收紧的弹性过冲回弹
+      const snap = p < 0.7 ? p / 0.7 : 1 + Math.sin(((p - 0.7) / 0.3) * Math.PI) * 0.06;
+      const cinch = 1 - 0.19 * clamp01(p);
+      const lx = (baseX - 28) * cinch;
+      const rx = (arcCx + archR + 26) * cinch;
+      const wTie = rx - lx;
+
       ctx.save();
-      ctx.globalAlpha = clamp01(p * 1.5);
-      // 扎带主体（深朱砂/茶褐醒目锁扣）
-      ctx.fillStyle = pal.cinnabar;
+      ctx.globalAlpha = clamp01(p * 1.6);
+
+      // 勒紧时上下紧挨的塑料袋挤压暗褶（真实“勒死”收腰感！）
+      ctx.strokeStyle = rgba("#2d4739", 0.36 * p);
+      ctx.lineWidth = 3.2;
       ctx.beginPath();
-      ctx.roundRect(lx, yy - 8, rx - lx, 16, 7);
-      ctx.fill();
-      // 锁扣方块
-      ctx.fillStyle = mixHex(pal.cinnabar, "#2b120e", 0.35);
+      ctx.moveTo(lx + 6, yy - 11);
+      ctx.lineTo(rx - 6, yy - 11);
+      ctx.moveTo(lx + 6, yy + 11);
+      ctx.lineTo(rx - 6, yy + 11);
+      ctx.stroke();
+
+      // 扎带主体（带立体圆柱渐变与细齿纹）
+      const tieG = ctx.createLinearGradient(0, yy - 9, 0, yy + 9);
+      tieG.addColorStop(0, mixHex(pal.cinnabar, "#f6b29f", 0.28));
+      tieG.addColorStop(0.45, pal.cinnabar);
+      tieG.addColorStop(1, mixHex(pal.cinnabar, "#3b130e", 0.42));
+      ctx.fillStyle = tieG;
       ctx.beginPath();
-      ctx.roundRect(rx - 18, yy - 11, 22, 22, 4);
+      ctx.roundRect(lx, yy - 8.5 * snap, wTie, 17 * snap, 7);
       ctx.fill();
-      // 向右探出的扎带尾条
+
+      // 扎带横向细防滑齿纹
+      ctx.strokeStyle = rgba("#3b130e", 0.25);
+      ctx.lineWidth = 1.4;
+      for (let gx = lx + 12; gx < rx - 22; gx += 9) {
+        ctx.beginPath();
+        ctx.moveTo(gx, yy - 5);
+        ctx.lineTo(gx, yy + 5);
+        ctx.stroke();
+      }
+
+      // 锁扣方块（立体高光）
+      ctx.fillStyle = mixHex(pal.cinnabar, "#2b100c", 0.38);
+      ctx.beginPath();
+      ctx.roundRect(rx - 18, yy - 12, 24, 24, 5);
+      ctx.fill();
+      ctx.fillStyle = rgba("#ffd7c8", 0.36);
+      ctx.fillRect(rx - 14, yy - 9, 16, 4);
+
+      // 向右拉出的紧绷扎带尾条
       ctx.strokeStyle = pal.cinnabar;
       ctx.lineWidth = 7;
+      ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.moveTo(rx + 2, yy);
-      ctx.lineTo(rx + 42 * p, yy - 4);
+      ctx.moveTo(rx + 4, yy);
+      ctx.quadraticCurveTo(rx + 26 * p, yy - 1, rx + 50 * p, yy - 6);
       ctx.stroke();
+
+      // 勒紧到位瞬间的四芒紧固闪光（提示「勒死锁紧」）
+      if (p > 0.55 && p < 0.99) {
+        const spark = Math.sin(((p - 0.55) / 0.44) * Math.PI);
+        const sx = rx - 6;
+        const sy = yy;
+        const sr = 26 * spark;
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.rotate(seedOffset * 0.4);
+        ctx.strokeStyle = rgba("#fff6d6", 0.92 * spark);
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(-sr, 0);
+        ctx.lineTo(sr, 0);
+        ctx.moveTo(0, -sr);
+        ctx.lineTo(0, sr);
+        ctx.stroke();
+        ctx.restore();
+      }
       ctx.restore();
     };
 
-    drawTie(neckBaseY - 46, tie1);
-    drawTie(neckBaseY - 82, tie2);
+    drawTie(neckBaseY - 46, tie1, 1);
+    drawTie(neckBaseY - 82, tie2, 2);
 
     ctx.restore();
+    // 消除 unused 警告（pivotX 辅助定位）
+    void pivotX;
   }
 
   ctx.restore();
 }
 
 // ============================================================================
-// 4. 纯铝箔袋 vs 镀铝袋（支持强光照射透亮对比 + 硬折痕 + 拉开外袋）
+// 4. 纯铝箔袋 vs 镀铝袋（强光丁达尔光柱透射对比 + 逆光金边 + 金属硬折痕反光）
 // ============================================================================
 
 export type FoilBagOpts = {
@@ -826,6 +1049,8 @@ export type FoilBagOpts = {
   openFlap?: number;
   /** 内部回调（openFlap > 0 时显露） */
   inside?: () => void;
+  /** 可选帧号（驱动金属流光与强光微尘呼吸） */
+  frame?: number;
 };
 
 export function drawFoilBag(
@@ -835,23 +1060,44 @@ export function drawFoilBag(
   h: number,
   opts: FoilBagOpts = {},
 ) {
-  const { pure = true, backlight = 0, foldCrease = 0, openFlap = 0, inside } = opts;
+  const { pure = true, backlight = 0, foldCrease = 0, openFlap = 0, inside, frame = 0 } = opts;
   const x0 = -w / 2;
   const y0 = -h / 2;
   const r = 10;
 
   ctx.save();
 
-  // 强光光晕（在袋子背后）
+  // 1) 背后强光体积光晕 + 斜向丁达尔光束（让「对着强光一照」瞬间具备物理沉浸感）
   if (backlight > 0.02) {
-    const bgGlow = ctx.createRadialGradient(0, -10, 12, 0, -10, w * 0.78);
-    bgGlow.addColorStop(0, rgba("#fff5cc", 0.9 * backlight));
-    bgGlow.addColorStop(0.45, rgba("#ffdc85", 0.42 * backlight));
-    bgGlow.addColorStop(1, rgba("#ffdc85", 0));
+    const pulse = 1 + Math.sin(frame * 0.07) * 0.03;
+    const bgGlow = ctx.createRadialGradient(0, -16, 14, 0, -16, w * 0.92 * pulse);
+    bgGlow.addColorStop(0, rgba("#fff9dc", 0.96 * backlight));
+    bgGlow.addColorStop(0.38, rgba("#ffe08a", 0.56 * backlight));
+    bgGlow.addColorStop(0.72, rgba("#f2b84b", 0.16 * backlight));
+    bgGlow.addColorStop(1, rgba("#f2b84b", 0));
     ctx.fillStyle = bgGlow;
     ctx.beginPath();
-    ctx.arc(0, -10, w * 0.78, 0, TAU * 0.9995);
+    ctx.arc(0, -16, w * 0.92 * pulse, 0, TAU * 0.9995);
     ctx.fill();
+
+    // 放射强光射线（真纯铝完全被袋身截断，只在袋身外圈露出逆光边缘射线！）
+    ctx.save();
+    ctx.globalAlpha = 0.28 * backlight;
+    for (let i = 0; i < 8; i++) {
+      const a = -Math.PI * 0.85 + (i / 7) * Math.PI * 1.7 + Math.sin(frame * 0.02 + i) * 0.03;
+      const len = w * (0.72 + (i % 2) * 0.22);
+      const rg = ctx.createLinearGradient(0, -16, Math.cos(a) * len, -16 + Math.sin(a) * len);
+      rg.addColorStop(0, rgba("#fff7d1", 0.8));
+      rg.addColorStop(1, rgba("#ffd770", 0));
+      ctx.strokeStyle = rg;
+      ctx.lineWidth = 18 + (i % 3) * 8;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(0, -16);
+      ctx.lineTo(Math.cos(a) * len, -16 + Math.sin(a) * len);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   softShadow(ctx, () => ctx.roundRect(x0, y0, w, h, r), {
@@ -861,10 +1107,9 @@ export function drawFoilBag(
     alpha: 0.24,
   });
 
-  // 如果顶部拉开，先画内腔 + 内部物体（例如透明 PE 袋裹着的素雪茶饼）
+  // 2) 如果顶部拉开，先画内腔 + 内部物体（例如透明 PE 袋裹着的素雪茶饼）
   const cutY = y0 + openFlap * h * 0.56;
   if (openFlap > 0.02) {
-    // 后袋片（完整高度）
     const backG = ctx.createLinearGradient(x0, y0, x0 + w, y0 + h);
     backG.addColorStop(0, "#8f8a81");
     backG.addColorStop(0.5, "#747068");
@@ -874,7 +1119,6 @@ export function drawFoilBag(
     ctx.roundRect(x0, y0, w, h, r);
     ctx.fill();
 
-    // 露出内部的透明袋 + 茶饼
     if (inside) {
       ctx.save();
       ctx.beginPath();
@@ -885,8 +1129,8 @@ export function drawFoilBag(
     }
   }
 
-  // 前袋主体路径（带折角或拉开）
-  const foldSz = foldCrease * Math.min(w, h) * 0.34;
+  // 3) 前袋主体路径（带折角或拉开）
+  const foldSz = foldCrease * Math.min(w, h) * 0.36;
   const frontPath = () => {
     const topY = openFlap > 0.02 ? cutY : y0;
     ctx.moveTo(x0 + r, topY);
@@ -906,18 +1150,19 @@ export function drawFoilBag(
     ctx.closePath();
   };
 
-  // 材质渐变：纯铝厚重哑光金属；镀铝偏轻薄冷亮
-  const fg = ctx.createLinearGradient(x0, y0, x0 + w, y0 + h);
+  // 材质渐变：纯铝厚重哑光金属（带动态扫光）；镀铝偏轻薄冷亮半透感
+  const sheenShift = Math.sin(frame * 0.032) * w * 0.08;
+  const fg = ctx.createLinearGradient(x0 + sheenShift, y0, x0 + w + sheenShift, y0 + h);
   if (pure) {
-    fg.addColorStop(0, "#d6d1c8");
-    fg.addColorStop(0.28, "#b7b1a6");
-    fg.addColorStop(0.55, "#ded9d0");
-    fg.addColorStop(0.82, "#a39d92");
-    fg.addColorStop(1, "#c7c1b6");
+    fg.addColorStop(0, "#d4cfc6");
+    fg.addColorStop(0.26, "#b2aba0");
+    fg.addColorStop(0.52, "#e0dbd1");
+    fg.addColorStop(0.78, "#9b958a");
+    fg.addColorStop(1, "#c5bfb4");
   } else {
-    fg.addColorStop(0, "#e6e9ec");
-    fg.addColorStop(0.42, "#c6ccd2");
-    fg.addColorStop(0.65, "#eef1f4");
+    fg.addColorStop(0, "#eaedf0");
+    fg.addColorStop(0.4, "#c7cdd3");
+    fg.addColorStop(0.66, "#f2f5f7");
     fg.addColorStop(1, "#b4bcc4");
   }
   ctx.fillStyle = fg;
@@ -925,36 +1170,85 @@ export function drawFoilBag(
   frontPath();
   ctx.fill();
 
-  // 镀铝袋被强光穿透的刺眼透亮光斑（真纯铝完全不透！）
+  // 细微金属拉丝斜向高光与热封压边纹理
+  ctx.save();
+  ctx.beginPath();
+  frontPath();
+  ctx.clip();
+  ctx.fillStyle = rgba("#ffffff", pure ? 0.14 : 0.22);
+  ctx.beginPath();
+  ctx.moveTo(x0 + w * 0.16 + sheenShift, y0);
+  ctx.lineTo(x0 + w * 0.34 + sheenShift, y0);
+  ctx.lineTo(x0 + w * 0.02 + sheenShift, y0 + h);
+  ctx.lineTo(x0 - w * 0.14 + sheenShift, y0 + h);
+  ctx.closePath();
+  ctx.fill();
+
+  // 三边热封宽边压纹（真纯铝更厚实）
+  const rim = pure ? 18 : 13;
+  ctx.strokeStyle = rgba(pal.ink, pure ? 0.14 : 0.1);
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x0 + rim, y0 + rim, w - rim * 2, h - rim * 2);
+  ctx.restore();
+
+  // 4) 镀铝袋被强光穿透的刺眼透亮光斑 + 廉价镀层微透斑驳（真纯铝完全不透！）
   if (!pure && backlight > 0.02) {
     ctx.save();
     ctx.beginPath();
     frontPath();
     ctx.clip();
-    const bleed = ctx.createRadialGradient(0, -12, 8, 0, -12, w * 0.44);
-    bleed.addColorStop(0, rgba("#ffffff", 0.96 * backlight));
-    bleed.addColorStop(0.38, rgba("#ffe49a", 0.82 * backlight));
-    bleed.addColorStop(0.76, rgba("#ffb84d", 0.34 * backlight));
+    const bleed = ctx.createRadialGradient(0, -16, 10, 0, -16, w * 0.56);
+    bleed.addColorStop(0, rgba("#ffffff", 0.98 * backlight));
+    bleed.addColorStop(0.32, rgba("#fff0b5", 0.9 * backlight));
+    bleed.addColorStop(0.65, rgba("#ffc55c", 0.48 * backlight));
     bleed.addColorStop(1, rgba("#ffb84d", 0));
     ctx.fillStyle = bleed;
     ctx.fillRect(x0, y0, w, h);
+
+    // 廉价镀铝层受强光照射时的细密半透明亮斑/针孔质感
+    const rr = rng(314);
+    for (let i = 0; i < 22; i++) {
+      const px = (rr() - 0.5) * w * 0.62;
+      const py = -16 + (rr() - 0.5) * h * 0.52;
+      const pr = 6 + rr() * 24;
+      const pg = ctx.createRadialGradient(px, py, 0, px, py, pr);
+      pg.addColorStop(0, rgba("#ffffff", 0.45 * backlight));
+      pg.addColorStop(1, rgba("#ffe49e", 0));
+      ctx.fillStyle = pg;
+      ctx.beginPath();
+      ctx.arc(px, py, pr, 0, TAU * 0.9995);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
-  // 真纯铝在强光下呈现厚实背影与金属锐边，丝毫不透
+  // 5) 真纯铝在强光下呈现 100% 实心遮光暗调 + 锐利逆光金边（与镀铝袋形成极致反差）
   if (pure && backlight > 0.02) {
     ctx.save();
     ctx.beginPath();
     frontPath();
     ctx.clip();
-    ctx.fillStyle = rgba("#3d372e", 0.22 * backlight);
+    const darkCore = ctx.createRadialGradient(0, -10, 20, 0, -10, w * 0.72);
+    darkCore.addColorStop(0, rgba("#2e2922", 0.34 * backlight));
+    darkCore.addColorStop(0.75, rgba("#3f3930", 0.24 * backlight));
+    darkCore.addColorStop(1, rgba("#665d4f", 0.08 * backlight));
+    ctx.fillStyle = darkCore;
     ctx.fillRect(x0, y0, w, h);
+    ctx.restore();
+
+    // 逆光勾勒的锋利金属金边
+    ctx.save();
+    ctx.strokeStyle = rgba("#fff0b8", 0.82 * backlight);
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    frontPath();
+    ctx.stroke();
     ctx.restore();
   }
 
-  // 压边热封纹路（四边微压条）
-  ctx.strokeStyle = rgba(pal.ink, pure ? 0.32 : 0.22);
-  ctx.lineWidth = pure ? 3 : 2;
+  // 外框压边线
+  ctx.strokeStyle = rgba(pal.ink, pure ? 0.36 : 0.24);
+  ctx.lineWidth = pure ? 3.2 : 2.1;
   ctx.beginPath();
   frontPath();
   ctx.stroke();
@@ -976,22 +1270,33 @@ export function drawFoilBag(
     ctx.fill();
   }
 
-  // 真纯铝右上角硬挺折痕（折下后定形不回弹，带清晰折棱）
+  // 6) 真纯铝右上角硬挺死折痕（折下定形不回弹 + 金属棱线高光闪 + 放射应力折纹）
   if (foldSz > 2 && openFlap < 0.02) {
     ctx.save();
-    // 折下三角的柔和投影
-    ctx.fillStyle = rgba("#2a2219", 0.22);
+    // 折翻三角落下的硬朗投影
+    ctx.fillStyle = rgba("#221b14", 0.28);
     ctx.beginPath();
     ctx.moveTo(x0 + w - foldSz, y0);
     ctx.lineTo(x0 + w, y0 + foldSz);
-    ctx.lineTo(x0 + w - foldSz + 10, y0 + foldSz + 12);
+    ctx.lineTo(x0 + w - foldSz + 12, y0 + foldSz + 16);
     ctx.closePath();
     ctx.fill();
 
+    // 折痕下方微细金属应力折纹（体现纯铝硬挺定形质感）
+    ctx.strokeStyle = rgba("#474139", 0.34 * foldCrease);
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(x0 + w - foldSz + 6, y0 + 6);
+    ctx.lineTo(x0 + w - foldSz - 24 * foldCrease, y0 + 28 * foldCrease);
+    ctx.moveTo(x0 + w - 8, y0 + foldSz - 4);
+    ctx.lineTo(x0 + w - 34 * foldCrease, y0 + foldSz + 26 * foldCrease);
+    ctx.stroke();
+
     // 折翻过来的内面铝箔三角
     const fgFold = ctx.createLinearGradient(x0 + w - foldSz, y0 + foldSz, x0 + w, y0);
-    fgFold.addColorStop(0, "#ece9e2");
-    fgFold.addColorStop(1, "#a7a095");
+    fgFold.addColorStop(0, "#f3f0e8");
+    fgFold.addColorStop(0.55, "#cfcac0");
+    fgFold.addColorStop(1, "#9a9388");
     ctx.fillStyle = fgFold;
     ctx.beginPath();
     ctx.moveTo(x0 + w - foldSz, y0);
@@ -999,17 +1304,43 @@ export function drawFoilBag(
     ctx.lineTo(x0 + w, y0 + foldSz);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = rgba(pal.ink, 0.42);
+    ctx.strokeStyle = rgba(pal.ink, 0.45);
     ctx.lineWidth = 2.6;
     ctx.stroke();
 
-    // 清晰锐利折痕高光
-    ctx.strokeStyle = rgba("#ffffff", 0.72);
-    ctx.lineWidth = 3;
+    // 锐利死折脊线（深折沟 + 亮金属脊）
+    ctx.strokeStyle = rgba("#3e3830", 0.55);
+    ctx.lineWidth = 4.6;
     ctx.beginPath();
     ctx.moveTo(x0 + w - foldSz, y0);
     ctx.lineTo(x0 + w, y0 + foldSz);
     ctx.stroke();
+
+    ctx.strokeStyle = rgba("#ffffff", 0.88);
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.moveTo(x0 + w - foldSz + 1, y0 + 1);
+    ctx.lineTo(x0 + w - 1, y0 + foldSz - 1);
+    ctx.stroke();
+
+    // 折合到位瞬间沿折痕扫过的金属反光星闪
+    if (foldCrease > 0.35 && foldCrease < 0.99) {
+      const sp = Math.sin(((foldCrease - 0.35) / 0.64) * Math.PI);
+      const gx = x0 + w - foldSz * (1 - sp * 0.7);
+      const gy = y0 + foldSz * (sp * 0.7);
+      const sr = 28 * sp;
+      ctx.save();
+      ctx.translate(gx, gy);
+      ctx.strokeStyle = rgba("#ffffff", 0.95 * sp);
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-sr, 0);
+      ctx.lineTo(sr, 0);
+      ctx.moveTo(0, -sr);
+      ctx.lineTo(0, sr);
+      ctx.stroke();
+      ctx.restore();
+    }
     ctx.restore();
   }
 

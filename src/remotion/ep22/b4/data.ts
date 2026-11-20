@@ -65,7 +65,7 @@ export function sfxHits(_staggerFrames: number) {
     ...mgLayer("crinkle", "paperRustle", TWIST_AT + 2, { volume: 0.68 }),
     mg("flutter", FOLD_AT + 2, { volume: 0.58 }),
     ...mgLayer("snap", "foilSeal", TIE1_AT, { volume: 0.8 }),
-    ...mgLayer("snap", "foilSeal", TIE2_AT, { volume: 0.85 }),
+    ...mgLayer("snap", "foilSeal", TIE2_AT, { volume: 0.86, rate: 1.12 }),
     ...mgLayer("thump", "cakeThud", COTTON_IN + 8, { volume: 0.76 }),
     mg("dingA5", COTTON_SLIDE + 4, { volume: 0.48 }),
   ];

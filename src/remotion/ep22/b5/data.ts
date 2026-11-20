@@ -52,7 +52,7 @@ export const FAKE_OUT = voAt("捏起来") - 4;
 // 幕二B：真纯铝不透光 + 硬挺折痕不回弹 ✓
 export const REAL_IN = voAt("捏起来") - 2;
 export const CREASE_AT = voAt("折痕") - 2;
-export const REAL_TAG = voAt("硬挺") - 2;
+export const REAL_TAG = voAt("真纯铝") - 2;
 
 export function sfxHits(_staggerFrames: number) {
   return [
@@ -63,7 +63,7 @@ export function sfxHits(_staggerFrames: number) {
     ...mgLayer("crinkle", "foilCrinkle", FAKE_IN + 6, { volume: 0.65 }),
     mg("swish", FAKE_CROSS + 2, { volume: 0.75 }),
     ...mgLayer("thump", "foilCrinkle", REAL_IN + 6, { volume: 0.78 }),
-    ...mgLayer("snap", "foilCrinkle", CREASE_AT + 2, { volume: 0.72 }),
+    ...mgLayer("snap", "foilCrinkle", CREASE_AT + 2, { volume: 0.76, rate: 1.08 }),
     mg("dingA5", REAL_TAG + 2, { volume: 0.52 }),
   ];
 }
