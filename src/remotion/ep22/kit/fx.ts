@@ -38,9 +38,21 @@ export function lightFloat(
   return baseLightFloat(local / SPRING_TEMPO, opts);
 }
 
+/** 片尾最后 0.5 秒（15 帧）保持画面干净静止，便于剪辑衔接 */
+export const END_STILL_FRAMES = 15;
+
 export function cameraAt(frame: number, length: number, opts: CameraOpts = {}): Camera {
-  return baseCameraAt(frame, length, {
+  const settleAt = Math.max(0, length - END_STILL_FRAMES);
+  // 在片尾前 12 帧柔和收住镜头微漂移，最后 15 帧（0.5s）完全静止
+  const clampedFrame =
+    frame <= settleAt - 12
+      ? frame
+      : frame >= settleAt
+        ? settleAt
+        : settleAt - 12 + 12 * Math.sin(((frame - (settleAt - 12)) / 12) * (Math.PI / 2));
+  return baseCameraAt(clampedFrame, length, {
     ...opts,
     focus: opts.focus?.map((k) => ({ ...k, dur: k.dur * TEMPO })),
   });
 }
+

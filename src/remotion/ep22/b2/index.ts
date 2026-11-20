@@ -4,6 +4,7 @@ import { sec } from "../kit/draw-kit";
 import {
   BOX_ORDER_AT,
   CHECK_AT,
+  COMPARE_AT,
   DOUBLE_AT,
   FILM_NOTE,
   LENGTH,
@@ -22,7 +23,7 @@ export default defineClip({
   episode: 22,
   code: "B2",
   title: "顺序对比",
-  note: "大整箱「内铝外塑」兜底防潮 · 单饼「内塑外铝」拉开外袋隔袋看清 · " + FILM_NOTE,
+  note: "大整箱「内铝外塑」兜底防潮 · 单饼「内塑外铝」隔袋看清 · 结尾左右并排对比 · " + FILM_NOTE,
   exportName: "正上茶舍_22_B2_顺序对比.mp4",
   Comp,
   draw,
@@ -37,6 +38,7 @@ export default defineClip({
     { frame: SINGLE_ORDER_AT, timeSec: sec(SINGLE_ORDER_AT), label: "内塑外铝", tag: "单饼", type: "stamp" },
     { frame: PEEK_AT, timeSec: sec(PEEK_AT), label: "拉开看清", tag: "验茶", type: "punchline" },
     { frame: CHECK_AT, timeSec: sec(CHECK_AT), label: "隔袋看清", tag: "不进潮", type: "action" },
+    { frame: COMPARE_AT, timeSec: sec(COMPARE_AT), label: "左右对比", tag: "收束", type: "punchline" },
   ],
   fields: [
     { key: "boxTag", label: "场景一标题", default: TEXT.boxTag, placeholder: TEXT.boxTag },

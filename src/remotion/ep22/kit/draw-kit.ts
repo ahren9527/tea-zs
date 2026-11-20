@@ -19,6 +19,9 @@ import {
   fxPalette,
   leafParticles,
   lightSpots,
+  mixHex,
+  noise1,
+  noise2,
   progress,
   rgba,
   withLayer,
@@ -339,3 +342,116 @@ export function renderLayers(
 }
 
 export const SAFE_BOTTOM = STAGE.height - 300;
+export const SAFE_RIGHT = STAGE.width - 120;
+
+// ---------------------------------------------------------------------------
+// 统一三层章节标题（B3「一层 · 封住气」/ B5「二层 · 挡住光」/ B6「三层 · 护住形」）
+// 同字号、同位置、同进场动画；背后一团极淡的小墨晕，与 B7 水墨口诀遥相呼应。
+// ---------------------------------------------------------------------------
+
+export const CHAPTER_TITLE_X = 520;
+export const CHAPTER_TITLE_Y = 365;
+export const CHAPTER_TITLE_SIZE = 132;
+
+function chapterBlobPath(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  seed: number,
+  rough: number,
+) {
+  ctx.beginPath();
+  const n = 96;
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * TAU;
+    const c = Math.cos(a);
+    const sn = Math.sin(a);
+    const m =
+      1 +
+      0.18 * noise2(c * 1.2 + seed, sn * 1.2, seed) +
+      0.06 * noise2(c * 3.1, sn * 3.1 + seed, seed + 5) +
+      rough * noise2(c * 7, sn * 7, seed + 9);
+    const x = cx + c * rx * m;
+    const y = cy + sn * ry * m;
+    if (i) ctx.lineTo(x, y);
+    else ctx.moveTo(x, y);
+  }
+  ctx.closePath();
+}
+
+/** 标题背后的一小团极淡墨晕（呼应 B7 三团墨，克制不抢主体） */
+export function drawTitleInkHalo(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  local: number,
+  color: string,
+  seed: number,
+  strength = 1,
+) {
+  if (local < 0) return;
+  const p = easeOutCubic(clamp01((local + 2) / 14));
+  const g = 0.55 + 0.45 * p;
+  ctx.save();
+  ctx.globalAlpha *= p * strength;
+  const layers = 8;
+  for (let j = 0; j < layers; j++) {
+    const k = j / (layers - 1);
+    const s = g * (1 - k * 0.52);
+    chapterBlobPath(
+      ctx,
+      cx + noise1(k * 2, seed) * 8,
+      cy + noise1(k * 2, seed + 3) * 5,
+      rx * s,
+      ry * s,
+      seed + k * 0.5,
+      0.025 + (1 - k) * 0.02,
+    );
+    ctx.fillStyle = rgba(color, 0.014 + k * 0.008);
+    ctx.fill();
+  }
+  // 极轻的一道宣纸水渍边
+  chapterBlobPath(ctx, cx, cy, rx * g, ry * g, seed, 0.045);
+  ctx.strokeStyle = rgba(color, 0.032);
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  ctx.restore();
+}
+
+export function drawChapterTitle(
+  ctx: CanvasRenderingContext2D,
+  frame: number,
+  pal: FxPalette,
+  text: string,
+  fontScale: number,
+  opts: { at?: number; color?: string; seed?: number; alpha?: number } = {},
+) {
+  const { at = 0, color = pal.ink, seed = 15, alpha = 1 } = opts;
+  const hl = frame - at;
+  if (hl < 0 || alpha <= 0.005) return;
+
+  // 0.5 秒（15 帧）内稳稳落定：前 12 帧柔和上浮到位，开场第 0 帧即显墨影
+  const pIn = easeOutCubic(clamp01((hl + 2) / 13));
+  const dy = (1 - pIn) * 18;
+  const fs = fitSize(text, CHAPTER_TITLE_SIZE, 820) * fontScale;
+  const haloColor = mixHex(pal.ink, "#6e6a62", 0.45);
+
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  // 淡墨晕衬底（宽扁柔和，淡而不浊）
+  drawTitleInkHalo(ctx, CHAPTER_TITLE_X, CHAPTER_TITLE_Y + dy, 255, 68, hl, haloColor, seed, 0.92);
+
+  // 统一章节大字（同字号、同位置、同进场）
+  inkText(ctx, text, CHAPTER_TITLE_X, CHAPTER_TITLE_Y + dy, fs, Math.max(0.18, pIn), seed + 4, {
+    color,
+    weight: 900,
+    font: SONG,
+    wash: 0.028,
+  });
+  ctx.restore();
+}
+

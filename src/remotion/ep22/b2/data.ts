@@ -1,4 +1,3 @@
-import { framesOf } from "@/remotion/shared/theme";
 import { mg, mgLayer } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
@@ -33,12 +32,12 @@ export const TEXT = {
 };
 export type TextKey = keyof typeof TEXT;
 
-export const END_HOLD_SEC = 1.2;
+export const END_HOLD_SEC = 2.5;
 export const LENGTH = VO.lengthOf(END_HOLD_SEC);
 export const FILM_NOTE = VO.filmNote(END_HOLD_SEC);
 
-// 幕一：大整箱 · 内铝外塑
-export const BOX_IN = framesOf(0.1);
+// 幕一：大整箱 · 内铝外塑（开场 0.5 秒内主体与标题同步进场，不留空帧）
+export const BOX_IN = 0;
 export const BOX_ORDER_AT = voAt("内铝外塑") - 2;
 export const POUCH_AT = voAt("铝箔袋封好") - 6;
 export const LINER_AT = voAt("大塑料袋") - 2;
@@ -55,8 +54,12 @@ export const PEEK_AT = voAt("拉开外层") - 2;
 export const CHECK_AT = voAt("就能看清") - 2;
 export const MOISTURE_AT = voAt("不用拆开");
 
+// 幕三：结尾左右并排对比（内铝外塑 vs 内塑外铝，完整同屏停留约 2.0 秒 ≥ 1.5s）
+export const COMPARE_AT = voAt("潮气") - 2;
+
 export function sfxHits(_staggerFrames: number) {
   return [
+    ...mgLayer("thumpSoft", "paperweight", BOX_IN + 6, { volume: 0.62 }),
     mg("dingD5", BOX_ORDER_AT, { volume: 0.46 }),
     ...mgLayer("thumpSoft", "foilCrinkle", POUCH_AT + 6, { volume: 0.7 }),
     ...mgLayer("flutter", "paperRustle", LINER_AT + 4, { volume: 0.6 }),
@@ -66,5 +69,7 @@ export function sfxHits(_staggerFrames: number) {
     ...mgLayer("swooshDown", "foilCrinkle", FOIL_OUT_AT + 4, { volume: 0.72 }),
     ...mgLayer("swooshUp", "foilCrinkle", PEEK_AT + 2, { volume: 0.75 }),
     mg("dingA5", CHECK_AT + 2, { volume: 0.48 }),
+    mg("swooshUp", COMPARE_AT + 2, { volume: 0.46 }),
   ];
 }
+

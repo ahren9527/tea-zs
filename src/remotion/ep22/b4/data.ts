@@ -1,4 +1,3 @@
-import { framesOf } from "@/remotion/shared/theme";
 import { mg, mgLayer } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
@@ -6,7 +5,7 @@ import { makeVoAtFromTimes } from "../kit/vo";
  * 第 22 期 B4「鹅颈封口」
  * 幕一：拉链自封口老化慢漏气 → 朱砂大叉划掉；
  * 幕二：改用平口袋 → 顺着茶叶挤气八九成（不抽真空）→ 拧成麻花 → 对折成鹅颈 → 扎带死死勒两道；
- * 幕三：素雪茶饼带着原装白棉纸直接装入平口袋，大字「原装棉纸别拆」。
+ * 幕三：「要是存茶饼」起茶饼就开始慢慢入袋，到「带着棉纸」刚好落定，接续下一镜素雪位置。
  */
 export const SCRIPT =
   "注意，普通拉链自封口用久了，胶条老化会慢漏气，长期存要用平口袋：顺着茶叶把空气挤出八九成，别抽真空；然后袋口拧成麻花、对折成鹅颈状，用扎带死死勒住两道。要是存茶饼，原装棉纸别拆，带着棉纸直接装。";
@@ -37,8 +36,8 @@ export const END_HOLD_SEC = 1.2;
 export const LENGTH = VO.lengthOf(END_HOLD_SEC);
 export const FILM_NOTE = VO.filmNote(END_HOLD_SEC);
 
-// 幕一：拉链自封口慢漏气
-export const ZIP_AT = framesOf(0.06);
+// 幕一：拉链自封口慢漏气（开场即入，不留空帧）
+export const ZIP_AT = 0;
 export const LEAK_AT = voAt("胶条老化") - 2;
 export const CROSS_AT = voAt("慢漏气") - 2;
 export const ACT1_OUT = voAt("长期存") - 6;
@@ -52,13 +51,13 @@ export const TIE1_AT = voAt("用扎带") + 4;
 export const TIE2_AT = voAt("两道") - 2;
 export const ACT2_OUT = voAt("要是存茶饼") - 6;
 
-// 幕三：带原装棉纸直接装
+// 幕三：带原装棉纸直接装 —— 从「要是存茶饼」开始缓缓滑入，到「带着棉纸」刚好落定
 export const COTTON_IN = voAt("要是存茶饼") - 2;
-export const COTTON_SLIDE = voAt("带着棉纸") - 2;
+export const COTTON_SLIDE = voAt("带着棉纸") + 8;
 
 export function sfxHits(_staggerFrames: number) {
   return [
-    ...mgLayer("crinkle", "paperRustle", ZIP_AT + 8, { volume: 0.62 }),
+    ...mgLayer("crinkle", "paperRustle", ZIP_AT + 6, { volume: 0.62 }),
     mg("swish", CROSS_AT + 2, { volume: 0.75 }),
     ...mgLayer("thumpSoft", "paperRustle", FLAT_IN + 8, { volume: 0.68 }),
     mg("swooshDown", SQUEEZE_AT + 2, { volume: 0.55 }),
@@ -67,6 +66,6 @@ export function sfxHits(_staggerFrames: number) {
     ...mgLayer("snap", "foilSeal", TIE1_AT, { volume: 0.8 }),
     ...mgLayer("snap", "foilSeal", TIE2_AT, { volume: 0.86, rate: 1.12 }),
     ...mgLayer("thump", "cakeThud", COTTON_IN + 8, { volume: 0.76 }),
-    mg("dingA5", COTTON_SLIDE + 4, { volume: 0.48 }),
+    mg("dingA5", COTTON_SLIDE, { volume: 0.48 }),
   ];
 }

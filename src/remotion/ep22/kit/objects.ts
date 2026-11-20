@@ -430,6 +430,8 @@ export type PeBagOpts = {
   inside?: () => void;
   /** 帧号（用于漏气微动） */
   frame?: number;
+  /** 袋面按压凹陷演示（正值向下/向内凹，微负值表示弹性回弹鼓起） */
+  dent?: { amount: number; x?: number; y?: number };
 };
 
 export function drawPeBag(
@@ -439,10 +441,13 @@ export function drawPeBag(
   h: number,
   opts: PeBagOpts = {},
 ) {
-  const { mode = "flat", leak = 0, thickEdge = 0.5, inside, frame = 0 } = opts;
+  const { mode = "flat", leak = 0, thickEdge = 0.5, inside, frame = 0, dent } = opts;
   const x0 = -w / 2;
   const y0 = -h / 2;
   const r = 16;
+  const dentAmt = dent?.amount ?? 0;
+  const dentX = dent?.x ?? w * 0.08;
+  const dentY = dent?.y ?? h * 0.08;
 
   ctx.save();
   softShadow(ctx, () => ctx.roundRect(x0, y0, w, h, r), {
@@ -594,6 +599,194 @@ export function drawPeBag(
     ctx.quadraticCurveTo(0, y0 + 14, x0 + w - 14, y0 + 5);
     ctx.stroke();
   }
+
+  // 袋面按压凹陷与弹性应力光圈（B3「够厚」手指按压回弹演示）
+  if (Math.abs(dentAmt) > 0.02) {
+    const absD = Math.min(1.2, Math.abs(dentAmt));
+    const press = Math.max(0, dentAmt);
+    const rebound = Math.max(0, -dentAmt);
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x0 + 6, y0 + 6, w - 12, h - 12, r - 2);
+    ctx.clip();
+
+    if (press > 0.02) {
+      // 凹陷阴影碗（中心微暗、外圈塑料绷紧高光脊）
+      const dRad = Math.min(w, h) * (0.22 + press * 0.12);
+      const dentG = ctx.createRadialGradient(
+        dentX - 10,
+        dentY - 10,
+        6,
+        dentX,
+        dentY,
+        dRad,
+      );
+      dentG.addColorStop(0, rgba("#2d4739", 0.34 * press));
+      dentG.addColorStop(0.52, rgba("#3f5c4c", 0.16 * press));
+      dentG.addColorStop(0.78, rgba("#ffffff", 0.42 * press));
+      dentG.addColorStop(1, rgba("#ffffff", 0));
+      ctx.fillStyle = dentG;
+      ctx.beginPath();
+      ctx.ellipse(dentX, dentY, dRad * 1.12, dRad * 0.92, -0.25, 0, TAU * 0.9995);
+      ctx.fill();
+
+      // 放射状厚膜绷紧褶皱（体现 12 丝厚膜的韧劲）
+      ctx.strokeStyle = rgba("#ffffff", 0.65 * press);
+      ctx.lineWidth = 3.2;
+      ctx.lineCap = "round";
+      for (let i = 0; i < 6; i++) {
+        const a = -0.5 + (i / 6) * TAU;
+        const r0 = dRad * 0.38;
+        const r1 = dRad * (0.88 + (i % 2) * 0.22);
+        ctx.beginPath();
+        ctx.moveTo(dentX + Math.cos(a) * r0, dentY + Math.sin(a) * r0);
+        ctx.quadraticCurveTo(
+          dentX + Math.cos(a + 0.12) * (r0 + r1) * 0.5,
+          dentY + Math.sin(a + 0.12) * (r0 + r1) * 0.5,
+          dentX + Math.cos(a) * r1,
+          dentY + Math.sin(a) * r1,
+        );
+        ctx.stroke();
+      }
+      // 凹坑边缘弧形压痕线
+      ctx.strokeStyle = rgba(pal.bamboo, 0.52 * press);
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.arc(dentX, dentY, dRad * 0.52, Math.PI * 0.1, Math.PI * 0.95);
+      ctx.stroke();
+    }
+
+    if (rebound > 0.02) {
+      // 回弹瞬间的两道清新弹力波纹
+      const ringR = Math.min(w, h) * (0.24 + (1 - rebound) * 0.16);
+      ctx.strokeStyle = rgba("#ffffff", 0.65 * Math.min(1, rebound * 3));
+      ctx.lineWidth = 3.4;
+      ctx.beginPath();
+      ctx.arc(dentX, dentY, ringR, 0, TAU * 0.9995);
+      ctx.stroke();
+    }
+    void absD;
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/** 2D 平涂简笔按压手指（暖宣纸国风线稿 + 淡彩平涂，原点为指尖触点） */
+export function drawPressFinger(
+  ctx: CanvasRenderingContext2D,
+  pal: FxPalette,
+  opts: { press?: number; scale?: number } = {},
+) {
+  const { press = 0, scale = 1 } = opts;
+  ctx.save();
+  ctx.scale(scale, scale);
+  // 轻微斜向右下角伸入，指尖在 (0, 0)
+  ctx.rotate(0.42 - press * 0.05);
+
+  const skin = "#f1d7bc";
+  const skinShade = "#ddb995";
+  const nail = "#fbf3ea";
+  const sleeve = "#dfd0b6";
+  const outline = mixHex(pal.ink, "#4a3828", 0.55);
+
+  // 柔和落影（按下去时影子贴近袋面更实）
+  softShadow(
+    ctx,
+    () => {
+      ctx.roundRect(-24, -10, 50, 175, 25);
+      ctx.ellipse(24, 155, 58, 72, 0.1, 0, TAU * 0.9995);
+    },
+    {
+      blur: 18 - press * 8,
+      dx: 10 - press * 5,
+      dy: 16 - press * 9,
+      alpha: 0.16 + press * 0.1,
+    },
+  );
+
+  // 收拢的其余三指（平涂简笔，位于手掌右侧后方）
+  ctx.fillStyle = skinShade;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 3.6;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  for (let i = 0; i < 3; i++) {
+    const fx = 34 + i * 24;
+    const fy = 104 + i * 16;
+    ctx.beginPath();
+    ctx.roundRect(fx - 14, fy - 18, 28, 52, 14);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // 手掌主体
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.moveTo(-24, 118);
+  ctx.quadraticCurveTo(-34, 185, -10, 232);
+  ctx.lineTo(74, 224);
+  ctx.quadraticCurveTo(106, 176, 88, 122);
+  ctx.quadraticCurveTo(68, 92, 24, 96);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // 伸出的食指（指尖在原点 (0,0)，按压时微扁回弹）
+  const tipSquash = 1 + press * 0.08;
+  ctx.save();
+  ctx.scale(tipSquash, 1 - press * 0.04);
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.roundRect(-24, -8, 48, 156, 24);
+  ctx.fill();
+  // 侧面淡暖阴影条（平涂两色层次）
+  ctx.fillStyle = rgba(skinShade, 0.55);
+  ctx.beginPath();
+  ctx.roundRect(4, 12, 18, 130, 10);
+  ctx.fill();
+  // 外描边
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 3.8;
+  ctx.beginPath();
+  ctx.roundRect(-24, -8, 48, 156, 24);
+  ctx.stroke();
+
+  // 指甲（简笔椭圆）
+  ctx.fillStyle = nail;
+  ctx.strokeStyle = rgba(outline, 0.55);
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.roundRect(-14, 0, 28, 30, 12);
+  ctx.fill();
+  ctx.stroke();
+
+  // 两道关节细折线
+  ctx.strokeStyle = rgba(outline, 0.45);
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.moveTo(-12, 58);
+  ctx.quadraticCurveTo(0, 62, 12, 58);
+  ctx.moveTo(-13, 104);
+  ctx.quadraticCurveTo(0, 108, 13, 104);
+  ctx.stroke();
+  ctx.restore();
+
+  // 燕麦米袖口（呼应茶室国风）
+  ctx.fillStyle = sleeve;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 3.6;
+  ctx.beginPath();
+  ctx.roundRect(-22, 218, 112, 86, 14);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = rgba(pal.tea, 0.35);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-14, 236);
+  ctx.lineTo(82, 236);
+  ctx.stroke();
 
   ctx.restore();
 }
@@ -1150,44 +1343,67 @@ export function drawFoilBag(
     ctx.closePath();
   };
 
-  // 材质渐变：纯铝厚重哑光金属（带动态扫光）；镀铝偏轻薄冷亮半透感
+  // 材质渐变：纯铝冷调银灰金属（与暖米宣纸拉开清晰冷暖对比）；镀铝偏轻薄冷白半透感
   const sheenShift = Math.sin(frame * 0.032) * w * 0.08;
   const fg = ctx.createLinearGradient(x0 + sheenShift, y0, x0 + w + sheenShift, y0 + h);
   if (pure) {
-    fg.addColorStop(0, "#d4cfc6");
-    fg.addColorStop(0.26, "#b2aba0");
-    fg.addColorStop(0.52, "#e0dbd1");
-    fg.addColorStop(0.78, "#9b958a");
-    fg.addColorStop(1, "#c5bfb4");
+    fg.addColorStop(0, "#bfc9d2");
+    fg.addColorStop(0.24, "#94a2ae");
+    fg.addColorStop(0.48, "#dfe7ee");
+    fg.addColorStop(0.72, "#7c8a96");
+    fg.addColorStop(1, "#aab6c1");
   } else {
-    fg.addColorStop(0, "#eaedf0");
-    fg.addColorStop(0.4, "#c7cdd3");
-    fg.addColorStop(0.66, "#f2f5f7");
-    fg.addColorStop(1, "#b4bcc4");
+    fg.addColorStop(0, "#e6ecf1");
+    fg.addColorStop(0.38, "#c2ccd5");
+    fg.addColorStop(0.64, "#f2f6fa");
+    fg.addColorStop(1, "#aebbc6");
   }
   ctx.fillStyle = fg;
   ctx.beginPath();
   frontPath();
   ctx.fill();
 
-  // 细微金属拉丝斜向高光与热封压边纹理
+  // 细微金属冷色高光带与热封压边纹理
   ctx.save();
   ctx.beginPath();
   frontPath();
   ctx.clip();
-  ctx.fillStyle = rgba("#ffffff", pure ? 0.14 : 0.22);
+  // 主斜向冷白金属高光带
+  ctx.fillStyle = rgba("#f4faff", pure ? 0.32 : 0.28);
   ctx.beginPath();
-  ctx.moveTo(x0 + w * 0.16 + sheenShift, y0);
-  ctx.lineTo(x0 + w * 0.34 + sheenShift, y0);
-  ctx.lineTo(x0 + w * 0.02 + sheenShift, y0 + h);
-  ctx.lineTo(x0 - w * 0.14 + sheenShift, y0 + h);
+  ctx.moveTo(x0 + w * 0.14 + sheenShift, y0);
+  ctx.lineTo(x0 + w * 0.31 + sheenShift, y0);
+  ctx.lineTo(x0 + w * 0.0 + sheenShift, y0 + h);
+  ctx.lineTo(x0 - w * 0.15 + sheenShift, y0 + h);
   ctx.closePath();
   ctx.fill();
 
-  // 三边热封宽边压纹（真纯铝更厚实）
-  const rim = pure ? 18 : 13;
-  ctx.strokeStyle = rgba(pal.ink, pure ? 0.14 : 0.1);
-  ctx.lineWidth = 1.5;
+  // 第二道细冷色反光棱条（增强厚铝金属质感）
+  if (pure) {
+    ctx.fillStyle = rgba("#e4f1fc", 0.24);
+    ctx.beginPath();
+    ctx.moveTo(x0 + w * 0.56 + sheenShift * 0.7, y0);
+    ctx.lineTo(x0 + w * 0.63 + sheenShift * 0.7, y0);
+    ctx.lineTo(x0 + w * 0.34 + sheenShift * 0.7, y0 + h);
+    ctx.lineTo(x0 + w * 0.28 + sheenShift * 0.7, y0 + h);
+    ctx.closePath();
+    ctx.fill();
+
+    // 左上冷银高光边线 + 右下冷钢暗缘
+    ctx.strokeStyle = rgba("#f2f8ff", 0.65);
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(x0 + r, y0 + 3);
+    ctx.lineTo(x0 + w - r, y0 + 3);
+    ctx.moveTo(x0 + 3, y0 + r);
+    ctx.lineTo(x0 + 3, y0 + h - r);
+    ctx.stroke();
+  }
+
+  // 三边热封宽边压纹（真纯铝更厚实清晰）
+  const rim = pure ? 20 : 13;
+  ctx.strokeStyle = rgba("#35434f", pure ? 0.32 : 0.16);
+  ctx.lineWidth = pure ? 2.2 : 1.5;
   ctx.strokeRect(x0 + rim, y0 + rim, w - rim * 2, h - rim * 2);
   ctx.restore();
 
@@ -1222,33 +1438,33 @@ export function drawFoilBag(
     ctx.restore();
   }
 
-  // 5) 真纯铝在强光下呈现 100% 实心遮光暗调 + 锐利逆光金边（与镀铝袋形成极致反差）
+  // 5) 真纯铝在强光下呈现 100% 实心遮光冷暗调 + 锐利逆光金边（与镀铝袋形成极致反差）
   if (pure && backlight > 0.02) {
     ctx.save();
     ctx.beginPath();
     frontPath();
     ctx.clip();
     const darkCore = ctx.createRadialGradient(0, -10, 20, 0, -10, w * 0.72);
-    darkCore.addColorStop(0, rgba("#2e2922", 0.34 * backlight));
-    darkCore.addColorStop(0.75, rgba("#3f3930", 0.24 * backlight));
-    darkCore.addColorStop(1, rgba("#665d4f", 0.08 * backlight));
+    darkCore.addColorStop(0, rgba("#25303a", 0.36 * backlight));
+    darkCore.addColorStop(0.75, rgba("#33404c", 0.24 * backlight));
+    darkCore.addColorStop(1, rgba("#536270", 0.08 * backlight));
     ctx.fillStyle = darkCore;
     ctx.fillRect(x0, y0, w, h);
     ctx.restore();
 
     // 逆光勾勒的锋利金属金边
     ctx.save();
-    ctx.strokeStyle = rgba("#fff0b8", 0.82 * backlight);
-    ctx.lineWidth = 4.5;
+    ctx.strokeStyle = rgba("#fff0b8", 0.86 * backlight);
+    ctx.lineWidth = 4.8;
     ctx.beginPath();
     frontPath();
     ctx.stroke();
     ctx.restore();
   }
 
-  // 外框压边线
-  ctx.strokeStyle = rgba(pal.ink, pure ? 0.36 : 0.24);
-  ctx.lineWidth = pure ? 3.2 : 2.1;
+  // 外框清晰钢墨描边（与暖米底色利落分离）
+  ctx.strokeStyle = pure ? rgba("#2b3742", 0.72) : rgba("#465664", 0.48);
+  ctx.lineWidth = pure ? 4.2 : 2.6;
   ctx.beginPath();
   frontPath();
   ctx.stroke();
@@ -1474,6 +1690,135 @@ export function drawCorrugatedBoxTop(
   ctx.restore();
 }
 
+/** 正视/侧视五层瓦楞纸箱（原点为箱底中心，方便逐个往上摞叠；支持压扁鼓肚 + 剖视茶饼裂纹） */
+export function drawCorrugatedBoxSide(
+  ctx: CanvasRenderingContext2D,
+  pal: FxPalette,
+  w: number,
+  h: number,
+  opts: { crush?: number; cutaway?: boolean } = {},
+) {
+  const { crush = 0, cutaway = false } = opts;
+  const hh = h * (1 - crush * 0.34);
+  const bulge = crush * 34;
+  const hw = w / 2;
+
+  ctx.save();
+
+  const boxOutline = () => {
+    ctx.moveTo(-hw, -hh);
+    ctx.lineTo(hw, -hh);
+    ctx.bezierCurveTo(hw + bulge, -hh * 0.65, hw + bulge, -hh * 0.35, hw, 0);
+    ctx.lineTo(-hw, 0);
+    ctx.bezierCurveTo(-hw - bulge, -hh * 0.35, -hw - bulge, -hh * 0.65, -hw, -hh);
+    ctx.closePath();
+  };
+
+  softShadow(ctx, boxOutline, { blur: 18, dx: 6, dy: 10, alpha: 0.2 });
+
+  // 纸箱正立面牛皮纸渐变（柔和温润，不发闷）
+  const g = ctx.createLinearGradient(-hw, -hh, hw, 0);
+  g.addColorStop(0, "#d4b387");
+  g.addColorStop(0.45, "#c39d6f");
+  g.addColorStop(1, "#aa8357");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  boxOutline();
+  ctx.fill();
+
+  // 顶盖横缝线 + 中心竖封胶带小段
+  ctx.strokeStyle = rgba("#634427", 0.42);
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.moveTo(-hw + 8, -hh + 18);
+  ctx.lineTo(hw - 8, -hh + 18);
+  ctx.stroke();
+
+  ctx.fillStyle = rgba("#e4be78", 0.72);
+  ctx.fillRect(-26, -hh, 52, Math.min(34, hh * 0.26));
+  ctx.strokeStyle = rgba("#8d652c", 0.4);
+  ctx.lineWidth = 1.6;
+  ctx.strokeRect(-26, -hh, 52, Math.min(34, hh * 0.26));
+
+  // 最底箱剖视窗：直接看见箱内平放的素雪茶饼被压扁、裂开
+  if (cutaway) {
+    const cw = w * 0.76;
+    const ch = hh * 0.72;
+    const cy = -hh * 0.48;
+    ctx.save();
+    ctx.fillStyle = "#816141";
+    ctx.beginPath();
+    ctx.roundRect(-cw / 2, cy - ch / 2, cw, ch, 12);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.roundRect(-cw / 2 + 4, cy - ch / 2 + 4, cw - 8, ch - 8, 9);
+    ctx.clip();
+
+    // 箱内上下两饼素雪茶饼
+    const cakeW = cw * 0.84;
+    const cakeH = Math.max(32, ch * 0.44);
+    ctx.save();
+    ctx.translate(0, cy + ch * 0.22);
+    drawCakeSide(ctx, pal, cakeW, cakeH, { crush, wrapped: true });
+    ctx.restore();
+    ctx.save();
+    ctx.translate(0, cy - ch * 0.22);
+    drawCakeSide(ctx, pal, cakeW, cakeH, { crush: crush * 0.78, wrapped: true });
+    ctx.restore();
+
+    // 压碎时散落的几粒茶屑
+    if (crush > 0.35) {
+      const ca = clamp01((crush - 0.35) / 0.65);
+      ctx.fillStyle = rgba("#5c4a30", 0.85 * ca);
+      const crumbs = [
+        { x: -cw * 0.26, y: cy + ch * 0.35, r: 4.5 },
+        { x: -cw * 0.12, y: cy + ch * 0.4, r: 3.5 },
+        { x: cw * 0.16, y: cy + ch * 0.38, r: 5 },
+        { x: cw * 0.29, y: cy + ch * 0.34, r: 3.8 },
+      ];
+      crumbs.forEach((cr) => {
+        ctx.beginPath();
+        ctx.arc(cr.x, cr.y, cr.r, 0, TAU * 0.9995);
+        ctx.fill();
+      });
+    }
+    ctx.restore();
+
+    // 剖视框线
+    ctx.strokeStyle = rgba("#f2dfb8", 0.78);
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.roundRect(-cw / 2, cy - ch / 2, cw, ch, 12);
+    ctx.stroke();
+  }
+
+  // 压扁时的纸箱受压折痕（四角内凹折皱）
+  if (crush > 0.15) {
+    const ca = clamp01((crush - 0.15) / 0.85);
+    ctx.strokeStyle = rgba("#4e3118", 0.68 * ca);
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = "round";
+    for (const side of [-1, 1] as const) {
+      ctx.beginPath();
+      ctx.moveTo(side * (hw + bulge * 0.65), -hh * 0.5);
+      ctx.lineTo(side * (hw - 36 * ca), -hh * 0.62);
+      ctx.moveTo(side * (hw + bulge * 0.65), -hh * 0.5);
+      ctx.lineTo(side * (hw - 32 * ca), -hh * 0.36);
+      ctx.stroke();
+    }
+  }
+
+  // 清晰箱体描边
+  ctx.strokeStyle = rgba(pal.ink, 0.52);
+  ctx.lineWidth = 3.2;
+  ctx.beginPath();
+  boxOutline();
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 // ============================================================================
 // 6. 铁罐 / 紫砂陶罐外壳（半透剖视：内套前两层袋子的素雪茶饼）
 // ============================================================================
@@ -1492,57 +1837,117 @@ export function drawOuterCanister(
 
   ctx.save();
   softShadow(ctx, () => ctx.roundRect(x0, y0 + 18, w, h - 18, 34), {
-    blur: 28,
+    blur: 26,
     dx: 12,
-    dy: 20,
-    alpha: 0.26,
+    dy: 18,
+    alpha: 0.22,
   });
 
-  // 罐身主体
+  // 罐身主体：压低饱和、提亮陶釉高光层次，去掉沉闷深褐块感
   const bodyG = ctx.createLinearGradient(x0, 0, x0 + w, 0);
   if (style === "clay") {
-    bodyG.addColorStop(0, "#754c36");
-    bodyG.addColorStop(0.28, "#9c6b4e");
-    bodyG.addColorStop(0.62, "#6c432e");
-    bodyG.addColorStop(1, "#4e2f1f");
+    bodyG.addColorStop(0, "#9d8877");
+    bodyG.addColorStop(0.22, "#c6b4a3");
+    bodyG.addColorStop(0.42, "#b49f8d");
+    bodyG.addColorStop(0.74, "#8b7665");
+    bodyG.addColorStop(0.92, "#756152");
+    bodyG.addColorStop(1, "#9a8778"); // 右缘环境反光
   } else {
-    bodyG.addColorStop(0, "#4c5652");
-    bodyG.addColorStop(0.3, "#78857f");
-    bodyG.addColorStop(0.65, "#3f4945");
-    bodyG.addColorStop(1, "#2d3532");
+    bodyG.addColorStop(0, "#687570");
+    bodyG.addColorStop(0.24, "#9aa7a1");
+    bodyG.addColorStop(0.55, "#6b7873");
+    bodyG.addColorStop(0.86, "#4c5753");
+    bodyG.addColorStop(1, "#6f7c77");
   }
   ctx.fillStyle = bodyG;
   ctx.beginPath();
   ctx.roundRect(x0, y0 + lidH * 0.65, w, h - lidH * 0.65, 36);
   ctx.fill();
 
-  // 罐盖
+  // 罐身竖向陶瓷柔光带 + 微妙陶轮横纹（增加通透立体层次）
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(x0, y0 + lidH * 0.65, w, h - lidH * 0.65, 36);
+  ctx.clip();
+  const glossG = ctx.createLinearGradient(x0 + w * 0.14, 0, x0 + w * 0.36, 0);
+  glossG.addColorStop(0, rgba("#fff9f0", 0));
+  glossG.addColorStop(0.5, rgba("#fff9f0", 0.34));
+  glossG.addColorStop(1, rgba("#fff9f0", 0));
+  ctx.fillStyle = glossG;
+  ctx.fillRect(x0 + w * 0.12, y0 + lidH * 0.65, w * 0.26, h);
+
+  // 顶部肩部柔光晕
+  const shoulderG = ctx.createRadialGradient(x0 + w * 0.28, y0 + lidH + 24, 12, x0 + w * 0.28, y0 + lidH + 24, w * 0.42);
+  shoulderG.addColorStop(0, rgba("#fff6e8", 0.26));
+  shoulderG.addColorStop(1, rgba("#fff6e8", 0));
+  ctx.fillStyle = shoulderG;
+  ctx.fillRect(x0, y0 + lidH * 0.65, w, h * 0.4);
+
+  // 细雅陶轮水平釉环
+  ctx.strokeStyle = rgba("#fff4e4", 0.14);
+  ctx.lineWidth = 2;
+  for (const frac of [0.34, 0.56, 0.78]) {
+    const ly = y0 + lidH + (h - lidH) * frac;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 16, ly);
+    ctx.lineTo(x0 + w - 16, ly);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 罐身细腻外描边
+  ctx.strokeStyle = rgba(pal.ink, 0.36);
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.roundRect(x0, y0 + lidH * 0.65, w, h - lidH * 0.65, 36);
+  ctx.stroke();
+
+  // 罐盖（同色系略浅，带盖沿亮脊）
   const lidG = ctx.createLinearGradient(x0 - 8, 0, x0 + w + 8, 0);
   if (style === "clay") {
-    lidG.addColorStop(0, "#83553d");
-    lidG.addColorStop(0.32, "#ad795a");
-    lidG.addColorStop(0.7, "#6c432e");
-    lidG.addColorStop(1, "#4f3020");
+    lidG.addColorStop(0, "#ab9684");
+    lidG.addColorStop(0.26, "#d4c3b3");
+    lidG.addColorStop(0.68, "#937d6b");
+    lidG.addColorStop(0.92, "#7d6858");
+    lidG.addColorStop(1, "#a28f7f");
   } else {
-    lidG.addColorStop(0, "#5a6661");
-    lidG.addColorStop(0.32, "#87948e");
-    lidG.addColorStop(0.7, "#45504c");
-    lidG.addColorStop(1, "#2f3835");
+    lidG.addColorStop(0, "#75827d");
+    lidG.addColorStop(0.28, "#a9b6b0");
+    lidG.addColorStop(0.7, "#5e6b66");
+    lidG.addColorStop(1, "#7b8883");
   }
   ctx.fillStyle = lidG;
   ctx.beginPath();
   ctx.roundRect(x0 - 10, y0 + 16, w + 20, lidH, 24);
   ctx.fill();
+  ctx.strokeStyle = rgba(pal.ink, 0.36);
+  ctx.lineWidth = 2.8;
+  ctx.stroke();
 
-  // 顶钮
-  ctx.fillStyle = style === "clay" ? "#8c5c42" : "#67736e";
+  // 盖顶高光弧线
+  ctx.strokeStyle = rgba("#fff8ec", 0.45);
+  ctx.lineWidth = 3.2;
+  ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.ellipse(0, y0 + 16, 48, 22, 0, Math.PI, TAU);
-  ctx.fill();
+  ctx.moveTo(x0 + 28, y0 + 28);
+  ctx.lineTo(x0 + w * 0.48, y0 + 28);
+  ctx.stroke();
 
-  // 罐盖腰线高光
-  ctx.strokeStyle = rgba("#fff4e0", 0.25);
-  ctx.lineWidth = 2.4;
+  // 顶钮（带高光点）
+  const knobG = ctx.createLinearGradient(-48, y0, 48, y0 + 22);
+  knobG.addColorStop(0, style === "clay" ? "#cab8a7" : "#9aa7a1");
+  knobG.addColorStop(1, style === "clay" ? "#8b7665" : "#5e6b66");
+  ctx.fillStyle = knobG;
+  ctx.beginPath();
+  ctx.ellipse(0, y0 + 16, 50, 22, 0, Math.PI, TAU);
+  ctx.fill();
+  ctx.strokeStyle = rgba(pal.ink, 0.36);
+  ctx.lineWidth = 2.6;
+  ctx.stroke();
+
+  // 罐盖腰线高光 + 下缘阴影线
+  ctx.strokeStyle = rgba("#fff4e0", 0.42);
+  ctx.lineWidth = 2.6;
   ctx.beginPath();
   ctx.moveTo(x0 + 14, y0 + lidH + 14);
   ctx.lineTo(x0 + w - 14, y0 + lidH + 14);
@@ -1550,17 +1955,17 @@ export function drawOuterCanister(
 
   // 半透剖视窗：清晰展示里面仍套好前两层袋子（外铝 + 内透明PE + 素雪饼）
   if (cutaway > 0.02) {
-    const cw = w * 0.74;
-    const ch = (h - lidH) * 0.78;
+    const cw = w * 0.76;
+    const ch = (h - lidH) * 0.8;
     const cy = y0 + lidH + (h - lidH) * 0.48;
     ctx.save();
     ctx.globalAlpha *= cutaway;
-    ctx.fillStyle = mixHex(pal.paper, "#3a291d", 0.14);
+    ctx.fillStyle = mixHex(pal.paper, "#3a291d", 0.08);
     ctx.beginPath();
     ctx.roundRect(-cw / 2, cy - ch / 2, cw, ch, 24);
     ctx.fill();
-    ctx.strokeStyle = rgba("#e4cf9b", 0.65);
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = rgba("#f3e3c3", 0.82);
+    ctx.lineWidth = 3.4;
     ctx.stroke();
 
     ctx.beginPath();

@@ -1,10 +1,9 @@
-import { framesOf } from "@/remotion/shared/theme";
 import { mg, mgLayer } from "@/remotion/shared/sfx-lib";
 import { makeVoAtFromTimes } from "../kit/vo";
 
 /**
  * 第 22 期 B5「二层纯铝」
- * 幕一：「二层 · 挡住光」纯铝箔袋落位，弹簧右让，依次挡住强光、水汽、纸箱纸浆味；
+ * 幕一：「二层 · 挡住光」承接 B4 尾帧的贴身 PE 素雪茶饼，纯铝箔袋立刻套上合拢，弹簧右让，依次挡住强光、水汽、纸箱纸浆味；
  * 幕二：辨真假——① 强光照镀铝袋透亮（朱砂大叉「镀铝 · 透光」）；② 真纯铝完全不透光、折角定形不回弹（「真纯铝 · 不透光」）。
  */
 export const SCRIPT =
@@ -35,9 +34,9 @@ export const END_HOLD_SEC = 1.2;
 export const LENGTH = VO.lengthOf(END_HOLD_SEC);
 export const FILM_NOTE = VO.filmNote(END_HOLD_SEC);
 
-// 幕一：纯铝箔阻隔三害
-export const HEAD_AT = framesOf(0.06);
-export const FOIL_AT = voAt("避光阻隔层") + 2;
+// 幕一：纯铝箔阻隔三害（开场 0.5 秒内主体与统一章节标题同步进场，并承接 B4 素雪茶饼位置）
+export const HEAD_AT = 0;
+export const FOIL_AT = 0;
 export const BLOCK1_AT = voAt("挡光") - 2;
 export const BLOCK2_AT = voAt("隔绝水汽") - 2;
 export const BLOCK3_AT = voAt("纸浆味") - 4;
@@ -56,7 +55,7 @@ export const REAL_TAG = voAt("真纯铝") - 2;
 
 export function sfxHits(_staggerFrames: number) {
   return [
-    ...mgLayer("thumpSoft", "foilCrinkle", FOIL_AT + 8, { volume: 0.72 }),
+    ...mgLayer("thumpSoft", "foilCrinkle", FOIL_AT + 6, { volume: 0.72 }),
     mg("dingD5", BLOCK1_AT, { volume: 0.44 }),
     mg("dingE5", BLOCK2_AT, { volume: 0.46 }),
     mg("dingFs5", BLOCK3_AT, { volume: 0.48 }),
