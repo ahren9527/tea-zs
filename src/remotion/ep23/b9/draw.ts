@@ -1,6 +1,6 @@
 /**
  * 第 23 期 B9「金句」水墨口诀逐帧画布（1080×1920）
- * 沿用 ep22 B7 水墨口诀风格：宣纸留白 + 底部远山薄雾（复用 public/tea/ep22/b7-mountains.png，无图时退回程序画山脊）+
+ * 沿用 ep22 B7 水墨口诀风格：宣纸留白 + 底部远山薄雾（复用 public/tea/ep23/b9-mountains.png，无图时退回程序画山脊）+
  * 两团淡墨依次洇开 + 马善政毛笔楷书两列竖排（「国标管的是出厂」/「存茶要自己留余量」）+ 左下朱印「存茶留余」。不要卷轴。
  */
 import { getIconImage } from "@/remotion/shared/icon-cache";
@@ -59,7 +59,7 @@ const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
 export const BRUSH_FONT = '"Ma Shan Zheng", "ZS WenKai", "LXGW WenKai", serif';
 
 /** 复用 ep22 B7 水墨远山透明底图，未加载时退回程序山脊 */
-export const MOUNT_SRC = "tea/ep22/b7-mountains.png";
+export const MOUNT_SRC = "tea/ep23/b9-mountains.png";
 export const NODE_IMAGES = [MOUNT_SRC];
 
 const COLS = [
