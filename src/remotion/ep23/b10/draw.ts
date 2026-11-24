@@ -36,6 +36,30 @@ import {
   textOf,
 } from "../kit/draw-kit";
 import { drawHandGesture, drawMiyunCake, drawNoseProfile } from "../kit/objects";
+import { getIconImage } from "@/remotion/shared/icon-cache";
+
+/** 手、鼻子用平涂淡彩插画（透明底 PNG），比代码简笔更像；图没加载时退回代码画 */
+const HAND_SRC = "tea/ep23/b10-hand.png";
+const NOSE_SRC = "tea/ep23/b10-nose.png";
+export const NODE_IMAGES = [HAND_SRC, NOSE_SRC];
+
+function drawCutout(
+  ctx: CanvasRenderingContext2D,
+  src: string,
+  width: number,
+  rot = 0,
+  dx = 0,
+): boolean {
+  const img = getIconImage(src);
+  if (!img || !img.complete || img.naturalWidth <= 0) return false;
+  const h = (img.naturalHeight / img.naturalWidth) * width;
+  ctx.save();
+  ctx.translate(dx, 0);
+  ctx.rotate(rot);
+  ctx.drawImage(img, -width / 2, -h / 2, width, h);
+  ctx.restore();
+  return true;
+}
 import {
   BYE_AT,
   HAND_PULSE_AT,
@@ -164,7 +188,8 @@ function drawVotePhase(
     ctx.globalAlpha *= lPose.alpha;
     ctx.translate(OPT_COLS.x[0], 1220 + lPose.y);
     ctx.scale(lPose.scaleX * (1 + handPulse), lPose.scaleY * (1 + handPulse));
-    drawHandGesture(ctx, pal, 1.12, { pinch });
+    if (!drawCutout(ctx, HAND_SRC, 400, -0.04 + pinch * 0.05))
+      drawHandGesture(ctx, pal, 1.12, { pinch });
     ctx.restore();
 
     const rPose = heavyLand(frame - VOTE_IN + 2, { drop: 70, fall: 7, squash: 0.045 });
@@ -173,7 +198,8 @@ function drawVotePhase(
     ctx.globalAlpha *= rPose.alpha;
     ctx.translate(OPT_COLS.x[1], 1220 + rPose.y);
     ctx.scale(rPose.scaleX * (1 + nosePulse), rPose.scaleY * (1 + nosePulse));
-    drawNoseProfile(ctx, pal, 1.12, { frame: stillFrame, sniff });
+    if (!drawCutout(ctx, NOSE_SRC, 400, 0, -sniff * 8))
+      drawNoseProfile(ctx, pal, 1.12, { frame: stillFrame, sniff });
     ctx.restore();
   }
 
