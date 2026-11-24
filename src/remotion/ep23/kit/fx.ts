@@ -55,4 +55,3 @@ export function cameraAt(frame: number, length: number, opts: CameraOpts = {}): 
     focus: opts.focus?.map((k) => ({ ...k, dur: k.dur * TEMPO })),
   });
 }
-

@@ -24,6 +24,7 @@ import {
   noise2,
   progress,
   rgba,
+  springValue,
   withLayer,
   type Bounds,
   type Camera,
@@ -31,6 +32,7 @@ import {
   type Pt,
   TEMPO,
 } from "./fx";
+import { drawBoilBrushStroke, onTwos } from "./hand";
 import { FONT_SONG, FPS, STAGE, framesOf, type AnimParams } from "@/remotion/shared/theme";
 import { TPL_FONT, resolveFont, setActiveFonts } from "@/remotion/shared/fonts";
 
@@ -104,6 +106,9 @@ export type TextStyle = {
   fixed?: boolean;
 };
 
+/** 画面文字的最小屏幕字号（px，1080 宽画布）。ep22 最小约 69px，关键小字不低于 54px */
+export const MIN_TEXT_PX = 54;
+
 export function fillText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -113,6 +118,12 @@ export function fillText(
   s: TextStyle,
 ) {
   ctx.save();
+  // 手机上看得清的下限：屏幕上不小于 MIN_TEXT_PX（包装、印章里的字用 fixed 跳过）
+  if (!s.fixed) {
+    const m = ctx.getTransform();
+    const sc = Math.hypot(m.a, m.b) || 1;
+    if (fs * sc < MIN_TEXT_PX) fs = MIN_TEXT_PX / sc;
+  }
   ctx.fillStyle = s.color;
   const family = s.font ?? KAI;
   ctx.font = `${s.weight ?? 700} ${Math.round(fs)}px ${s.fixed ? family : resolveFont(family)}`;
@@ -154,6 +165,136 @@ export function inkText(
   });
 }
 
+export type BeatTextOpts = TextStyle & {
+  /** 逐字开口帧（来自 VO.charFrames）；若长度与文案字数不同则自动按首尾插值 */
+  charFrames: number[];
+  /**
+   * 重音字标记：
+   * - true：全词皆重音（如「8.5%」「不超过」「安全线」）
+   * - string：包含在这些字符里的字为重音（如「8.5%」或「安全」）
+   * - number[]：指定字符索引为重音
+   */
+  accent?: boolean | string | number[];
+  /** 重音字缩放倍数（默认 1.18，控制在 1.15–1.25 之间） */
+  accentScale?: number;
+  /** 重音字颜色（省略则沿用主色） */
+  accentColor?: string;
+  /** 字未到开口帧前的预览底淡度（默认 0，开场前 0.5 秒首词可传 0.12 避免空帧） */
+  preAlpha?: number;
+  /** 进场下落/轻抬位移（px，默认 14） */
+  rise?: number;
+};
+
+/**
+ * 「字踩重音」逐字动效：
+ * 严格按 vo-times.json 的逐字开口帧出现（一拍二节奏 + 弹簧微弹），重音字略大 1.15–1.25×，
+ * 文字本体不做线条抖动，始终清晰好读；仅用于画面上的关键词。
+ */
+export function drawBeatText(
+  ctx: CanvasRenderingContext2D,
+  frame: number,
+  text: string,
+  x: number,
+  y: number,
+  fs: number,
+  opts: BeatTextOpts,
+) {
+  const cs = chars(text);
+  if (!cs.length) return;
+  const {
+    charFrames,
+    accent = false,
+    accentScale = 1.18,
+    accentColor,
+    preAlpha = 0,
+    rise = 14,
+    color,
+    weight = 900,
+    vertical = false,
+    font = SONG,
+    spacing,
+    fixed = false,
+  } = opts;
+
+  const family = fixed ? font : resolveFont(font);
+  const clampedAccent = Math.max(1.14, Math.min(1.25, accentScale));
+
+  // 按字数对齐开口帧（兼容面板临时改字）
+  const onsets = cs.map((_, i) => {
+    if (!charFrames.length) return 0;
+    if (charFrames.length === cs.length) return charFrames[i];
+    if (cs.length === 1) return charFrames[0];
+    const f0 = charFrames[0];
+    const f1 = charFrames[charFrames.length - 1];
+    return Math.round(f0 + ((f1 - f0) * i) / (cs.length - 1));
+  });
+
+  const isAccented = (ch: string, i: number) => {
+    if (accent === true) return true;
+    if (Array.isArray(accent)) return accent.includes(i);
+    if (typeof accent === "string") return accent.includes(ch);
+    return false;
+  };
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // 计算每个字的排版槽位（横排按真实字宽分布，避免 ASCII/数字与汉字间距过宽或拥挤）
+  const advances: number[] = cs.map((ch, i) => {
+    const acc = isAccented(ch, i);
+    const fSize = Math.round(fs * (acc ? clampedAccent : 1));
+    ctx.font = `${weight} ${fSize}px ${family}`;
+    if (vertical) return fSize * (spacing ?? VSTEP);
+    const m = ctx.measureText(ch).width;
+    return Math.max(fSize * 0.42, m * (spacing ?? 1.02));
+  });
+  const totalSpan = advances.reduce((a, b) => a + b, 0);
+
+  let cursor = -totalSpan / 2;
+  cs.forEach((ch, i) => {
+    const adv = advances[i];
+    const centerOff = cursor + adv / 2;
+    cursor += adv;
+
+    const acc = isAccented(ch, i);
+    const local = frame - onsets[i];
+    if (local < 0 && preAlpha <= 0.005) return;
+
+    const fTwos = onTwos(Math.max(0, local));
+    const sp =
+      local < 0
+        ? 0
+        : springValue(
+            fTwos + 1,
+            acc
+              ? { stiffness: 310, damping: 14.5, mass: 1.05 } // 重音字：脆弹微过冲
+              : { stiffness: 220, damping: 20, mass: 1.0 }, // 普通字：稳落轻弹
+          );
+
+    const alpha = local < 0 ? preAlpha : Math.max(preAlpha, clamp01((local + 2) / 5));
+    const baseScale = acc ? clampedAccent : 1;
+    // 弹簧过冲转化为轻盈放大弹跳，重音字更有重量感
+    const popScale = local < 0 ? 0.92 : (0.76 + 0.24 * sp) * baseScale;
+    const stretch = acc && local >= 0 && local < 10 ? Math.sin((local / 10) * Math.PI) * 0.06 : 0;
+    const dy = local < 0 ? rise * 0.4 : (1 - Math.min(1.12, sp)) * rise;
+
+    const cx = vertical ? x : x + centerOff;
+    const cy = vertical ? y + centerOff : y;
+
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.translate(cx, cy + dy);
+    ctx.scale(popScale * (1 + stretch), popScale * (1 - stretch * 0.7));
+    ctx.fillStyle = acc && accentColor ? accentColor : color;
+    ctx.font = `${weight} ${Math.round(fs)}px ${family}`;
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
 export function softShadow(
   ctx: CanvasRenderingContext2D,
   path: () => void,
@@ -185,28 +326,38 @@ export function brushCross(
   color: string,
   seed = 1,
   width = 14,
+  frame?: number,
 ) {
   if (p <= 0) return;
   const h = size / 2;
-  drawBrushStroke(
-    ctx,
+  const strokeFn = (pts: Pt[], prog: number, s: number) =>
+    frame !== undefined
+      ? drawBoilBrushStroke(ctx, pts, prog, frame, {
+          width,
+          color,
+          seed: s,
+          tail: 0.25,
+          jitter: 0.3,
+          boilAmp: 1.5,
+        })
+      : drawBrushStroke(ctx, pts, prog, { width, color, seed: s, tail: 0.25, jitter: 0.3 });
+  strokeFn(
     [
       { x: cx - h, y: cy - h * 0.92 },
       { x: cx - h * 0.1, y: cy + h * 0.02 },
       { x: cx + h * 1.02, y: cy + h },
     ],
     easeOutExpo(progress(p, 0, 0.55)),
-    { width, color, seed, tail: 0.25, jitter: 0.3 },
+    seed,
   );
-  drawBrushStroke(
-    ctx,
+  strokeFn(
     [
       { x: cx + h * 0.96, y: cy - h },
       { x: cx + h * 0.05, y: cy - h * 0.04 },
       { x: cx - h, y: cy + h * 0.94 },
     ],
     easeOutExpo(progress(p, 0.42, 1)),
-    { width, color, seed: seed + 1, tail: 0.25, jitter: 0.3 },
+    seed + 1,
   );
 }
 
@@ -220,15 +371,27 @@ export function brushRing(
   color: string,
   seed = 1,
   width = 8,
+  frame?: number,
 ) {
   if (p <= 0) return;
   const pts: Pt[] = [];
-  for (let i = 0; i <= 64; i++) {
-    const a = -Math.PI * 0.62 + (i / 64) * TAU * 0.95;
+  for (let i = 0; i <= 48; i++) {
+    const a = -Math.PI * 0.62 + (i / 48) * TAU * 0.95;
     const w = 1 + Math.sin(i * 0.5 + seed) * 0.015;
     pts.push({ x: cx + Math.cos(a) * rx * w, y: cy + Math.sin(a) * ry * w });
   }
-  drawBrushStroke(ctx, pts, easeInOutCubic(p), { width, color, seed, tail: 0.25, jitter: 0.25 });
+  if (frame !== undefined) {
+    drawBoilBrushStroke(ctx, pts, easeInOutCubic(p), frame, {
+      width,
+      color,
+      seed,
+      tail: 0.25,
+      jitter: 0.25,
+      boilAmp: 1.4,
+    });
+  } else {
+    drawBrushStroke(ctx, pts, easeInOutCubic(p), { width, color, seed, tail: 0.25, jitter: 0.25 });
+  }
 }
 
 export function gapMarker(
@@ -239,6 +402,7 @@ export function gapMarker(
   color: string,
   seed = 1,
   tick = 26,
+  frame?: number,
 ) {
   if (p <= 0) return;
   const dx = b.x - a.x;
@@ -247,25 +411,32 @@ export function gapMarker(
   const nx = -dy / len;
   const ny = dx / len;
   const tp = easeOutExpo(progress(p, 0, 0.35));
+  const strokeFn = (
+    pts: Pt[],
+    prog: number,
+    o: { width: number; seed: number; tail: number; head?: number },
+  ) =>
+    frame !== undefined
+      ? drawBoilBrushStroke(ctx, pts, prog, frame, { ...o, color, boilAmp: 1.25 })
+      : drawBrushStroke(ctx, pts, prog, { ...o, color });
   for (const [q, s] of [
     [a, seed],
     [b, seed + 1],
   ] as const) {
-    drawBrushStroke(
-      ctx,
+    strokeFn(
       [
         { x: q.x - nx * tick, y: q.y - ny * tick },
         { x: q.x + nx * tick, y: q.y + ny * tick },
       ],
       tp,
-      { width: 5, color, seed: s, tail: 0.2 },
+      { width: 5, seed: s, tail: 0.2 },
     );
   }
   const lp = easeInOutCubic(progress(p, 0.2, 1));
   const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   const half = (q: Pt): Pt[] => [m, { x: m.x + (q.x - m.x) * 0.92, y: m.y + (q.y - m.y) * 0.92 }];
-  drawBrushStroke(ctx, half(a), lp, { width: 3.4, color, seed: seed + 2, tail: 0.5, head: 0.02 });
-  drawBrushStroke(ctx, half(b), lp, { width: 3.4, color, seed: seed + 3, tail: 0.5, head: 0.02 });
+  strokeFn(half(a), lp, { width: 3.4, seed: seed + 2, tail: 0.5, head: 0.02 });
+  strokeFn(half(b), lp, { width: 3.4, seed: seed + 3, tail: 0.5, head: 0.02 });
 }
 
 export function mixColor(a: string, b: string, t: number) {
@@ -458,4 +629,3 @@ export function drawChapterTitle(
   });
   ctx.restore();
 }
-

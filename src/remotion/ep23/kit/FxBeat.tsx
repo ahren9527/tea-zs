@@ -3,7 +3,12 @@ import { AbsoluteFill } from "remotion";
 import { FxCanvas } from "@/remotion/shared/fx/react";
 import { SfxTrack } from "@/remotion/shared/sfx";
 import { FPS, type AnimParams } from "@/remotion/shared/theme";
-import { useCustomTexts, useFontChoice, useFontSizeScale, usePaperTheme } from "@/remotion/shared/theme-context";
+import {
+  useCustomTexts,
+  useFontChoice,
+  useFontSizeScale,
+  usePaperTheme,
+} from "@/remotion/shared/theme-context";
 import { ensureFonts, setActiveFonts } from "@/remotion/shared/fonts";
 import type { SfxHit } from "@/remotion/shared/sfx-lib";
 

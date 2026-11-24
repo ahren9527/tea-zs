@@ -11,6 +11,12 @@ export type VoBeatKey = keyof typeof VO_TIMES;
 export interface VoTimeline {
   /** 某个词（第 nth 次出现）第一个字开始说的帧（相对片段起点） */
   voAt: (phrase: string, nth?: number) => number;
+  /**
+   * 返回某个词对应的逐字开口帧数组（相对片段起点）。
+   * 若画面展示字数 displayLen 与口播字数不同（如「8.5%」「≤7%」「安全线？」），
+   * 按真实开口起止区间平滑插值分配，确保每个字都踩在马老师语速上。
+   */
+  charFrames: (phrase: string, displayLen?: number, nth?: number) => number[];
   /** 片段起点在整条口播 / 成片里的绝对秒数 */
   startSec: number;
   /** 最后一个字开始说的时刻（相对片段起点，秒） */
@@ -76,6 +82,35 @@ export function makeVoAtFromTimes(
     return framesOf(leadSec + offsetSec + j / fallbackCps);
   };
 
+  const charFrames = (phrase: string, displayLen?: number, nth = 0): number[] => {
+    const pLen = Math.max(1, Array.from(phrase).length);
+    const outLen = Math.max(1, displayLen ?? pLen);
+    const i = find(spokenRec, phrase, nth);
+    if (i >= 0) {
+      const raw: number[] = [];
+      for (let k = 0; k < pLen; k++) {
+        const ti = times[Math.min(times.length - 1, i + k)];
+        raw.push(framesOf(ti - startSec + offsetSec));
+      }
+      if (outLen === pLen) return raw;
+      if (outLen === 1) return [raw[0]];
+      const fStart = raw[0];
+      const fEnd =
+        pLen > 1
+          ? raw[raw.length - 1]
+          : framesOf(
+              (times[Math.min(times.length - 1, i + 1)] ?? times[i] + 0.24) - startSec + offsetSec,
+            );
+      const span = Math.max(outLen * 2, fEnd - fStart);
+      return Array.from({ length: outLen }, (_, k) =>
+        Math.round(fStart + (span * k) / Math.max(1, outLen - 1)),
+      );
+    }
+    const base = voAt(phrase, nth);
+    const step = Math.max(3, Math.round(FPS / Math.max(2.2, fallbackCps)));
+    return Array.from({ length: outLen }, (_, k) => base + k * step);
+  };
+
   const lengthOf = (endHoldSec: number) => framesOf(lastCharSec + endHoldSec);
   const filmNote = (endHoldSec: number) => {
     const len = lengthOf(endHoldSec) / FPS;
@@ -83,5 +118,5 @@ export function makeVoAtFromTimes(
     return `约${len.toFixed(1)}秒 · 成片 ${startSec.toFixed(1)}–${end.toFixed(1)}s · 起点 ${timecodeDF(startSec)}（29.97）`;
   };
   const cps = (spokenRec.length - 1) / Math.max(0.1, times[times.length - 1] - first);
-  return { voAt, startSec, lastCharSec, cps, lengthOf, filmNote };
+  return { voAt, charFrames, startSec, lastCharSec, cps, lengthOf, filmNote };
 }

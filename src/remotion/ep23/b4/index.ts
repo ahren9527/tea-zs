@@ -1,7 +1,19 @@
 import { defineClip } from "@/remotion/shared/define-clip";
 import { ensureFonts } from "@/remotion/shared/fonts";
 import { sec } from "../kit/draw-kit";
-import { FILM_NOTE, LENGTH, LINE_AT, TEXT, VO, sfxHits } from "./data";
+import {
+  DAMP_AT,
+  FILM_NOTE,
+  LENGTH,
+  NEQ_AT,
+  PASS_AT,
+  SAFE_AT,
+  STD_AT,
+  TEXT,
+  VO,
+  YEAR_AT,
+  sfxHits,
+} from "./data";
 import { Comp } from "./Comp";
 import { allTexts, draw } from "./draw";
 
@@ -18,8 +30,18 @@ export default defineClip({
   sfx: sfxHits,
   refVo: { src: "tea/vo/ep23.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
-  // 时间轴上的关键帧标记
-  markers: [{ frame: LINE_AT, timeSec: sec(LINE_AT), label: TEXT.line, tag: "大字", type: "punchline" }],
-  // 面板右侧可改的文案：key 与 TEXT 一一对应
-  fields: [{ key: "line", label: "大字", default: TEXT.line, placeholder: TEXT.line }],
+  markers: [
+    { frame: YEAR_AT, timeSec: sec(YEAR_AT), label: TEXT.years, tag: "存期", type: "intro" },
+    { frame: DAMP_AT, timeSec: sec(DAMP_AT), label: "水汽变化", tag: "环境", type: "action" },
+    { frame: STD_AT, timeSec: sec(STD_AT), label: TEXT.stdOut, tag: "脱离", type: "action" },
+    { frame: PASS_AT, timeSec: sec(PASS_AT), label: TEXT.passLine, tag: "结论", type: "punchline" },
+    { frame: NEQ_AT, timeSec: sec(NEQ_AT), label: "≠", tag: "对比", type: "punchline" },
+    { frame: SAFE_AT, timeSec: sec(SAFE_AT), label: TEXT.safeLine, tag: "收尾", type: "punchline" },
+  ],
+  fields: [
+    { key: "years", label: "存期标题", default: TEXT.years, placeholder: TEXT.years },
+    { key: "stdOut", label: "过渡提示", default: TEXT.stdOut, placeholder: TEXT.stdOut },
+    { key: "passLine", label: "对比上行", default: TEXT.passLine, placeholder: TEXT.passLine },
+    { key: "safeLine", label: "对比下行", default: TEXT.safeLine, placeholder: TEXT.safeLine },
+  ],
 });

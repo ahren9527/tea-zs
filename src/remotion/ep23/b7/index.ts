@@ -1,7 +1,19 @@
 import { defineClip } from "@/remotion/shared/define-clip";
 import { ensureFonts } from "@/remotion/shared/fonts";
 import { sec } from "../kit/draw-kit";
-import { FILM_NOTE, LENGTH, LINE_AT, TEXT, VO, sfxHits } from "./data";
+import {
+  DAMP_AT,
+  DB_CODE_AT,
+  FILM_NOTE,
+  HIGH_AT,
+  LENGTH,
+  MARGIN_AT,
+  SEVEN_AT,
+  TEXT,
+  VO,
+  WATER_AT,
+  sfxHits,
+} from "./data";
 import { Comp } from "./Comp";
 import { allTexts, draw } from "./draw";
 
@@ -18,8 +30,39 @@ export default defineClip({
   sfx: sfxHits,
   refVo: { src: "tea/vo/ep23.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
-  // 时间轴上的关键帧标记
-  markers: [{ frame: LINE_AT, timeSec: sec(LINE_AT), label: TEXT.line, tag: "大字", type: "punchline" }],
-  // 面板右侧可改的文案：key 与 TEXT 一一对应
-  fields: [{ key: "line", label: "大字", default: TEXT.line, placeholder: TEXT.line }],
+  markers: [
+    {
+      frame: WATER_AT,
+      timeSec: sec(WATER_AT),
+      label: TEXT.itemWater,
+      tag: "查报告",
+      type: "intro",
+    },
+    { frame: SEVEN_AT, timeSec: sec(SEVEN_AT), label: TEXT.lowVal, tag: "≤7%", type: "punchline" },
+    {
+      frame: MARGIN_AT,
+      timeSec: sec(MARGIN_AT),
+      label: TEXT.marginOk,
+      tag: "余量",
+      type: "action",
+    },
+    { frame: DB_CODE_AT, timeSec: sec(DB_CODE_AT), label: "地方标准", tag: "说明", type: "action" },
+    { frame: HIGH_AT, timeSec: sec(HIGH_AT), label: TEXT.highVal, tag: "贴线", type: "action" },
+    { frame: DAMP_AT, timeSec: sec(DAMP_AT), label: TEXT.dampRisk, tag: "风险", type: "punchline" },
+  ],
+  fields: [
+    {
+      key: "reportTitle",
+      label: "报告标题",
+      default: TEXT.reportTitle,
+      placeholder: TEXT.reportTitle,
+    },
+    { key: "itemWater", label: "检测项名", default: TEXT.itemWater, placeholder: TEXT.itemWater },
+    { key: "lowVal", label: "低水区间", default: TEXT.lowVal, placeholder: TEXT.lowVal },
+    { key: "marginOk", label: "安全结论", default: TEXT.marginOk, placeholder: TEXT.marginOk },
+    { key: "dbCode", label: "地标编号", default: TEXT.dbCode, placeholder: TEXT.dbCode },
+    { key: "dbDesc", label: "地标说明", default: TEXT.dbDesc, placeholder: TEXT.dbDesc },
+    { key: "highVal", label: "高水区间", default: TEXT.highVal, placeholder: TEXT.highVal },
+    { key: "dampRisk", label: "风险结论", default: TEXT.dampRisk, placeholder: TEXT.dampRisk },
+  ],
 });

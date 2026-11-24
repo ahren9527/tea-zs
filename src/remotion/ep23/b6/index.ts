@@ -1,7 +1,17 @@
 import { defineClip } from "@/remotion/shared/define-clip";
 import { ensureFonts } from "@/remotion/shared/fonts";
 import { sec } from "../kit/draw-kit";
-import { FILM_NOTE, LENGTH, LINE_AT, TEXT, VO, sfxHits } from "./data";
+import {
+  ABSORB_AT,
+  FILM_NOTE,
+  FLUFF_AT,
+  LENGTH,
+  MOLD_AT,
+  TEXT,
+  THROW_AT,
+  VO,
+  sfxHits,
+} from "./data";
 import { Comp } from "./Comp";
 import { allTexts, draw } from "./draw";
 
@@ -18,8 +28,27 @@ export default defineClip({
   sfx: sfxHits,
   refVo: { src: "tea/vo/ep23.mp3", startSec: VO.startSec },
   prepare: (params) => ensureFonts(allTexts(params)),
-  // 时间轴上的关键帧标记
-  markers: [{ frame: LINE_AT, timeSec: sec(LINE_AT), label: TEXT.line, tag: "大字", type: "punchline" }],
-  // 面板右侧可改的文案：key 与 TEXT 一一对应
-  fields: [{ key: "line", label: "大字", default: TEXT.line, placeholder: TEXT.line }],
+  markers: [
+    { frame: FLUFF_AT, timeSec: sec(FLUFF_AT), label: TEXT.looseTrait, tag: "散茶", type: "intro" },
+    { frame: ABSORB_AT, timeSec: sec(ABSORB_AT), label: "吸潮对比", tag: "演示", type: "action" },
+    { frame: MOLD_AT, timeSec: sec(MOLD_AT), label: "超标发霉", tag: "警示", type: "punchline" },
+    {
+      frame: THROW_AT,
+      timeSec: sec(THROW_AT),
+      label: TEXT.discard,
+      tag: "收尾",
+      type: "punchline",
+    },
+  ],
+  fields: [
+    { key: "cakeLabel", label: "左标", default: TEXT.cakeLabel, placeholder: TEXT.cakeLabel },
+    { key: "looseLabel", label: "右标", default: TEXT.looseLabel, placeholder: TEXT.looseLabel },
+    {
+      key: "looseTrait",
+      label: "散茶特性",
+      default: TEXT.looseTrait,
+      placeholder: TEXT.looseTrait,
+    },
+    { key: "discard", label: "结尾大字", default: TEXT.discard, placeholder: TEXT.discard },
+  ],
 });

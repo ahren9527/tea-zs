@@ -57,7 +57,8 @@ const bundle = join(outDir, ".render-bundle.mjs");
 mkdirSync(outDir, { recursive: true });
 const stub = `export * from ${JSON.stringify(resolve(ROOT, entry))};
 export { setSurfaceFactory } from ${JSON.stringify(join(ROOT, "src/remotion/shared/fx/surface.ts"))};
-export { setIconImage } from ${JSON.stringify(join(ROOT, "src/remotion/shared/icon-cache.ts"))};`;
+export { setIconImage } from ${JSON.stringify(join(ROOT, "src/remotion/shared/icon-cache.ts"))};
+export { setProductCanvasFactory } from ${JSON.stringify(join(ROOT, "src/remotion/shared/products/common.ts"))};`;
 await esbuild.build({
   stdin: { contents: stub, resolveDir: ROOT, loader: "ts" },
   bundle: true,
@@ -71,9 +72,15 @@ const mod = await import(pathToFileURL(bundle).href + `?t=${Date.now()}`);
 // draw.ts 可导出 NODE_IMAGES（public/ 下的相对路径），离线渲染时预先解码放进图片缓存
 if (Array.isArray(mod.NODE_IMAGES)) {
   const { loadImage } = req("@napi-rs/canvas");
-  for (const src of mod.NODE_IMAGES) mod.setIconImage(src, await loadImage(join(ROOT, "public", src)));
+  for (const src of mod.NODE_IMAGES)
+    mod.setIconImage(src, await loadImage(join(ROOT, "public", src)));
 }
 mod.setSurfaceFactory((w, h) => {
+  const c = createCanvas(w, h);
+  return { canvas: c, ctx: c.getContext("2d") };
+});
+// 产品（shared/products）的离屏缓存也要 Node 画布，否则茶饼包装画成空白
+mod.setProductCanvasFactory((w, h) => {
   const c = createCanvas(w, h);
   return { canvas: c, ctx: c.getContext("2d") };
 });
