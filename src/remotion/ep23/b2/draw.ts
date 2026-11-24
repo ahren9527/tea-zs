@@ -214,13 +214,26 @@ function drawPhase2(
       weight: 900,
       wash: 0.03,
     });
-    // 上方小字「出厂」清晰交代归属
+    // 上方「出厂」：朱砂框小印（接前面文件上盖的那枚），字号够手机上一眼看清
     const tag = t(params, "factoryTag");
-    fillText(ctx, tag, 0, -102, 42 * fontScale, {
-      color: pal.tea,
-      font: KAI,
-      weight: 700,
+    const tfs = 76 * fontScale;
+    const tw = Math.max(1, Array.from(tag).length) * tfs * 1.02 + 40;
+    const th = tfs + 26;
+    const ty = -fs * 0.5 - 30 - th / 2;
+    ctx.save();
+    ctx.translate(0, ty);
+    ctx.rotate(-0.04);
+    ctx.fillStyle = rgba(pal.cinnabar, 0.08);
+    ctx.fillRect(-tw / 2, -th / 2, tw, th);
+    ctx.strokeStyle = pal.cinnabar;
+    ctx.lineWidth = 5;
+    ctx.strokeRect(-tw / 2, -th / 2, tw, th);
+    fillText(ctx, tag, 0, 3, tfs, {
+      color: pal.cinnabar,
+      font: SONG,
+      weight: 900,
     });
+    ctx.restore();
     ctx.restore();
   }
 
