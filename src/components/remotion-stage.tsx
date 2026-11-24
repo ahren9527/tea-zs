@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { StageErrorBoundary } from "@/components/stage-error";
 import { resolveClip, type ClipRef } from "@/lib/draw-stage";
 import { FPS, HEIGHT, WIDTH, PAPER_THEMES, type PaperThemeKey } from "@/remotion/shared/theme";
-import { PaperThemeContext, FontSizeContext, CustomTextContext } from "@/remotion/shared/theme-context";
+import type { FontChoice } from "@/remotion/shared/fonts";
+import { DEFAULT_FONTS } from "@/remotion/shared/fonts";
+import { PaperThemeContext, FontSizeContext, CustomTextContext, FontChoiceContext } from "@/remotion/shared/theme-context";
 
 type Props = {
   /** 经典片段 id，或直接传 ClipDef（模板分镜） */
@@ -19,6 +21,7 @@ type Props = {
   paperTheme?: PaperThemeKey;
   fontScale?: number;
   customTexts?: Record<string, string>;
+  fonts?: FontChoice;
   onPlayerReady?: (player: PlayerRef | null) => void;
   onPlayingChange?: (playing: boolean) => void;
   onFrameUpdate?: (frame: number) => void;
@@ -35,6 +38,7 @@ export function RemotionStage({
   paperTheme = "classic",
   fontScale = 1,
   customTexts,
+  fonts = DEFAULT_FONTS,
   onPlayerReady,
   onPlayingChange,
   onFrameUpdate,
@@ -56,7 +60,7 @@ export function RemotionStage({
     [staggerFrames, customTexts, paperTheme, fontScale, extraProps],
   );
   const textKey = useMemo(() => resetKey ?? JSON.stringify(customTexts ?? {}), [customTexts, resetKey]);
-  const playerKey = `${clip.id}-${playId}-${paperTheme}-${fontScale}-${staggerFrames}-${textKey}`;
+  const playerKey = `${clip.id}-${playId}-${paperTheme}-${fontScale}-${fonts.body}-${fonts.title}-${staggerFrames}-${textKey}`;
   const themeColor = PAPER_THEMES[paperTheme]?.paper ?? "#f3ecdc";
 
   const ThemedComponent = useMemo(() => {
@@ -69,18 +73,20 @@ export function RemotionStage({
         <PaperThemeContext.Provider value={activeTheme}>
           <FontSizeContext.Provider value={activeFontScale}>
             <CustomTextContext.Provider value={activeTexts}>
+              <FontChoiceContext.Provider value={fonts}>
               <RawComp
                 {...(props as any)}
                 fontScale={activeFontScale}
                 customTexts={activeTexts}
                 staggerFrames={staggerFrames}
               />
+              </FontChoiceContext.Provider>
             </CustomTextContext.Provider>
           </FontSizeContext.Provider>
         </PaperThemeContext.Provider>
       );
     };
-  }, [clip.Comp, paperTheme, fontScale, customTexts, staggerFrames]);
+  }, [clip.Comp, paperTheme, fontScale, customTexts, staggerFrames, fonts]);
 
   useEffect(() => {
     setMounted(true);

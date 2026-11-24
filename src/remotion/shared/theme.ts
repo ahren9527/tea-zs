@@ -106,6 +106,8 @@ export type AnimParams = {
   customTexts?: Record<string, string>;
   paperTheme?: PaperThemeKey;
   fontScale?: number;
+  /** 面板选的字体（楷体位置 / 宋体位置），见 shared/fonts.ts */
+  fonts?: Partial<import("./fonts").FontChoice>;
 };
 
 export function scaledFontSize(baseSize: number, fontScale: number = 1): number {

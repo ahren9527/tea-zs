@@ -1,9 +1,15 @@
 import { createContext, useContext } from "react";
+import { DEFAULT_FONTS, type FontChoice } from "./fonts";
 import { PAPER_THEMES, type PaperThemeKey } from "./theme";
 
 export const PaperThemeContext = createContext<PaperThemeKey>("classic");
 export const FontSizeContext = createContext<number>(1);
 export const CustomTextContext = createContext<Record<string, string>>({});
+export const FontChoiceContext = createContext<FontChoice>(DEFAULT_FONTS);
+
+export function useFontChoice(): FontChoice {
+  return useContext(FontChoiceContext);
+}
 
 export function usePaperTheme(): PaperThemeKey {
   return useContext(PaperThemeContext);

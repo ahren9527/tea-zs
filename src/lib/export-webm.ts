@@ -8,15 +8,15 @@ import {
   canEncodeAudio,
   canEncodeVideo,
 } from "mediabunny";
-import { hitsFor } from "@/remotion/shared/sfx-hits";
 import type { SfxHit } from "@/remotion/shared/sfx-lib";
 import { audioBufferToWav, renderSfx } from "@/lib/sfx-mix";
-import { STATIC_MODE } from "@/lib/static-mode";
+import { setActiveFonts } from "@/remotion/shared/fonts";
 import { FPS, STAGE, type AnimParams } from "@/remotion/shared/theme";
 import {
   drawFrame,
   preloadIcons,
   resolveClip,
+  staggerFramesOf,
   totalDuration,
   type ClipRef,
 } from "@/lib/draw-stage";
@@ -57,9 +57,7 @@ function clipFrames(params: AnimParams, clipRef: ClipRef) {
 }
 
 function clipHits(clipRef: ClipRef, staggerMs: number): SfxHit[] {
-  const staggerFrames = Math.max(6, Math.round((staggerMs / 1000) * FPS));
-  const clip = resolveClip(clipRef);
-  return clip.sfx ? clip.sfx(staggerFrames) : hitsFor(clip.id, staggerFrames);
+  return resolveClip(clipRef).sfx?.(staggerFramesOf(staggerMs)) ?? [];
 }
 
 async function mixSfx(clipRef: ClipRef, params: AnimParams): Promise<AudioBuffer | null> {
@@ -72,7 +70,7 @@ async function mixSfx(clipRef: ClipRef, params: AnimParams): Promise<AudioBuffer
  * 只导出音效轨：48 kHz / 16-bit 立体声 WAV，长度严格 = 片段帧数 / 29.97 秒（与导出视频逐帧对齐）。
  * 片段没有音效时也会给一段等长静音，方便剪映里统一对轨。
  */
-export async function exportSfxWav(params: AnimParams, clipId: ClipRef = "ep18-b1"): Promise<Blob> {
+export async function exportSfxWav(params: AnimParams, clipId: ClipRef): Promise<Blob> {
   const r = await renderSfx(clipHits(clipId, params.staggerMs), clipFrames(params, clipId), FPS);
   return audioBufferToWav(r.buffer);
 }
@@ -255,59 +253,31 @@ async function recordWebm(
   });
 }
 
-async function exportViaServer(
-  params: AnimParams,
-  clipId: ClipRef,
-  onProgress?: (p: ExportProgress) => void,
-  abortSignal?: AbortSignal,
-): Promise<Blob> {
-  const webm = await recordWebm(params, clipId, onProgress, abortSignal);
-  onProgress?.({
-    phase: "encoding",
-    currentFrame: 100,
-    totalFrames: 100,
-    percent: 96,
-    message: "正在请求服务器转码为 MP4 (H.264)...",
-  });
-  const body = new FormData();
-  body.append("video", webm, "tea.webm");
-  const res = await fetch("/api/export-mp4", { method: "POST", body, signal: abortSignal });
-  if (!res.ok) throw new Error((await res.text()) || "服务器转码失败");
-  return res.blob();
-}
-
 export async function exportMp4(
   params: AnimParams,
-  clipId: ClipRef = "ep18-b1",
+  clipId: ClipRef,
   onProgress?: (p: ExportProgress) => void,
   abortSignal?: AbortSignal,
   opts: ExportOptions = {},
 ): Promise<Blob> {
   await document.fonts.ready;
   await preloadIcons();
+  setActiveFonts(params.fonts);
   await resolveClip(clipId).prepare?.(params);
 
-  try {
-    return await exportWithMediabunny(params, clipId, onProgress, abortSignal, opts);
-  } catch (browserErr) {
-    if (abortSignal?.aborted || STATIC_MODE) throw browserErr;
-    try {
-      return await exportViaServer(params, clipId, onProgress, abortSignal);
-    } catch {
-      const msg = browserErr instanceof Error ? browserErr.message : "导出失败";
-      throw new Error(msg);
-    }
-  }
+  // 纯浏览器内编码（WebCodecs）；没有服务器兜底，请用桌面版 Chrome 导出
+  return exportWithMediabunny(params, clipId, onProgress, abortSignal, opts);
 }
 
 export async function exportWebm(
   params: AnimParams,
-  clipId: ClipRef = "ep18-b1",
+  clipId: ClipRef,
   onProgress?: (p: ExportProgress) => void,
   abortSignal?: AbortSignal,
 ): Promise<Blob> {
   await document.fonts.ready;
   await preloadIcons();
+  setActiveFonts(params.fonts);
   await resolveClip(clipId).prepare?.(params);
   return recordWebm(params, clipId, onProgress, abortSignal);
 }

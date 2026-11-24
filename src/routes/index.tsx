@@ -1,85 +1,92 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import type { PlayerRef } from "@remotion/player";
-import {
-  BookOpen,
-  CheckCircle2,
-  Copy,
-  Download,
-  FileInput,
-  Film,
-  FilePlus2,
-  Layers,
-  Replace,
-  RotateCcw,
-  Settings2,
-  Sparkles,
-  Trash2,
-  Type,
-} from "lucide-react";
+import { CheckCircle2, Download, Film, FolderOpen, Layers, RotateCcw, Sparkles, Type } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BatchExportDialog } from "@/components/studio/batch-export-dialog";
-import { BeatList } from "@/components/studio/beat-list";
-import { ImportDialog } from "@/components/studio/import-dialog";
-import { SchemaForm } from "@/components/studio/schema-form";
-import { TemplatePicker } from "@/components/studio/template-picker";
+import { BatchExportDialog } from "@/components/batch-export-dialog";
+import { BeatList } from "@/components/beat-list";
 import { ExportDialog } from "@/components/export-dialog";
-import { RemotionStage } from "@/components/remotion-stage";
+import { PlayerTimeline } from "@/components/player-timeline";
 import { RefVoAudio } from "@/components/ref-vo-audio";
-import { refVoOf } from "@/remotion/shared/define-clip";
-import { PlayerTimeline } from "@/components/studio/player-timeline";
-import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
-import { STATIC_MODE } from "@/lib/static-mode";
+import { RemotionStage } from "@/components/remotion-stage";
+import { TextFields } from "@/components/text-fields";
+import { STAGGER_MS, resolveBeat } from "@/lib/beat";
 import { preloadIcons } from "@/lib/draw-stage";
-import {
-  downloadBlob,
-  exportBeatFiles,
-  type ExportProgress,
-  type SoundMode,
-} from "@/lib/export-webm";
-import { useActiveEpisode, useEpisodes } from "@/episodes/store";
-import { BESPOKE_STAGGER_MS, resolveBeat } from "@/templates/beat-clip";
-import { getTemplate } from "@/templates/registry";
-import { defaultExportName, type PaperThemeId } from "@/templates/schema";
-import { PAPER_THEMES, type PaperThemeKey } from "@/remotion/shared/theme";
+import { downloadBlob, exportBeatFiles, type ExportProgress, type SoundMode } from "@/lib/export-webm";
+import { rehydratePanel, usePanel } from "@/lib/panel-store";
+import { DEFAULT_FONTS, FONT_OPTIONS, type FontId } from "@/remotion/shared/fonts";
+import { CLIPS, EPISODE_NUMBERS, getEpisodeMeta } from "@/remotion/catalog";
 
 export const Route = createFileRoute("/")({
   component: Home,
   codeSplitGroupings: [],
 });
 
-const THEME_KEYS = Object.keys(PAPER_THEMES) as PaperThemeKey[];
 const field =
   "rounded-md border border-chrome-line/80 bg-chrome/60 px-2 py-1 text-sm text-chrome-fg focus:border-moss-fg/50 focus:outline-none";
 
 function useHydrated() {
   const [ok, setOk] = useState(false);
+  useEffect(() => rehydratePanel(() => setOk(true)), []);
+  return ok;
+}
+
+/** 参考口播文件是否真的部署了（没有就提示，而不是静默没声音） */
+function useFileExists(src: string | undefined) {
+  const [ok, setOk] = useState<boolean | null>(null);
   useEffect(() => {
-    const unsub = useEpisodes.persist.onFinishHydration(() => setOk(true));
-    void useEpisodes.persist.rehydrate();
-    if (useEpisodes.persist.hasHydrated()) setOk(true);
-    return unsub;
-  }, []);
+    if (!src) {
+      setOk(null);
+      return;
+    }
+    let alive = true;
+    fetch(`/${src}`, { method: "HEAD" })
+      .then((r) => {
+        // SPA 回落会把不存在的路径返回成 index.html，所以还要看类型
+        if (alive) setOk(r.ok && !(r.headers.get("content-type") ?? "").includes("text/html"));
+      })
+      .catch(() => {
+        if (alive) setOk(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [src]);
   return ok;
 }
 
 function Home() {
   const hydrated = useHydrated();
-  const store = useEpisodes();
-  const episode = useActiveEpisode();
-  const activeBeatId = episode ? store.activeBeatId[episode.id] : undefined;
-  const beat = episode?.beats.find((b) => b.id === activeBeatId) ?? episode?.beats[0];
+  const store = usePanel();
+
+  const episode = EPISODE_NUMBERS.includes(store.episode) ? store.episode : (EPISODE_NUMBERS[0] ?? 0);
+  const clips = useMemo(() => CLIPS.filter((c) => c.episode === episode), [episode]);
+  const clip = clips.find((c) => c.id === store.activeClip[episode]) ?? clips[0];
+  const overrides = clip ? store.texts[clip.id] : undefined;
+  const fontScale = store.fontScale[episode] ?? 1;
+  const fonts = store.fonts[episode] ?? DEFAULT_FONTS;
+  const resolved = useMemo(
+    () => (clip ? resolveBeat(clip, overrides, { fontScale, fonts }) : null),
+    [clip, overrides, fontScale, fonts],
+  );
+  const durations = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const c of clips) out[c.id] = resolveBeat(c).durationSec;
+    return out;
+  }, [clips]);
+  const edited = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of clips) {
+      const t = store.texts[c.id] ?? {};
+      if (c.fields.some((f) => t[f.key] !== undefined && t[f.key] !== f.default)) set.add(c.id);
+    }
+    return set;
+  }, [clips, store.texts]);
 
   const [playId, setPlayId] = useState(1);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isLoop, setIsLoop] = useState(true);
-  /** 参考口播（只在预览里放，导出不带） */
   const [refVoOn, setRefVoOn] = useState(false);
-  const [tab, setTab] = useState<"content" | "timing">("content");
-  const [picker, setPicker] = useState<null | "add" | "change">(null);
-  const [importOpen, setImportOpen] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
-  const [newMenu, setNewMenu] = useState(false);
-
   const [exportOpen, setExportOpen] = useState(false);
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -92,27 +99,18 @@ function Home() {
     playerRef.current = p;
     setPlayer(p);
   }, []);
+  const refVoExists = useFileExists(clip?.refVo?.src);
 
   useEffect(() => {
     void preloadIcons();
   }, []);
 
-  const resolved = useMemo(
-    () => (beat && episode ? resolveBeat(beat, episode) : null),
-    [beat, episode],
-  );
-  const durations = useMemo(() => {
-    const out: Record<string, number> = {};
-    if (episode) for (const b of episode.beats) out[b.id] = resolveBeat(b, episode).durationSec;
-    return out;
-  }, [episode]);
-
-  const selectBeat = useCallback(
+  const selectClip = useCallback(
     (id: string) => {
-      store.selectBeat(id);
+      store.selectClip(episode, id);
       setPlayId((n) => n + 1);
     },
-    [store],
+    [store, episode],
   );
 
   const replay = useCallback(() => {
@@ -130,7 +128,7 @@ function Home() {
         currentFrame: 0,
         totalFrames: resolved.totalFrames,
         percent: 0,
-        message: "正在初始化离屏渲染管线...",
+        message: "正在初始化离屏渲染…",
       });
       setIsExporting(true);
       setExportOpen(true);
@@ -140,7 +138,7 @@ function Home() {
         await exportBeatFiles(
           resolved.params,
           resolved.clip,
-          resolved.exportName,
+          resolved.clip.exportName,
           format,
           soundMode,
           (f) => downloadBlob(f.blob, f.filename),
@@ -149,11 +147,7 @@ function Home() {
         );
       } catch (e) {
         setExportError(
-          controller.signal.aborted
-            ? "用户已取消视频导出"
-            : e instanceof Error
-              ? e.message
-              : "导出失败，请重试",
+          controller.signal.aborted ? "已取消导出" : e instanceof Error ? e.message : "导出失败，请重试",
         );
       } finally {
         setIsExporting(false);
@@ -163,245 +157,70 @@ function Home() {
     [resolved, soundMode],
   );
 
-  if (!hydrated || !episode) {
+  if (!hydrated) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-chrome text-chrome-muted">
-        <span className="font-serif text-sm">
-          {hydrated ? "还没有任何一期，点「恢复示例」或新建一期" : "正在载入本地存档…"}
-        </span>
-        {hydrated && (
-          <button
-            type="button"
-            onClick={() => store.restoreSeeds()}
-            className="ml-3 rounded border border-chrome-line px-3 py-1 text-xs"
-          >
-            恢复示例
-          </button>
-        )}
+        <span className="font-serif text-sm">正在载入本机存档…</span>
       </main>
     );
   }
 
-  const tplDef = beat && beat.template !== "bespoke" ? getTemplate(beat.template) : undefined;
-  const templateEps = store.episodes.filter((e) => !e.classic);
-  const classicEps = store.episodes.filter((e) => e.classic);
-  const savedLabel = store.savedAt
-    ? new Date(store.savedAt).toLocaleTimeString("zh-CN", { hour12: false })
-    : "";
+  if (!clips.length || !clip || !resolved) {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-chrome text-chrome-muted">
+        <p className="font-serif text-sm">还没有任何一期。</p>
+        <code className="rounded bg-surface px-2 py-1 font-mono text-xs text-moss-fg">
+          npm run new:episode -- 23 本期标题
+        </code>
+      </main>
+    );
+  }
+
+  const savedLabel = store.savedAt ? new Date(store.savedAt).toLocaleTimeString("zh-CN", { hour12: false }) : "";
+  const fieldValues = store.texts[clip.id] ?? {};
 
   return (
     <main className="flex min-h-dvh flex-col bg-chrome text-chrome-fg">
-      {/* 顶栏：品牌 · 期切换 · 新建 · 导入导出 */}
+      {/* 顶栏：品牌 · 选期 · 批量导出 · 保存状态 */}
       <header className="flex flex-wrap items-center gap-3 border-b border-chrome-line/50 px-4 py-2.5">
         <div className="flex items-center gap-2.5">
           <div className="flex size-9 items-center justify-center rounded-sm border border-seal/60 bg-seal font-serif text-base font-black tracking-tighter text-paper shadow-sm">
             正上
           </div>
           <div>
-            <p className="font-serif text-[10px] uppercase tracking-[0.25em] text-chrome-muted">
-              正上茶舍 · 口播动画台
-            </p>
-            <p className="font-display text-sm font-bold">每期定制动画 · 面板固定</p>
+            <p className="font-serif text-[10px] uppercase tracking-[0.25em] text-chrome-muted">正上茶舍 · 动画台</p>
+            <p className="font-display text-sm font-bold">每期演示动画 · 预览 / 改字 / 导出</p>
           </div>
         </div>
 
-        <div className="ml-2 flex items-center gap-1.5">
-          <label className="sr-only" htmlFor="ep-select">
-            切换期
-          </label>
+        <label className="ml-2 flex items-center gap-1.5 text-xs text-chrome-muted">
+          <span className="sr-only">切换期</span>
           <select
-            id="ep-select"
             aria-label="切换期"
             className={`${field} max-w-[19rem] py-1.5 font-serif`}
-            value={episode.id}
+            value={episode}
             onChange={(e) => {
-              store.selectEpisode(e.target.value);
+              store.selectEpisode(Number(e.target.value));
               setPlayId((n) => n + 1);
             }}
           >
-            {classicEps.length > 0 && (
-              <optgroup label="定制期（src/remotion/epNN 手写动画）">
-                {classicEps.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    第{e.number}期 · {e.title}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {templateEps.length > 0 && (
-              <optgroup label="模板期（从模板起步）">
-                {templateEps.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    第{e.number}期 · {e.title}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setNewMenu((v) => !v)}
-              className="flex items-center gap-1.5 rounded-md bg-moss px-3 py-1.5 text-xs font-medium text-moss-fg shadow hover:bg-moss/90"
-            >
-              <FilePlus2 className="size-3.5" /> 新建一期
-            </button>
-            {newMenu && (
-              <div className="absolute left-0 z-40 mt-1 w-72 overflow-hidden rounded-md border border-chrome-line bg-surface text-xs shadow-xl">
-                <div className="border-b border-chrome-line/60 px-3 py-2.5">
-                  <p className="flex items-center gap-1.5 font-medium text-chrome-fg">
-                    <Sparkles className="size-3.5 text-moss-fg" /> 定制一期（主路径）
-                  </p>
-                  <p className="mt-1 text-[10px] leading-relaxed text-chrome-muted">
-                    每个节拍的动画单独手写。在项目里运行下面的命令建好节拍文件夹，保存后这里自动出现新的一期：
-                  </p>
-                  <code className="mt-1.5 block select-all rounded bg-chrome px-2 py-1 font-mono text-[10px] text-moss-fg">
-                    npm run new:clip -- 20 B1 标题
-                  </code>
-                  <p className="mt-1 text-[10px] text-chrome-muted">详见 docs/新建一期.md</p>
-                </div>
-                <p className="px-3 pt-2 text-[10px] uppercase tracking-widest text-chrome-muted">
-                  从模板起步（可选）
-                </p>
-                <button
-                  type="button"
-                  className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-chrome-line/50"
-                  onClick={() => {
-                    store.createEpisode("copy");
-                    setNewMenu(false);
-                  }}
-                >
-                  <Copy className="mt-0.5 size-3.5 text-moss-fg" />
-                  <span>
-                    复制当前期
-                    <span className="block text-[10px] text-chrome-muted">
-                      沿用分镜结构，只改文案
-                    </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-chrome-line/50"
-                  onClick={() => {
-                    store.createEpisode("blank");
-                    setNewMenu(false);
-                  }}
-                >
-                  <FilePlus2 className="mt-0.5 size-3.5 text-moss-fg" />
-                  <span>
-                    空白模板期
-                    <span className="block text-[10px] text-chrome-muted">
-                      只带开场 + 收尾两个模板分镜
-                    </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-start gap-2 border-t border-chrome-line/60 px-3 py-2 text-left hover:bg-chrome-line/50"
-                  onClick={() => {
-                    setImportOpen(true);
-                    setNewMenu(false);
-                  }}
-                >
-                  <FileInput className="mt-0.5 size-3.5 text-moss-fg" />
-                  <span>
-                    粘贴脚本生成
-                    <span className="block text-[10px] text-chrome-muted">
-                      一个分镜一块，自动建好整期
-                    </span>
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setImportOpen(true)}
-            className="flex items-center gap-1.5 rounded-md border border-chrome-line/80 px-2.5 py-1.5 text-xs text-chrome-muted hover:text-chrome-fg"
-          >
-            <Replace className="size-3.5" /> 导入 / 导出
-          </button>
-          <Link
-            to="/gallery"
-            className="flex items-center gap-1.5 rounded-md border border-chrome-line/80 px-2.5 py-1.5 text-xs text-chrome-muted hover:text-chrome-fg"
-          >
-            <BookOpen className="size-3.5" /> 模板图鉴
-          </Link>
-        </div>
-
-        <div className="ml-auto flex items-center gap-3">
-          <span
-            className="flex items-center gap-1 text-[11px] text-chrome-muted"
-            title="所有修改自动保存在本机浏览器"
-          >
-            <CheckCircle2 className="size-3.5 text-emerald-400" />
-            {savedLabel ? `已自动保存 ${savedLabel}` : "自动保存已开启"}
-          </span>
-          {!STATIC_MODE && (
-            <>
-              <SignedIn>
-                <UserButton />
-              </SignedIn>
-              <SignedOut>
-                <a
-                  href="/login"
-                  className="rounded-md border border-chrome-line/80 bg-surface/60 px-3 py-1 text-xs font-serif text-chrome-muted hover:text-chrome-fg"
-                >
-                  登录
-                </a>
-              </SignedOut>
-            </>
-          )}
-        </div>
-      </header>
-
-      {/* 本期设置 */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-chrome-line/30 bg-surface/40 px-4 py-2 text-xs">
-        <span className="flex items-center gap-1 text-chrome-muted">
-          <Settings2 className="size-3.5" /> 本期
-        </span>
-        <label className="flex items-center gap-1.5">
-          第
-          <input
-            aria-label="期数"
-            type="number"
-            min={1}
-            className={`${field} w-16 text-center`}
-            value={episode.number}
-            onChange={(e) =>
-              store.updateEpisode(episode.id, { number: Math.max(1, Number(e.target.value) || 1) })
-            }
-          />
-          期
-        </label>
-        <label className="flex items-center gap-1.5">
-          标题
-          <input
-            aria-label="本期标题"
-            className={`${field} w-56 font-serif`}
-            value={episode.title}
-            onChange={(e) => store.updateEpisode(episode.id, { title: e.target.value })}
-          />
-        </label>
-        <div className="flex items-center gap-1.5">
-          纸色
-          <div className="flex gap-1">
-            {THEME_KEYS.map((k) => (
-              <button
-                key={k}
-                type="button"
-                title={PAPER_THEMES[k].name}
-                aria-label={`纸色 ${PAPER_THEMES[k].name}`}
-                onClick={() => store.updateEpisode(episode.id, { theme: k as PaperThemeId })}
-                className={`size-5 rounded-sm border shadow-inner transition-transform ${episode.theme === k ? "scale-110 border-moss-fg ring-1 ring-moss-fg" : "border-black/30"}`}
-                style={{
-                  background: `linear-gradient(135deg, ${PAPER_THEMES[k].paper} 55%, ${PAPER_THEMES[k].seal} 55%)`,
-                }}
-              />
+            {EPISODE_NUMBERS.map((n) => (
+              <option key={n} value={n}>
+                第{n}期 · {getEpisodeMeta(n).title}
+              </option>
             ))}
-          </div>
-        </div>
-        <label className="flex items-center gap-1.5">
+          </select>
+        </label>
+
+        <button
+          type="button"
+          onClick={() => setBatchOpen(true)}
+          className="flex items-center gap-1.5 rounded-md bg-moss px-3 py-1.5 text-xs font-medium text-moss-fg shadow hover:bg-moss/90"
+        >
+          <Download className="size-3.5" /> 批量导出本期（{clips.length} 个）
+        </button>
+
+        <label className="flex items-center gap-1.5 text-xs" title="整期画面文字的字号倍数，预览和导出一致">
           <Type className="size-3.5 text-chrome-muted" /> 字号
           <input
             aria-label="字号"
@@ -409,468 +228,227 @@ function Home() {
             min={0.8}
             max={1.3}
             step={0.05}
-            value={episode.fontScale}
-            onChange={(e) => store.updateEpisode(episode.id, { fontScale: Number(e.target.value) })}
+            value={fontScale}
+            onChange={(e) => store.setFontScale(episode, Number(e.target.value))}
           />
-          <span className="w-9 font-mono text-[10px] text-chrome-muted">
-            {Math.round(episode.fontScale * 100)}%
-          </span>
+          <span className="w-9 font-mono text-[10px] text-chrome-muted">{Math.round(fontScale * 100)}%</span>
+          {fontScale !== 1 && (
+            <button type="button" onClick={() => store.setFontScale(episode, 1)} className="text-[10px] text-chrome-muted hover:text-chrome-fg">
+              复原
+            </button>
+          )}
         </label>
-        {episode.classic && (
-          <span
-            className="rounded bg-seal/25 px-2 py-0.5 text-[11px] text-red-200"
-            title={`动画代码在 src/remotion/ep${episode.number}/`}
-          >
-            定制期：动画在 src/remotion/ep{episode.number}/，这里改文案与导出
-          </span>
-        )}
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => store.restoreSeeds()}
-            className="flex items-center gap-1 text-chrome-muted hover:text-chrome-fg"
-            title="把定制期和模板示例期补回列表"
-          >
-            <RotateCcw className="size-3" /> 恢复示例
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (
-                window.confirm(
-                  `删除「第${episode.number}期 · ${episode.title}」？此操作不可撤销（可先导出 JSON 备份）。`,
-                )
-              )
-                store.deleteEpisode(episode.id);
-            }}
-            className="flex items-center gap-1 text-chrome-muted hover:text-red-300"
-          >
-            <Trash2 className="size-3" /> 删除本期
-          </button>
-        </div>
-      </div>
 
-      <div className="grid min-h-0 flex-1 gap-4 p-4 lg:grid-cols-[290px_minmax(0,1fr)_390px]">
-        {/* 左：分镜列表 */}
-        <aside className="flex min-h-0 flex-col gap-3 rounded-lg border border-chrome-line/70 bg-surface/80 p-3 lg:max-h-[calc(100dvh-8.5rem)]">
+        <div className="flex items-center gap-1.5 text-xs" title="换掉画面里楷体 / 宋体位置的字体；包装、印章上的字不变。预览和导出一致">
+          <span className="text-chrome-muted">字体</span>
+          {(
+            [
+              ["body", "正文"],
+              ["title", "标题"],
+            ] as const
+          ).map(([slot, label]) => (
+            <label key={slot} className="flex items-center gap-1">
+              <span className="text-[10px] text-chrome-muted">{label}</span>
+              <select
+                aria-label={`${label}字体`}
+                className={`${field} py-0.5 text-xs`}
+                value={fonts[slot]}
+                onChange={(e) => store.setFonts(episode, { [slot]: e.target.value as FontId })}
+              >
+                {(Object.keys(FONT_OPTIONS) as FontId[]).map((id) => (
+                  <option key={id} value={id}>
+                    {FONT_OPTIONS[id].label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+          {(fonts.body !== DEFAULT_FONTS.body || fonts.title !== DEFAULT_FONTS.title) && (
+            <button type="button" onClick={() => store.setFonts(episode, null)} className="text-[10px] text-chrome-muted hover:text-chrome-fg">
+              复原
+            </button>
+          )}
+        </div>
+
+        <span
+          className="ml-auto flex items-center gap-1 text-[11px] text-chrome-muted"
+          title="改过的文案只存在这台电脑的浏览器里；动画以代码为准"
+        >
+          <CheckCircle2 className="size-3.5 text-emerald-400" />
+          {savedLabel ? `改字已保存在本机 ${savedLabel}` : "改字自动保存在本机"}
+        </span>
+      </header>
+
+      <div className="grid min-h-0 flex-1 gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)_380px]">
+        {/* 左：节拍列表 */}
+        <aside className="flex min-h-0 flex-col gap-3 rounded-lg border border-chrome-line/70 bg-surface/80 p-3 lg:max-h-[calc(100dvh-5.5rem)]">
           <div className="flex items-center gap-1.5 font-serif text-sm">
-            <Layers className="size-4 text-moss-fg" /> 本期分镜
+            <Layers className="size-4 text-moss-fg" /> 第{episode}期 · {getEpisodeMeta(episode).title}
           </div>
-          <BeatList
-            episode={episode}
-            activeBeatId={beat?.id}
-            durations={durations}
-            onSelect={selectBeat}
-            onAdd={() => setPicker("add")}
-            onMove={store.moveBeat}
-            onReorder={store.reorderBeat}
-            onDuplicate={store.duplicateBeat}
-            onDelete={store.deleteBeat}
-            onRenumber={store.renumber}
-          />
-          <button
-            type="button"
-            onClick={() => setBatchOpen(true)}
-            disabled={!episode.beats.length}
-            className="mt-auto flex items-center justify-center gap-1.5 rounded-md border border-moss-fg/40 bg-moss/40 py-2 text-xs font-medium text-moss-fg hover:bg-moss/60 disabled:opacity-40"
-          >
-            <Download className="size-3.5" /> 批量导出本期（{episode.beats.length} 个）
-          </button>
+          <BeatList clips={clips} activeId={clip.id} durations={durations} edited={edited} onSelect={selectClip} />
         </aside>
 
         {/* 中：预览 */}
         <section className="flex min-h-0 flex-col gap-3">
           <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border border-chrome-line/60 bg-gradient-to-b from-[#181410] via-[#130f0c] to-[#0c0907] p-3 shadow-inner">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(107,78,49,0.08)_0%,transparent_70%)]" />
-            {resolved && beat ? (
-              <div
-                className="aspect-reel relative flex items-center justify-center overflow-hidden rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.85)] ring-1 ring-white/10"
-                style={{
-                  aspectRatio: "9 / 16",
-                  height: "100%",
-                  maxHeight: "min(70dvh, 780px)",
-                  width: "auto",
-                  maxWidth: "100%",
-                }}
-              >
-                <RemotionStage
-                  clipId={resolved.clip}
-                  extraProps={resolved.extraProps}
-                  resetKey={resolved.kind === "template" ? beat.id : undefined}
-                  playId={playId}
-                  staggerMs={BESPOKE_STAGGER_MS}
-                  playbackRate={playbackRate}
-                  isLoop={isLoop}
-                  paperTheme={resolved.theme}
-                  fontScale={resolved.fontScale}
-                  customTexts={resolved.customTexts}
-                  onPlayerReady={handlePlayerReady}
-                />
-              </div>
-            ) : (
-              <p className="text-sm text-chrome-muted">这一期还没有分镜，点左侧「添加分镜」。</p>
-            )}
+            <div
+              className="relative flex items-center justify-center overflow-hidden rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.85)] ring-1 ring-white/10"
+              style={{ aspectRatio: "9 / 16", height: "100%", maxHeight: "min(72dvh, 800px)", width: "auto", maxWidth: "100%" }}
+            >
+              <RemotionStage
+                clipId={resolved.clip}
+                playId={playId}
+                staggerMs={STAGGER_MS}
+                playbackRate={playbackRate}
+                isLoop={isLoop}
+                fontScale={resolved.fontScale}
+                fonts={resolved.fonts}
+                customTexts={resolved.texts}
+                onPlayerReady={handlePlayerReady}
+              />
+            </div>
           </div>
-          {resolved && (
-            <PlayerTimeline
-              player={player}
-              totalFrames={resolved.totalFrames}
-              markers={resolved.markers}
-              playbackRate={playbackRate}
-              isLoop={isLoop}
-              onPlaybackRateChange={setPlaybackRate}
-              onLoopToggle={() => setIsLoop((v) => !v)}
-              onReplay={replay}
-            />
-          )}
-          {resolved && refVoOf(resolved.clip) && (
+          <PlayerTimeline
+            player={player}
+            totalFrames={resolved.totalFrames}
+            markers={clip.markers}
+            playbackRate={playbackRate}
+            isLoop={isLoop}
+            onPlaybackRateChange={setPlaybackRate}
+            onLoopToggle={() => setIsLoop((v) => !v)}
+            onReplay={replay}
+          />
+          {clip.refVo && (
             <div className="flex items-center gap-2 text-xs text-chrome-muted">
               <button
                 type="button"
                 aria-pressed={refVoOn}
+                disabled={refVoExists === false}
                 onClick={() => setRefVoOn((v) => !v)}
-                className={`rounded-md border px-2.5 py-1 font-medium ${refVoOn ? "border-moss-fg/50 bg-moss/40 text-moss-fg" : "border-chrome-line text-chrome-muted hover:text-chrome-fg"}`}
+                className={`rounded-md border px-2.5 py-1 font-medium disabled:opacity-40 ${refVoOn ? "border-moss-fg/50 bg-moss/40 text-moss-fg" : "border-chrome-line text-chrome-muted hover:text-chrome-fg"}`}
               >
                 参考口播 {refVoOn ? "开" : "关"}
               </button>
               <span className="truncate">
-                同步播放马老师口播 {refVoOf(resolved.clip)!.startSec.toFixed(1)}s 起的这一段 ·
-                只在预览里，导出不带
+                {refVoExists === false
+                  ? `没找到 public/${clip.refVo.src}，录音放进去并部署后才能对口播预览`
+                  : `同步播放口播 ${clip.refVo.startSec.toFixed(1)}s 起的这一段 · 只在预览里，导出不带`}
               </span>
-              <RefVoAudio
-                player={player}
-                refVo={refVoOf(resolved.clip)}
-                enabled={refVoOn}
-                playbackRate={playbackRate}
-              />
+              <RefVoAudio player={player} refVo={clip.refVo} enabled={refVoOn} playbackRate={playbackRate} />
             </div>
           )}
         </section>
 
-        {/* 右：表单 + 导出 */}
-        <aside className="flex min-h-0 flex-col gap-3 lg:max-h-[calc(100dvh-8.5rem)] lg:overflow-y-auto">
-          {beat && resolved ? (
-            <>
-              <div className="rounded-lg border border-chrome-line/70 bg-surface/90 p-3.5 shadow-md">
-                <div className="flex items-center gap-2">
-                  <input
-                    aria-label="分镜编号"
-                    className={`${field} w-16 font-mono font-bold`}
-                    value={beat.code}
-                    onChange={(e) => store.updateBeat(beat.id, { code: e.target.value })}
-                  />
-                  <input
-                    aria-label="分镜标题"
-                    className={`${field} min-w-0 flex-1 font-serif`}
-                    value={beat.title}
-                    onChange={(e) => store.updateBeat(beat.id, { title: e.target.value })}
-                  />
-                  <span className="shrink-0 rounded-full border border-moss/40 bg-moss/20 px-2 py-0.5 font-mono text-[10px] text-moss-fg">
-                    {resolved.durationSec.toFixed(1)}s
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2 text-xs">
-                  <span className="truncate text-chrome-muted">
-                    {tplDef ? (
-                      <>
-                        模板：<span className="text-chrome-fg">{tplDef.name}</span>
-                      </>
-                    ) : (
-                      <>定制片段（手写动画，代码在 {resolved?.clip.folder}）</>
-                    )}
-                  </span>
-                  {tplDef && (
-                    <button
-                      type="button"
-                      onClick={() => setPicker("change")}
-                      className="shrink-0 rounded border border-chrome-line px-2 py-0.5 text-chrome-muted hover:text-chrome-fg"
-                    >
-                      换模板
-                    </button>
-                  )}
-                </div>
-                {resolved.error && (
-                  <p className="mt-2 text-xs text-amber-300">⚠ {resolved.error}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-1 rounded-lg border border-chrome-line/70 bg-surface/90 p-1 text-xs">
-                {(
-                  [
-                    ["content", "文案"],
-                    ["timing", "节奏与导出名"],
-                  ] as const
-                ).map(([k, label]) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setTab(k)}
-                    className={`rounded-md py-1.5 ${tab === k ? "bg-moss font-semibold text-moss-fg" : "text-chrome-muted hover:text-chrome-fg"}`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="rounded-lg border border-chrome-line/70 bg-surface/90 p-3.5 shadow-md">
-                {tab === "content" ? (
-                  <>
-                    <SchemaForm
-                      fields={resolved.fields}
-                      content={beat.content}
-                      onChange={(k, v) => store.setField(beat.id, k, v)}
-                    />
-                    {tplDef && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          window.confirm("把这个分镜的文案恢复成模板示例？") &&
-                          store.resetBeatContent(beat.id)
-                        }
-                        className="mt-3 flex items-center gap-1 text-[11px] text-chrome-muted hover:text-chrome-fg"
-                      >
-                        <RotateCcw className="size-3" /> 恢复模板示例文案
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <div className="space-y-3.5 text-xs">
-                    {resolved.kind === "template" ? (
-                      <>
-                        <label className="block">
-                          <span className="mb-1 flex justify-between">
-                            <span>节奏</span>
-                            <span className="font-mono text-chrome-muted">
-                              {beat.timing.durationSec
-                                ? `自动 ${resolved.plan?.pace.toFixed(2)}×`
-                                : `${beat.timing.pace.toFixed(2)}×`}
-                            </span>
-                          </span>
-                          <input
-                            aria-label="节奏"
-                            type="range"
-                            className="w-full"
-                            min={0.5}
-                            max={2}
-                            step={0.05}
-                            disabled={Boolean(beat.timing.durationSec)}
-                            value={beat.timing.pace}
-                            onChange={(e) =>
-                              store.setTiming(beat.id, { pace: Number(e.target.value) })
-                            }
-                          />
-                          <span className="text-[10px] text-chrome-muted">
-                            越大越快。填了下面的口播时长会自动计算。
-                          </span>
-                        </label>
-                        <label className="block">
-                          <span className="mb-1 flex justify-between">
-                            <span>结尾定格</span>
-                            <span className="font-mono text-chrome-muted">
-                              {beat.timing.holdSec.toFixed(1)}s
-                            </span>
-                          </span>
-                          <input
-                            aria-label="结尾定格"
-                            type="range"
-                            className="w-full"
-                            min={0}
-                            max={4}
-                            step={0.1}
-                            value={beat.timing.holdSec}
-                            onChange={(e) =>
-                              store.setTiming(beat.id, { holdSec: Number(e.target.value) })
-                            }
-                          />
-                        </label>
-                        <div>
-                          <label className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(beat.timing.durationSec)}
-                              onChange={(e) =>
-                                store.setTiming(beat.id, {
-                                  durationSec: e.target.checked
-                                    ? Math.max(3, Math.round(resolved.durationSec))
-                                    : undefined,
-                                })
-                              }
-                            />
-                            对齐口播时长
-                          </label>
-                          {beat.timing.durationSec ? (
-                            <div className="mt-1.5 flex items-center gap-2">
-                              <input
-                                aria-label="口播时长"
-                                type="number"
-                                min={2}
-                                max={120}
-                                step={0.5}
-                                className={`${field} w-24`}
-                                value={beat.timing.durationSec}
-                                onChange={(e) =>
-                                  store.setTiming(beat.id, {
-                                    durationSec: Math.max(2, Number(e.target.value) || 2),
-                                  })
-                                }
-                              />
-                              <span className="text-chrome-muted">秒（动画会铺满这段口播）</span>
-                            </div>
-                          ) : null}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-chrome-muted">
-                        定制片段的节奏写在代码里，这里只能改导出名与纸色。
-                      </p>
-                    )}
-                    <label className="block">
-                      <span className="mb-1 block">导出文件名</span>
-                      <input
-                        className={`${field} w-full font-mono text-xs`}
-                        placeholder={defaultExportName(episode.number, beat)}
-                        value={beat.exportName ?? ""}
-                        onChange={(e) =>
-                          store.updateBeat(beat.id, { exportName: e.target.value || undefined })
-                        }
-                      />
-                      <span className="text-[10px] text-chrome-muted">
-                        留空自动：{defaultExportName(episode.number, beat)}
-                      </span>
-                    </label>
-                    <label className="block">
-                      <span className="mb-1 block">本分镜纸色</span>
-                      <select
-                        className={`${field} w-full`}
-                        value={beat.theme ?? ""}
-                        onChange={(e) =>
-                          store.updateBeat(beat.id, {
-                            theme: (e.target.value || undefined) as PaperThemeId | undefined,
-                          })
-                        }
-                      >
-                        <option value="">跟随本期（{PAPER_THEMES[episode.theme].name}）</option>
-                        {THEME_KEYS.map((k) => (
-                          <option key={k} value={k}>
-                            {PAPER_THEMES[k].name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="block">
-                      <span className="mb-1 block">口播 / 剪辑备注（不进画面）</span>
-                      <textarea
-                        className={`${field} min-h-[4rem] w-full`}
-                        value={beat.note ?? ""}
-                        onChange={(e) =>
-                          store.updateBeat(beat.id, { note: e.target.value || undefined })
-                        }
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2.5 rounded-lg border border-chrome-line/70 bg-surface/90 p-3.5 shadow-lg">
-                <div className="flex items-center justify-between text-xs text-chrome-muted">
-                  <span className="flex items-center gap-1.5 font-serif">
-                    <Film className="size-3.5 text-moss-fg" /> 导出当前分镜
-                  </span>
-                  <span className="truncate pl-2 font-mono text-[10px] text-moss-fg">
-                    {resolved.exportName}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleStartExport("mp4")}
-                    disabled={isExporting}
-                    className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-moss text-xs font-medium text-moss-fg shadow-md hover:bg-moss/90 disabled:opacity-50"
-                  >
-                    <Download className="size-3.5" /> MP4 (H.264)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleStartExport("webm")}
-                    disabled={isExporting}
-                    className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-chrome-line/80 bg-chrome/50 text-xs font-medium text-chrome-fg hover:bg-chrome-line disabled:opacity-50"
-                  >
-                    <Sparkles className="size-3.5" /> 快速 WebM
-                  </button>
-                </div>
-                <div
-                  role="radiogroup"
-                  aria-label="音效导出方式"
-                  className="flex items-center gap-1.5 text-[11px]"
-                >
-                  <span className="text-chrome-muted">音效</span>
-                  {(
-                    [
-                      ["mix", "合成进视频"],
-                      ["stems", "分轨：无音效视频 + WAV"],
-                    ] as const
-                  ).map(([m, label]) => (
-                    <button
-                      key={m}
-                      type="button"
-                      role="radio"
-                      aria-checked={soundMode === m}
-                      disabled={isExporting}
-                      onClick={() => setSoundMode(m)}
-                      className={`rounded px-2 py-0.5 ${soundMode === m ? "bg-moss/80 text-moss-fg" : "border border-chrome-line/70 text-chrome-muted hover:text-chrome-fg"}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                {soundMode === "stems" && (
-                  <p className="text-[10px] leading-relaxed text-chrome-muted">
-                    音效轨为 48 kHz WAV，长度 = 帧数 ÷
-                    29.97，与视频逐帧对齐；剪映里两条轨首帧对齐即可。
-                  </p>
-                )}
-              </div>
-            </>
-          ) : (
-            <p className="rounded-lg border border-chrome-line/70 bg-surface/90 p-4 text-xs text-chrome-muted">
-              选择或添加一个分镜开始编辑。
+        {/* 右：节拍信息 · 文案 · 导出 */}
+        <aside className="flex min-h-0 flex-col gap-3 lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-y-auto">
+          <div className="rounded-lg border border-chrome-line/70 bg-surface/90 p-3.5 shadow-md">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm font-bold">{clip.code}</span>
+              <span className="min-w-0 flex-1 truncate font-serif">{clip.title}</span>
+              <span className="shrink-0 rounded-full border border-moss/40 bg-moss/20 px-2 py-0.5 font-mono text-[10px] text-moss-fg">
+                {resolved.durationSec.toFixed(1)}s
+              </span>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-chrome-muted">{clip.note}</p>
+            <p className="mt-1.5 flex items-center gap-1 font-mono text-[10px] text-chrome-muted/80">
+              <FolderOpen className="size-3" /> {clip.folder}
             </p>
-          )}
+          </div>
+
+          <div className="rounded-lg border border-chrome-line/70 bg-surface/90 p-3.5 shadow-md">
+            <div className="mb-2.5 flex items-center justify-between text-xs">
+              <span className="font-serif text-chrome-fg">画面文案</span>
+              {edited.has(clip.id) && (
+                <button
+                  type="button"
+                  onClick={() => window.confirm("把这个节拍的文案全部恢复成代码里的默认值？") && store.resetClip(clip.id)}
+                  className="flex items-center gap-1 text-[11px] text-chrome-muted hover:text-chrome-fg"
+                >
+                  <RotateCcw className="size-3" /> 全部恢复默认
+                </button>
+              )}
+            </div>
+            <TextFields
+              fields={clip.fields}
+              values={fieldValues}
+              onChange={(k, v) => store.setText(clip.id, k, v)}
+              onReset={(k) => store.resetText(clip.id, k)}
+            />
+            <p className="mt-3 text-[10px] leading-relaxed text-chrome-muted/80">
+              这里改的字只存在本机浏览器，换电脑不会带过去。要长期生效，把改动告诉维护的人写进代码默认值。
+            </p>
+          </div>
+
+          <div className="space-y-2.5 rounded-lg border border-chrome-line/70 bg-surface/90 p-3.5 shadow-lg">
+            <div className="flex items-center justify-between text-xs text-chrome-muted">
+              <span className="flex items-center gap-1.5 font-serif">
+                <Film className="size-3.5 text-moss-fg" /> 导出当前节拍
+              </span>
+              <span className="truncate pl-2 font-mono text-[10px] text-moss-fg">{clip.exportName}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => void handleStartExport("mp4")}
+                disabled={isExporting}
+                className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-moss text-xs font-medium text-moss-fg shadow-md hover:bg-moss/90 disabled:opacity-50"
+              >
+                <Download className="size-3.5" /> MP4 (H.264)
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleStartExport("webm")}
+                disabled={isExporting}
+                className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-chrome-line/80 bg-chrome/50 text-xs font-medium text-chrome-fg hover:bg-chrome-line disabled:opacity-50"
+              >
+                <Sparkles className="size-3.5" /> 快速 WebM
+              </button>
+            </div>
+            <div role="radiogroup" aria-label="音效导出方式" className="flex items-center gap-1.5 text-[11px]">
+              <span className="text-chrome-muted">音效</span>
+              {(
+                [
+                  ["mix", "合成进视频"],
+                  ["stems", "分轨：无音效视频 + WAV"],
+                ] as const
+              ).map(([m, label]) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="radio"
+                  aria-checked={soundMode === m}
+                  disabled={isExporting}
+                  onClick={() => setSoundMode(m)}
+                  className={`rounded px-2 py-0.5 ${soundMode === m ? "bg-moss/80 text-moss-fg" : "border border-chrome-line/70 text-chrome-muted hover:text-chrome-fg"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {soundMode === "stems" && (
+              <p className="text-[10px] leading-relaxed text-chrome-muted">
+                音效轨为 48 kHz WAV，长度 = 帧数 ÷ 29.97，与视频逐帧对齐；剪辑里两条轨首帧对齐即可。
+              </p>
+            )}
+          </div>
         </aside>
       </div>
 
-      <TemplatePicker
-        open={picker != null}
-        title={
-          picker === "change" ? "换一个模板（同名字段的文案会保留）" : "添加分镜：选择节拍模板"
-        }
-        theme={episode.theme}
-        current={picker === "change" ? beat?.template : undefined}
-        onClose={() => setPicker(null)}
-        onPick={(id) => {
-          if (picker === "change" && beat) store.changeTemplate(beat.id, id);
-          else store.addBeat(id, beat?.id);
-          setPicker(null);
-          setPlayId((n) => n + 1);
-        }}
-      />
-      <ImportDialog
-        open={importOpen}
+      <BatchExportDialog
+        open={batchOpen}
         episode={episode}
-        onClose={() => setImportOpen(false)}
-        onImport={(raw, replace) => {
-          const r = store.importEpisode(raw, replace ? { replaceId: episode.id } : undefined);
-          setPlayId((n) => n + 1);
-          return r.warnings;
-        }}
+        clips={clips}
+        texts={store.texts}
+        fontScale={fontScale}
+        fonts={fonts}
+        onClose={() => setBatchOpen(false)}
       />
-      <BatchExportDialog open={batchOpen} episode={episode} onClose={() => setBatchOpen(false)} />
       <ExportDialog
         isOpen={exportOpen}
         progress={exportProgress}
         error={exportError}
         isExporting={isExporting}
-        clipTitle={beat ? `${beat.code} ${beat.title}` : ""}
+        clipTitle={`${clip.code} ${clip.title}`}
         onCancel={() => abortRef.current?.abort()}
         onClose={() => setExportOpen(false)}
       />

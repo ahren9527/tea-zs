@@ -1,5 +1,5 @@
 import { defineClip } from "@/remotion/shared/define-clip";
-import { ensureFonts } from "@/templates/fonts";
+import { ensureFonts } from "@/remotion/shared/fonts";
 import { sec } from "../kit/draw-kit";
 import { CROSS_AT, FILM_NOTE, G1_AT, G2_AT, G3_AT, LENGTH, SUM_AT, TEXT, VO, sfxHits } from "./data";
 import { Comp } from "./Comp";

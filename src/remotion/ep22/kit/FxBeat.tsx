@@ -1,11 +1,10 @@
 import { useMemo } from "react";
 import { AbsoluteFill } from "remotion";
 import { FxCanvas } from "@/remotion/shared/fx/react";
-import { useCustomTexts, useFontSizeScale } from "@/remotion/shared/paper";
 import { SfxTrack } from "@/remotion/shared/sfx";
 import { FPS, type AnimParams } from "@/remotion/shared/theme";
-import { usePaperTheme } from "@/remotion/shared/theme-context";
-import { ensureFonts } from "@/templates/fonts";
+import { useCustomTexts, useFontChoice, useFontSizeScale, usePaperTheme } from "@/remotion/shared/theme-context";
+import { ensureFonts, setActiveFonts } from "@/remotion/shared/fonts";
 import type { SfxHit } from "@/remotion/shared/sfx-lib";
 
 /**
@@ -24,11 +23,15 @@ export function FxBeat({
   const paperTheme = usePaperTheme();
   const fontScale = useFontSizeScale();
   const customTexts = useCustomTexts();
+  const fonts = useFontChoice();
   const params = useMemo<AnimParams>(
-    () => ({ startMs: 0, staggerMs: 0, durationMs: 0, paperTheme, fontScale, customTexts }),
-    [paperTheme, fontScale, customTexts],
+    () => ({ startMs: 0, staggerMs: 0, durationMs: 0, paperTheme, fontScale, customTexts, fonts }),
+    [paperTheme, fontScale, customTexts, fonts],
   );
-  const fontsReady = useMemo(() => ensureFonts(allTexts(params)), [params, allTexts]);
+  const fontsReady = useMemo(() => {
+    setActiveFonts(fonts);
+    return ensureFonts(allTexts(params));
+  }, [params, allTexts, fonts]);
   return (
     <AbsoluteFill>
       <FxCanvas

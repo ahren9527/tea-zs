@@ -3,7 +3,7 @@
  * 纯静态构建（Cloudflare Pages / 任意静态托管，挂在域名根路径）：
  *   npm run build:static   →  dist-static/
  *
- * - 不带 Nitro / 服务端：没有登录、没有数据库、没有 /api/*（MP4 只走浏览器内导出）。
+ * - 纯前端：没有登录、没有数据库、没有 /api/*（MP4 只走浏览器内导出）。
  * - index.html 是 SPA 壳；不生成 404.html，Cloudflare Pages 会把未知路径回落到 index.html。
  *   其它静态托管请配置「所有路径回落到 /index.html」。
  */
@@ -20,7 +20,7 @@ rmSync(join(ROOT, "dist"), { recursive: true, force: true });
 const r = spawnSync("npx", ["vite", "build"], {
   cwd: ROOT,
   stdio: "inherit",
-  env: { ...process.env, STATIC_BUILD: "1", VITE_STATIC: "1", VITE_AUTH_ENABLED: "false" },
+  env: { ...process.env, STATIC_BUILD: "1" },
 });
 if (r.status !== 0) process.exit(r.status ?? 1);
 

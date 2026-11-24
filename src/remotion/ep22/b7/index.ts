@@ -1,6 +1,6 @@
 import { preloadIconList } from "@/remotion/shared/icon-cache";
 import { defineClip } from "@/remotion/shared/define-clip";
-import { ensureFonts } from "@/templates/fonts";
+import { ensureFonts } from "@/remotion/shared/fonts";
 import { sec } from "../kit/draw-kit";
 import { FILM_NOTE, LENGTH, P1_AT, P2_AT, P3_AT, SEAL_HIT, TEXT, VO, sfxHits } from "./data";
 import { Comp } from "./Comp";

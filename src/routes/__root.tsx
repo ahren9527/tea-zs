@@ -1,13 +1,8 @@
 import { ClientOnly, createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
-import { AuthProvider } from "@/lib/auth/provider";
-import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
-import { STATIC_MODE } from "@/lib/static-mode";
 
-const APP_NAME = "正上茶舍";
-const APP_DESC = "正上茶舍 (Tea-ZS) - 茶学自媒体口播动画台与茶叶知识互动展示系统";
-const host = import.meta.env.VITE_PUBLIC_HOSTNAME;
-const ogImage = host ? `https://${host}/og.jpg` : undefined;
+const APP_NAME = "正上茶舍 · 动画台";
+const APP_DESC = "正上茶舍白茶短视频的演示动画面板：预览、改字、导出 MP4";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -16,34 +11,17 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },
       { name: "description", content: APP_DESC },
-      { property: "og:title", content: APP_NAME },
-      { property: "og:description", content: APP_DESC },
-      { name: "apple-mobile-web-app-title", content: APP_NAME },
+      { name: "robots", content: "noindex, nofollow" },
       { name: "theme-color", content: "#14110e" },
-      { name: "twitter:card", content: "summary_large_image" },
-      ...(ogImage
-        ? [
-            { property: "og:image", content: ogImage },
-            { property: "og:image:width", content: "1200" },
-            { property: "og:image:height", content: "630" },
-          ]
-        : []),
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "preload", href: "/fonts/lxgw-wenkai-medium.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: appCss },
       { rel: "stylesheet", href: "/fonts/zs-wenkai.css" },
-      // PWA 清单由服务端中间件提供，静态部署没有
-      ...(STATIC_MODE
-        ? []
-        : [
-            { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-            { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
-          ]),
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600;700;900&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@500;600;700;900&display=swap",
       },
     ],
   }),
@@ -53,17 +31,10 @@ export const Route = createRootRoute({
         <HeadContent />
       </head>
       <body>
-        <PreviewHostBridge />
-        <AuthProvider>
-          {/* 静态版的 index.html 只是空壳（不含页面内容），页面只在浏览器里渲染，避免水合不一致 */}
-          {STATIC_MODE ? (
-            <ClientOnly>
-              <Outlet />
-            </ClientOnly>
-          ) : (
-            <Outlet />
-          )}
-        </AuthProvider>
+        {/* 面板只在浏览器里渲染（画布、localStorage、WebCodecs 都是浏览器能力），静态 index.html 只是空壳 */}
+        <ClientOnly>
+          <Outlet />
+        </ClientOnly>
         <Scripts />
       </body>
     </html>

@@ -4,8 +4,8 @@
 
 用法：
   pip install faster-whisper numpy        # 一次即可（CPU 能跑，small 模型约 1–2 分钟/2 分钟音频）
-  python3 scripts/vo/align-vo.py 口播.mp3 src/remotion/ep21/kit/vo-segments.json \
-      --out src/remotion/ep21/kit/vo-times.json --prompt "新茶老茶，海交会，老白茶，饼茶。"
+  python3 scripts/vo/align-vo.py 口播.mp3 src/remotion/ep23/kit/vo-segments.json \
+      --out src/remotion/ep23/kit/vo-times.json --prompt "本期专有词，逗号隔开。"
 
 vo-segments.json：按口播顺序排列的整条定稿文案，分段写：
   [ {"key": "b1", "text": "新茶老茶混着存……"},

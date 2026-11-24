@@ -8,3 +8,14 @@ node_modules/
 dist/
 dist-static/
 .output/
+.vercel/
+.nitro/
+
+# 本地看帧、调试截图
+screenshots/
+
+# Python
+__pycache__/
+*.pyc
+
+.DS_Store

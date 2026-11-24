@@ -32,7 +32,7 @@ import {
   TEMPO,
 } from "./fx";
 import { FONT_SONG, FPS, STAGE, framesOf, type AnimParams } from "@/remotion/shared/theme";
-import { TPL_FONT } from "@/templates/fonts";
+import { TPL_FONT, resolveFont, setActiveFonts } from "@/remotion/shared/fonts";
 
 const PUNCT = /[，。：？！、；“”「」—\s]/g;
 
@@ -100,6 +100,8 @@ export type TextStyle = {
   font?: string;
   align?: CanvasTextAlign;
   spacing?: number;
+  /** true = 不跟随面板字体（包装上印的字等） */
+  fixed?: boolean;
 };
 
 export function fillText(
@@ -112,7 +114,8 @@ export function fillText(
 ) {
   ctx.save();
   ctx.fillStyle = s.color;
-  ctx.font = `${s.weight ?? 700} ${Math.round(fs)}px ${s.font ?? KAI}`;
+  const family = s.font ?? KAI;
+  ctx.font = `${s.weight ?? 700} ${Math.round(fs)}px ${s.fixed ? family : resolveFont(family)}`;
   ctx.textAlign = s.align ?? "center";
   ctx.textBaseline = "middle";
   const cs = chars(text);
@@ -293,6 +296,7 @@ export type FrameLayers = {
 export function beginFrame(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
   const frame = (elapsed / 1000) * FPS;
   const pal = fxPalette(params.paperTheme);
+  setActiveFonts(params.fonts);
   if ("reset" in ctx && typeof ctx.reset === "function") ctx.reset();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalAlpha = 1;

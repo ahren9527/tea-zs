@@ -354,11 +354,11 @@ function paintSuxueWrapper(c: CanvasRenderingContext2D, pal: FxPalette, seed: nu
   c.restore();
 
   // 左侧手写「一叶倾心」
-  fillText(c, "一叶", -R * 0.69, R * 0.25, R * 0.105, { color: "#22382b", weight: 400, font: KAI });
-  fillText(c, "倾心", -R * 0.62, R * 0.355, R * 0.105, { color: "#22382b", weight: 400, font: KAI });
+  fillText(c, "一叶", -R * 0.69, R * 0.25, R * 0.105, { color: "#22382b", weight: 400, font: KAI, fixed: true });
+  fillText(c, "倾心", -R * 0.62, R * 0.355, R * 0.105, { color: "#22382b", weight: 400, font: KAI, fixed: true });
 
   // 「白牡丹-白茶」
-  fillText(c, "白牡丹-白茶", -R * 0.04, R * 0.355, R * 0.1, { color: "#4a4944", weight: 700, font: SONG });
+  fillText(c, "白牡丹-白茶", -R * 0.04, R * 0.355, R * 0.1, { color: "#4a4944", weight: 700, font: SONG, fixed: true });
 
   // 底部墨绿弧形丝带：两端翠绿燕尾 → 墨绿主带（上下细亮边）→ 白色英文
   {

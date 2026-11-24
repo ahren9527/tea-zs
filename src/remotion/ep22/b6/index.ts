@@ -1,5 +1,5 @@
 import { defineClip } from "@/remotion/shared/define-clip";
-import { ensureFonts } from "@/templates/fonts";
+import { ensureFonts } from "@/remotion/shared/fonts";
 import { sec } from "../kit/draw-kit";
 import {
   BOX_AT,

@@ -1,8 +1,8 @@
 import { getClip } from "@/remotion/catalog";
-import type { AnimParams } from "@/remotion/shared/theme";
+import { FPS, type AnimParams } from "@/remotion/shared/theme";
 import type { ClipDef } from "@/remotion/shared/types";
 
-/** 片段可以传 id（经典片段）或直接传 ClipDef（模板分镜） */
+/** 片段可以传 id，也可以直接传 ClipDef */
 export type ClipRef = string | ClipDef;
 
 export function resolveClip(ref: ClipRef): ClipDef {
@@ -24,17 +24,21 @@ export async function preloadIcons(): Promise<void> {
   }
 }
 
-export function totalDuration(params: AnimParams, clipId: ClipRef = "ep18-b1") {
+export function staggerFramesOf(staggerMs: number) {
+  return Math.max(6, Math.round((staggerMs / 1000) * FPS));
+}
+
+/** 片段总时长（毫秒） */
+export function totalDuration(params: AnimParams, clipId: ClipRef) {
   const clip = resolveClip(clipId);
-  const staggerFrames = Math.max(6, Math.round((params.staggerMs / 1000) * 29.97));
-  return (clip.duration(staggerFrames) / 29.97) * 1000;
+  return (clip.duration(staggerFramesOf(params.staggerMs)) / FPS) * 1000;
 }
 
 export function drawFrame(
   ctx: CanvasRenderingContext2D,
   elapsed: number,
   params: AnimParams,
-  clipId: ClipRef = "ep18-b1",
+  clipId: ClipRef,
 ) {
   resolveClip(clipId).draw(ctx, elapsed, params);
 }
