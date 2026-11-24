@@ -17,11 +17,12 @@ import {
   springValue,
   type FxPalette,
 } from "../kit/fx";
+import { onTwos } from "../kit/hand";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
-  KAI,
   SONG,
   allTextsOf,
+  beatWord,
   beginFrame,
   brushRing,
   fillText,
@@ -45,6 +46,7 @@ import {
   TEXT,
   type TextKey,
 } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -76,9 +78,10 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
-  const stillFrame = Math.min(frame, STILL_START);
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 3,
     subject: (p) => {
       drawPhase1(ctx, frame, p, params, fontScale);
@@ -206,9 +209,9 @@ function drawPhase2(
     const fs = fitSize(txt, 134, 720) * fontScale;
     ctx.save();
     ctx.globalAlpha = land.alpha;
-    ctx.translate(CX, 720 + land.y);
-    ctx.scale(land.scaleX, land.scaleY);
-    inkText(ctx, txt, 0, 0, fs, easeOutCubic(progress(p1, 0, 12)), 51, {
+    ctx.translate(CX, 720);
+    beatWord(ctx, frame, VO, "合格上限", txt, 0, 0, fs, {
+      accent: "上限",
       color: pal.ink,
       font: SONG,
       weight: 900,
@@ -281,9 +284,9 @@ function drawPhase2(
     const fs = fitSize(txt, 134, 720) * fontScale;
     ctx.save();
     ctx.globalAlpha = land.alpha;
-    ctx.translate(CX, 1155 + land.y);
-    ctx.scale(land.scaleX, land.scaleY);
-    inkText(ctx, txt, 0, 0, fs, easeOutCubic(progress(p2, 0, 12)), 71, {
+    ctx.translate(CX, 1155);
+    beatWord(ctx, frame, VO, "保险线", txt, 0, 0, fs, {
+      accent: true,
       color: pal.bamboo,
       font: SONG,
       weight: 900,

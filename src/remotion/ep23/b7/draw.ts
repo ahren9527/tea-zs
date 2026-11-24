@@ -18,11 +18,13 @@ import {
   rgba,
   type FxPalette,
 } from "../kit/fx";
+import { onTwos } from "../kit/hand";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
   KAI,
   SONG,
   allTextsOf,
+  beatWord,
   beginFrame,
   brushRing,
   fillText,
@@ -51,6 +53,7 @@ import {
   WATER_AT,
   type TextKey,
 } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -83,9 +86,11 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
   const stillFrame = Math.min(frame, STILL_START);
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 3,
     subject: (p) => {
       drawAct1(ctx, frame, p, params, fontScale);
@@ -245,22 +250,13 @@ function drawAct2And3(
       const mLand = heavyLand(ml, { drop: 34, fall: 5, squash: 0.045 });
       ctx.save();
       ctx.globalAlpha *= mLand.alpha;
-      ctx.translate(CX, 650 + mLand.y);
-      ctx.scale(mLand.scaleX, mLand.scaleY);
-      inkText(
-        ctx,
-        mTxt,
-        0,
-        0,
-        fitSize(mTxt, 96, 600) * fontScale,
-        easeOutCubic(progress(ml, 0, 12)),
-        33,
-        {
-          color: pal.bamboo,
-          font: SONG,
-          weight: 900,
-        },
-      );
+      ctx.translate(CX, 650);
+      beatWord(ctx, frame, VO, "余量就足", mTxt, 0, 0, fitSize(mTxt, 96, 600) * fontScale, {
+        accent: "足",
+        color: pal.bamboo,
+        font: SONG,
+        weight: 900,
+      });
       ctx.restore();
     }
 

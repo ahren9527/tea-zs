@@ -22,11 +22,14 @@ import {
   sealPress,
   type FxPalette,
 } from "../kit/fx";
+import { anticipateMove, onTwos } from "../kit/hand";
+import { drawMoistureScale } from "../kit/objects";
 import { SEAL_FONT, type AnimParams } from "@/remotion/shared/theme";
 import {
   allTextsOf,
   beginFrame,
   chars,
+  gapMarker,
   fitSize,
   inkText,
   renderLayers,
@@ -52,6 +55,7 @@ import {
   TEXT,
   type TextKey,
 } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -85,9 +89,11 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
   const stillFrame = Math.min(frame, STILL_START);
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 0,
     light: 0.6,
     back: (p) => drawMountains(ctx, stillFrame, p),
@@ -256,8 +262,10 @@ function drawSubject(
     const fs = fitSize(txt, COL_SIZE, 940, 1.04) * fontScale;
     const step = fs * 1.06;
     const top = c.y - ((cs.length - 1) * step) / 2;
+    // 逐字踩口播：每个字按 vo-times 里马老师的真实开口帧落墨（面板改字时按首尾插值）
+    const cf = VO.charFrames(TEXT[c.key], cs.length);
     cs.forEach((ch, k) => {
-      const l = frame - (c.at + k * CHAR_FRAMES);
+      const l = frame - ((cf[k] ?? c.at + k * CHAR_FRAMES) - 2);
       if (l <= -2) return;
       const land = heavyLand(l + 2, { drop: 20, fall: 3, squash: 0.055 });
       ctx.save();
@@ -272,6 +280,52 @@ function drawSubject(
       ctx.restore();
     });
   });
+
+  // 收束到全片母题：一把淡墨水分刻度尺，指针停在 7%，7%→8.5% 那段就是「余量」
+  const rl = frame - (SEAL_HIT + 4);
+  if (rl > 0) {
+    const rIn = easeOutCubic(progress(rl, 0, 16));
+    const RX = 560;
+    const RY = 1425;
+    const LEN = 560;
+    const pos = (v: number) => -LEN / 2 + ((v - 5) / 5) * LEN;
+    const val = 5 + 2 * anticipateMove(rl - 4, { prep: 4, back: 0.08 });
+    ctx.save();
+    ctx.translate(RX, RY);
+    drawMoistureScale(ctx, pal, {
+      orientation: "horizontal",
+      min: 5,
+      max: 10,
+      length: LEN,
+      thickness: 40,
+      value: val,
+      reveal: rIn,
+      show7: true,
+      show85: true,
+      emphasize7: 0.6,
+      emphasize85: 0.6,
+      labelSide: "bottom",
+      showLabels: true,
+      fontScale,
+      seed: 91,
+      frame,
+      inkMotif: true,
+    });
+    const gp = easeOutCubic(progress(rl, 14, 30));
+    if (gp > 0.01) {
+      gapMarker(
+        ctx,
+        { x: pos(7), y: -46 },
+        { x: pos(8.5), y: -46 },
+        gp,
+        pal.cinnabar,
+        93,
+        22,
+        frame,
+      );
+    }
+    ctx.restore();
+  }
 
   // 左下朱印「存茶留余」
   const pl = frame - SEAL_AT;

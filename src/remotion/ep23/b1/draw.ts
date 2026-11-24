@@ -17,11 +17,13 @@ import {
   type FxPalette,
   type Pt,
 } from "../kit/fx";
+import { onTwos } from "../kit/hand";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
   KAI,
   SONG,
   allTextsOf,
+  beatWord,
   beginFrame,
   fitSize,
   inkText,
@@ -30,6 +32,7 @@ import {
 } from "../kit/draw-kit";
 import { drawMoistureScale } from "../kit/objects";
 import { LENGTH, LINE_AT, NUM_AT, SAFE_AT, SCALE_AT, TEXT, type TextKey } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -54,9 +57,11 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
   const stillFrame = Math.min(frame, STILL_START);
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 3,
     subject: (p) => drawSubject(ctx, frame, stillFrame, p, params, fontScale),
   });
@@ -141,9 +146,9 @@ function drawSubject(
     const numFs = fitSize(numTxt, 218, 760, 0.72) * fontScale;
     ctx.save();
     ctx.globalAlpha = land.alpha;
-    ctx.translate(CX, LINE_Y - 172 - shiftUp + land.y);
-    ctx.scale(land.scaleX, land.scaleY);
-    inkText(ctx, numTxt, 0, 0, numFs, easeOutCubic(progress(nl, -2, 10)), 43, {
+    ctx.translate(CX, LINE_Y - 172 - shiftUp);
+    beatWord(ctx, frame, VO, "8.5%", numTxt, 0, 0, numFs, {
+      accent: true,
       color: pal.cinnabar,
       font: SONG,
       weight: 900,
@@ -177,9 +182,9 @@ function drawSubject(
     const subtleFloat = Math.sin(stillFrame * 0.05) * 2.5 * qp;
     ctx.save();
     ctx.globalAlpha = qLand.alpha;
-    ctx.translate(CX, 1235 + qLand.y + subtleFloat);
-    ctx.scale(qLand.scaleX, qLand.scaleY);
-    inkText(ctx, qTxt, 0, 0, qFs, qp, 67, {
+    ctx.translate(CX, 1235 + subtleFloat);
+    beatWord(ctx, frame, VO, "安全线", qTxt, 0, 0, qFs, {
+      accent: "安全线",
       color: pal.ink,
       font: SONG,
       weight: 900,

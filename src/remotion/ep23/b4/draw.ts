@@ -15,11 +15,13 @@ import {
   rgba,
   type FxPalette,
 } from "../kit/fx";
+import { onTwos } from "../kit/hand";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
   KAI,
   SONG,
   allTextsOf,
+  beatWord,
   beginFrame,
   fillText,
   fitSize,
@@ -42,6 +44,7 @@ import {
   YEAR_AT,
   type TextKey,
 } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -70,9 +73,11 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
   const stillFrame = Math.min(frame, STILL_START);
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 3,
     subject: (p) => {
       drawPhase1(ctx, frame, stillFrame, p, params, fontScale);
@@ -258,23 +263,14 @@ function drawPhase2(
     const txt = t(params, "passLine");
     ctx.save();
     ctx.globalAlpha = land.alpha;
-    ctx.translate(CX, 735 + land.y);
-    ctx.scale(land.scaleX, land.scaleY);
-    inkText(
-      ctx,
-      txt,
-      0,
-      0,
-      fitSize(txt, 148, 720) * fontScale,
-      easeOutCubic(progress(p1, 0, 12)),
-      41,
-      {
-        color: pal.ink,
-        font: SONG,
-        weight: 900,
-        wash: 0.03,
-      },
-    );
+    ctx.translate(CX, 735);
+    beatWord(ctx, frame, VO, "及格线", txt, 0, 0, fitSize(txt, 148, 720) * fontScale, {
+      accent: true,
+      color: pal.ink,
+      font: SONG,
+      weight: 900,
+      wash: 0.03,
+    });
     ctx.restore();
     // 底下细朱砂横线（呼应 8.5% 及格上限）
     drawBrushStroke(
@@ -328,23 +324,14 @@ function drawPhase2(
     const txt = t(params, "safeLine");
     ctx.save();
     ctx.globalAlpha = land.alpha;
-    ctx.translate(CX, 1175 + land.y);
-    ctx.scale(land.scaleX, land.scaleY);
-    inkText(
-      ctx,
-      txt,
-      0,
-      0,
-      fitSize(txt, 148, 720) * fontScale,
-      easeOutCubic(progress(p2, 0, 12)),
-      61,
-      {
-        color: pal.bamboo,
-        font: SONG,
-        weight: 900,
-        wash: 0.03,
-      },
-    );
+    ctx.translate(CX, 1175);
+    beatWord(ctx, frame, VO, "安全线", txt, 0, 0, fitSize(txt, 148, 720) * fontScale, {
+      accent: true,
+      color: pal.bamboo,
+      font: SONG,
+      weight: 900,
+      wash: 0.03,
+    });
     ctx.restore();
     drawBrushStroke(
       ctx,

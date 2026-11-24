@@ -20,10 +20,12 @@ import {
   type FxPalette,
   type Pt,
 } from "../kit/fx";
+import { onTwos } from "../kit/hand";
 import { SEAL_FONT, type AnimParams } from "@/remotion/shared/theme";
 import {
   SONG,
   allTextsOf,
+  beatWord,
   beginFrame,
   brushRing,
   chars,
@@ -51,6 +53,7 @@ import {
   VOTE_OUT,
   type TextKey,
 } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -83,9 +86,11 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
   const stillFrame = Math.min(frame, STILL_START);
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 3,
     subject: (p) => {
       drawVotePhase(ctx, frame, stillFrame, p, params, fontScale);
@@ -313,8 +318,8 @@ function drawByePhase(
   drawTitleInkHalo(ctx, CX, 910, 260, 120, bl, pal.ink, 331, 0.85);
 
   // 居中大字「下期见」
-  const textP = easeOutCubic(progress(bl, 2, 16));
-  inkText(ctx, byeTxt, CX, 865, fitSize(byeTxt, 144, 680) * fontScale, textP, 341, {
+  beatWord(ctx, frame, VO, "下期见", byeTxt, CX, 865, fitSize(byeTxt, 144, 680) * fontScale, {
+    accent: "见",
     color: pal.ink,
     font: SONG,
     weight: 900,

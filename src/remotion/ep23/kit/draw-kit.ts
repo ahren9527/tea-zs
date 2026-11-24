@@ -32,7 +32,7 @@ import {
   type Pt,
   TEMPO,
 } from "./fx";
-import { drawBoilBrushStroke, onTwos } from "./hand";
+import { drawBoilBrushStroke, idleBreathe, onTwos, setRawFrame } from "./hand";
 import { FONT_SONG, FPS, STAGE, framesOf, type AnimParams } from "@/remotion/shared/theme";
 import { TPL_FONT, resolveFont, setActiveFonts } from "@/remotion/shared/fonts";
 
@@ -464,8 +464,16 @@ export type FrameLayers = {
   over?: (pal: FxPalette) => void;
 };
 
+let CURRENT_FRAME = 0;
+
+/** 主体整体微呼吸的中心（主体大多压在画面中轴、安全区中部） */
+const BREATHE_CX = 495;
+const BREATHE_CY = 960;
+
 export function beginFrame(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
   const frame = (elapsed / 1000) * FPS;
+  setRawFrame(frame);
+  CURRENT_FRAME = frame;
   const pal = fxPalette(params.paperTheme);
   setActiveFonts(params.fonts);
   if ("reset" in ctx && typeof ctx.reset === "function") ctx.reset();
@@ -498,7 +506,14 @@ export function renderLayers(
       0.9 * clamp01(light),
     );
   });
-  withLayer(ctx, cam, 1, () => L.subject(pal));
+  // 主体层：整体极轻微呼吸（缩放 ≤ 0.8%、上下 ≤ 2px），一拍二取帧；片尾静止时也保留
+  withLayer(ctx, cam, 1, () => {
+    const b = idleBreathe(onTwos(CURRENT_FRAME));
+    ctx.translate(BREATHE_CX, BREATHE_CY + b.y);
+    ctx.scale(b.scale, b.scale);
+    ctx.translate(-BREATHE_CX, -BREATHE_CY);
+    L.subject(pal);
+  });
   if (L.leaves) {
     withLayer(ctx, cam, 1.35, () => {
       drawLeafParticles(
@@ -628,4 +643,32 @@ export function drawChapterTitle(
     wash: 0.028,
   });
   ctx.restore();
+}
+
+/**
+ * 关键词「字踩重音」的便捷包装：按口播里 phrase 的逐字开口帧，让画面上的 text 逐字落下。
+ * text 与 phrase 字数不同（如「8.5%」「安全线？」「整批扔掉」）时按开口区间插值。
+ * 字背后补一层和 inkText 一样的极淡墨晕底，保持原来的水墨质感。
+ */
+export function beatWord(
+  ctx: CanvasRenderingContext2D,
+  frame: number,
+  vo: { charFrames: (phrase: string, displayLen?: number, nth?: number) => number[] },
+  phrase: string,
+  text: string,
+  x: number,
+  y: number,
+  fs: number,
+  opts: Omit<BeatTextOpts, "charFrames"> & { nth?: number; wash?: number },
+) {
+  if (!text) return;
+  const n = chars(text).length;
+  const cf = vo.charFrames(phrase, n, opts.nth ?? 0);
+  const first = cf[0] ?? 0;
+  const p = clamp01((frame - first + 2) / 10);
+  if (opts.wash && p > 0) {
+    const b = textBounds(text, x, y, fs, opts.vertical);
+    drawInkReveal(ctx, p, b, 7, () => {}, { wash: opts.color, washAlpha: opts.wash });
+  }
+  drawBeatText(ctx, frame, text, x, y, fs, { ...opts, charFrames: cf });
 }

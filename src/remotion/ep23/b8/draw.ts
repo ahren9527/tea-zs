@@ -12,17 +12,18 @@ import {
   drawBrushStroke,
   easeInOutCubic,
   easeOutCubic,
-  heavyLand,
   progress,
   rgba,
   type FxPalette,
   type Pt,
 } from "../kit/fx";
+import { onTwos } from "../kit/hand";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
   KAI,
   SONG,
   allTextsOf,
+  beatWord,
   beginFrame,
   brushRing,
   fitSize,
@@ -42,6 +43,7 @@ import {
   TEXT,
   type TextKey,
 } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -72,9 +74,11 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
   const stillFrame = Math.min(frame, STILL_START);
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 3,
     subject: (p) => drawSubject(ctx, frame, stillFrame, p, params, fontScale),
   });
@@ -167,19 +171,31 @@ function drawSubject(
     );
 
     // 大字「存」+ 竹青毛笔圈
-    const laLand = heavyLand(frame - STORE_AT + 2, { drop: 44, fall: 5, squash: 0.06 });
     const laTxt = t(params, "leftAct");
     ctx.save();
-    ctx.translate(LEFT_X, 710 + (leftP > 0 ? laLand.y : 0));
-    if (leftP > 0) ctx.scale(laLand.scaleX, laLand.scaleY);
-    inkText(ctx, laTxt, 0, 0, fitSize(laTxt, 162, 320) * fontScale, Math.max(0.25, leftP), 23, {
+    ctx.translate(LEFT_X, 710);
+    beatWord(ctx, frame, VO, "存", laTxt, 0, 0, fitSize(laTxt, 162, 320) * fontScale, {
+      accent: true,
+      nth: 1,
       color: pal.bamboo,
       font: SONG,
       weight: 900,
       wash: 0.03,
     });
     if (leftP > 0.05) {
-      brushRing(ctx, 0, 0, 118, 114, leftP, pal.bamboo, 25, 8);
+      brushRing(
+        ctx,
+        0,
+        0,
+        118,
+        114,
+        easeOutCubic(
+          progress(frame, VO.charFrames("存", 1, 1)[0] + 4, VO.charFrames("存", 1, 1)[0] + 18),
+        ),
+        pal.bamboo,
+        25,
+        8,
+      );
     }
     ctx.restore();
 
@@ -245,19 +261,31 @@ function drawSubject(
     );
 
     // 大字「喝」+ 朱砂毛笔圈
-    const raLand = heavyLand(frame - DRINK_AT + 2, { drop: 44, fall: 5, squash: 0.06 });
     const raTxt = t(params, "rightAct");
     ctx.save();
-    ctx.translate(RIGHT_X, 710 + (rightP > 0 ? raLand.y : 0));
-    if (rightP > 0) ctx.scale(raLand.scaleX, raLand.scaleY);
-    inkText(ctx, raTxt, 0, 0, fitSize(raTxt, 162, 320) * fontScale, Math.max(0.25, rightP), 33, {
+    ctx.translate(RIGHT_X, 710);
+    beatWord(ctx, frame, VO, "喝", raTxt, 0, 0, fitSize(raTxt, 162, 320) * fontScale, {
+      accent: true,
+      nth: 1,
       color: pal.cinnabar,
       font: SONG,
       weight: 900,
       wash: 0.03,
     });
     if (rightP > 0.05) {
-      brushRing(ctx, 0, 0, 118, 114, rightP, pal.cinnabar, 35, 8);
+      brushRing(
+        ctx,
+        0,
+        0,
+        118,
+        114,
+        easeOutCubic(
+          progress(frame, VO.charFrames("喝", 1, 1)[0] + 4, VO.charFrames("喝", 1, 1)[0] + 18),
+        ),
+        pal.cinnabar,
+        35,
+        8,
+      );
     }
     ctx.restore();
 

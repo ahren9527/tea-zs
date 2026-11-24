@@ -23,9 +23,22 @@ import { springValue } from "./fx";
 // 1. 线条抖动（Line Boil）：每 3 帧切一次状态，幅度 1–2px
 // ============================================================================
 
+/**
+ * 当前真实帧（逐帧，不按一拍二取整）。主体动作按一拍二传进来的 frame 是偶数帧，
+ * 若 boil 也跟着它算，会变成 4 帧/2 帧交替的不均匀抖动，所以 boil 一律按真实帧每 3 帧换一次。
+ * beginFrame 每帧设置；离线单独调用（未设置）时退回传入的 frame。
+ */
+let RAW_FRAME = -1;
+export function setRawFrame(frame: number) {
+  RAW_FRAME = frame;
+}
+export function rawFrame(fallback: number): number {
+  return RAW_FRAME >= 0 ? RAW_FRAME : fallback;
+}
+
 /** 每 3 帧步进一次的确定性 boil 序号 */
 export function boilStep(frame: number): number {
-  return Math.floor(Math.max(0, frame) / 3);
+  return Math.floor(Math.max(0, rawFrame(frame)) / 3);
 }
 
 /** 单个顶点在当前 boil 步上的 1–2px 微小偏移（hash01 + noise1 确定性组合） */

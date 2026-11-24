@@ -15,11 +15,13 @@ import {
   rgba,
   type FxPalette,
 } from "../kit/fx";
+import { anticipateMove, followThrough, onTwos } from "../kit/hand";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
   KAI,
   SONG,
   allTextsOf,
+  beatWord,
   beginFrame,
   fitSize,
   inkText,
@@ -43,6 +45,7 @@ import {
   TEXT,
   type TextKey,
 } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -74,11 +77,13 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
   const stillFrame = Math.min(frame, STILL_START);
   const overP = easeOutCubic(progress(frame, OVER_AT + 4, OVER_AT + 24));
 
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 2,
     subject: (p) => drawSubject(ctx, frame, stillFrame, p, params, fontScale, overP),
     over: (p) => {
@@ -113,7 +118,10 @@ function drawSubject(
   // 计算刻度尺实时数值：
   // 起手 8.2% → 「贴着上限」紧贴 8.42% → 梅雨 + 漏气轻轻一顶，冲破 8.5% 直上 9.35%
   const baseVal = 8.2 + stickP * 0.22 + rainP * 0.08 + leakP * 0.1;
-  const pushOver = easeOutCubic(progress(frame, OVER_AT, OVER_AT + 18)) * 0.78;
+  // 预备 + 过冲：指针先往下一沉，再一下冲过 8.5%，带一点回弹停住
+  const pushOver = anticipateMove(frame - OVER_AT, { prep: 6, back: 0.12 }) * 0.78;
+  // 跟随：数值牌比指针晚 4 帧跟上（竖尺向上为负，所以滞后是正向下偏）
+  const tagLagPx = frame > OVER_AT ? (1 - followThrough(frame - OVER_AT, 4)) * 34 : 0;
   const microShake =
     frame >= FLIP_AT && overP < 0.95 ? Math.sin(stillFrame * 0.35) * 0.04 * (1 - overP) : 0;
   const curVal = Math.min(9.6, baseVal + pushOver + microShake);
@@ -125,7 +133,8 @@ function drawSubject(
     ctx.save();
     ctx.globalAlpha = 1 - titleSwap;
     const hTxt = t(params, "hugging");
-    inkText(ctx, hTxt, 495, 420, fitSize(hTxt, 118, 720) * fontScale, Math.max(0.25, enterP), 11, {
+    beatWord(ctx, frame, VO, "贴着上限", hTxt, 495, 420, fitSize(hTxt, 118, 720) * fontScale, {
+      accent: "上限",
       color: pal.ink,
       font: SONG,
       weight: 900,
@@ -138,23 +147,14 @@ function drawSubject(
     const oTxt = t(params, "overLimit");
     ctx.save();
     ctx.globalAlpha = titleSwap * oLand.alpha;
-    ctx.translate(495, 420 + oLand.y);
-    ctx.scale(oLand.scaleX, oLand.scaleY);
-    inkText(
-      ctx,
-      oTxt,
-      0,
-      0,
-      fitSize(oTxt, 136, 720) * fontScale,
-      Math.min(1, titleSwap * 1.4),
-      19,
-      {
-        color: pal.cinnabar,
-        font: SONG,
-        weight: 900,
-        wash: 0.04,
-      },
-    );
+    ctx.translate(495, 420);
+    beatWord(ctx, frame, VO, "水分直接超标", oTxt, 0, 0, fitSize(oTxt, 136, 720) * fontScale, {
+      accent: "超标",
+      color: pal.cinnabar,
+      font: SONG,
+      weight: 900,
+      wash: 0.04,
+    });
     ctx.restore();
   }
 
@@ -177,6 +177,7 @@ function drawSubject(
     labelSide: "right",
     showLabels: true,
     valueText: valStr,
+    tagLag: tagLagPx,
     fontScale,
     seed: 55,
   });

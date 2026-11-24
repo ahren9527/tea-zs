@@ -17,24 +17,19 @@ import {
   rgba,
   type FxPalette,
 } from "../kit/fx";
+import { anticipateMove, boilOffset, followThrough, onTwos } from "../kit/hand";
 import { type AnimParams } from "@/remotion/shared/theme";
 import {
   SONG,
   allTextsOf,
+  drawBeatText,
   beginFrame,
-  brushCross,
   fitSize,
   inkText,
   renderLayers,
   textOf,
 } from "../kit/draw-kit";
-import {
-  drawLooseTeaPile,
-  drawMiyunCake,
-  drawMoistureScale,
-  drawTrashBin,
-  drawWaterDrop,
-} from "../kit/objects";
+import { drawLooseTeaPile, drawMiyunCake, drawMoistureScale, drawWaterDrop } from "../kit/objects";
 import {
   ABSORB_AT,
   ENTER_AT,
@@ -46,6 +41,7 @@ import {
   THROW_AT,
   type TextKey,
 } from "./data";
+import { VO } from "./data";
 
 const t = (p: AnimParams, k: TextKey) => textOf(p, TEXT, k);
 const STILL_START = Math.max(0, LENGTH - END_STILL_FRAMES);
@@ -77,9 +73,11 @@ function beatCamera(frame: number) {
 }
 
 export function draw(ctx: CanvasRenderingContext2D, elapsed: number, params: AnimParams) {
-  const { frame, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  const { frame: rawF, pal, fontScale } = beginFrame(ctx, elapsed, params);
+  // 一拍二：主体动作按偶数帧取整；镜头、粒子仍逐帧
+  const frame = onTwos(rawF);
   const stillFrame = Math.min(frame, STILL_START);
-  renderLayers(ctx, stillFrame, pal, beatCamera(frame), {
+  renderLayers(ctx, Math.min(rawF, STILL_START), pal, beatCamera(rawF), {
     leaves: 3,
     subject: (p) => {
       drawPhase1(ctx, frame, stillFrame, p, params, fontScale);
@@ -284,48 +282,128 @@ function drawPhase2(
 ) {
   if (frame < PHASE2_AT + 2) return;
   const pIn = easeOutCubic(progress(frame, PHASE2_AT + 2, PHASE2_AT + 16));
-  const throwP = easeInOutCubic(progress(frame, THROW_AT, THROW_AT + 22));
+  // 演而不讲：不打叉、不画垃圾桶——让这堆受潮散茶自己「坏给你看」：
+  // 发暗 → 起一层灰白霉绒 → 先往上一缩（预备）再整堆滑落出画，碎叶晚几帧跟着掉（跟随），纸上只剩一圈水渍。
+  const moldP = easeOutCubic(progress(frame, PHASE2_AT, PHASE2_AT + 34));
+  const throwL = frame - (THROW_AT + 22); // 预备踩在「全」，滑落踩在「扔」
+  const mv = anticipateMove(throwL, { prep: 8, back: 0.06 });
+  const fall = Math.max(-0.06, mv);
+  const PILE_Y = 900;
 
-  // 顶部醒目朱砂大字「整批扔掉」
+  // 纸上的水渍（茶堆在时被压着，掉走后露出来，留到片尾）
+  const stainP = clamp01(fall * 1.4) * pIn;
+  if (stainP > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = stainP;
+    // 只留一圈淡褐水渍边（中间不填色，像茶堆压过的湿印子）
+    ctx.strokeStyle = rgba("#7c5840", 0.14);
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    for (let i = 0; i <= 48; i++) {
+      const a = (i / 48) * Math.PI * 2;
+      const w = 1 + 0.05 * Math.sin(a * 3 + 1) + 0.03 * Math.sin(a * 7);
+      const px = MID_X + Math.cos(a) * 230 * w;
+      const py = PILE_Y + 30 + Math.sin(a) * 140 * w;
+      if (i) ctx.lineTo(px, py);
+      else ctx.moveTo(px, py);
+    }
+    ctx.stroke();
+    ctx.fillStyle = rgba("#8a7a5c", 0.06);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 受潮散茶堆
+  const pileY = PILE_Y + (fall > 0 ? fall * fall * 980 : fall * 160);
+  const squash = fall < 0 ? -fall * 1.2 : 0;
+  const alpha = pIn * clamp01(1 - Math.max(0, fall - 0.55) / 0.35);
+  if (alpha > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(MID_X, pileY);
+    ctx.rotate(Math.max(0, fall) * 0.42);
+    ctx.scale(1.35 * (1 + squash), 1.35 * (1 - squash));
+    drawLooseTeaPile(ctx, pal, 185, 132, { fluff: 0.6, damp: 0.95 + moldP * 0.05, seed: 66 });
+    // 灰白霉绒：一簇簇从边缘往里冒，绒边毛糙
+    drawMold(ctx, moldP, frame);
+    ctx.restore();
+  }
+
+  // 跟随：几片碎叶比茶堆晚 5 帧才开始掉，落得更慢
+  const lag = followThrough(throwL, 5);
+  if (throwL > 0 && lag > 0.01) {
+    for (let i = 0; i < 6; i++) {
+      const sx = MID_X - 150 + i * 60 + Math.sin(i * 2.3) * 20;
+      const sy = PILE_Y - 40 + (i % 3) * 30 + lag * lag * (700 + i * 60);
+      const a = clamp01(1 - lag * 0.9) * 0.8;
+      if (a <= 0.01) continue;
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.translate(sx, sy);
+      ctx.rotate(lag * (1.5 + i * 0.4));
+      ctx.fillStyle = i % 2 ? rgba("#4c5341", 0.9) : rgba("#6a5a42", 0.9);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 16, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // 顶部朱砂大字「整批扔掉」：踩着「只能全扔掉」逐字落下
   const dTxt = t(params, "discard");
-  inkText(ctx, dTxt, MID_X, 455, fitSize(dTxt, 134, 760) * fontScale, pIn, 91, {
+  // 「整批」踩「整批茶」，「扔掉」踩「全扔掉」里的「扔掉」
+  const n = Array.from(dTxt).length;
+  const cf =
+    n === 4
+      ? [...VO.charFrames("整批", 2), ...VO.charFrames("扔掉", 2)]
+      : VO.charFrames("全扔掉", n);
+  drawBeatText(ctx, frame, dTxt, MID_X, 455, fitSize(dTxt, 134, 760) * fontScale, {
+    charFrames: cf,
+    accent: "扔掉",
     color: pal.cinnabar,
     font: SONG,
     weight: 900,
-    wash: 0.035,
   });
+}
 
-  // 竹编废茶篓（居中偏下 y = 1230，底部 1380 < 1560）
-  const binLand = heavyLand(frame - (PHASE2_AT + 4), { drop: 50, fall: 6, squash: 0.04 });
-  ctx.save();
-  ctx.globalAlpha = binLand.alpha;
-  ctx.translate(MID_X, 1235 + binLand.y);
-  ctx.scale(binLand.scaleX, binLand.scaleY);
-  drawTrashBin(ctx, pal, 270, 260);
-  ctx.restore();
-
-  // 受潮散茶堆：先悬于篓上方被打朱砂叉，再顺势缩入篓口落尽（克制干净）
-  const teaY = 835 + throwP * 340;
-  const teaScale = (1 - throwP * 0.56) * pIn;
-  const teaAlpha = clamp01(1 - Math.max(0, (throwP - 0.72) / 0.28)) * pIn;
-  if (teaAlpha > 0.01) {
-    ctx.save();
-    ctx.globalAlpha = teaAlpha;
-    ctx.translate(MID_X, teaY);
-    ctx.rotate(throwP * 0.24);
-    ctx.scale(teaScale, teaScale);
-    drawLooseTeaPile(ctx, pal, 185, 132, { fluff: 0.65, damp: 0.95, seed: 66 });
-    ctx.restore();
-  }
-
-  // 朱砂毛笔大叉：干脆划掉这批受潮散茶
-  const crossP = easeOutCubic(progress(frame, MOLD_AT + 2, MOLD_AT + 20));
-  if (crossP > 0.01) {
-    ctx.save();
-    ctx.globalAlpha = 1 - throwP * 0.25;
-    brushCross(ctx, MID_X, 835 + throwP * 65, 290, crossP, pal.cinnabar, 97, 18);
-    ctx.restore();
-  }
+/** 散茶堆上的灰白霉绒（确定性；p 0→1 从边缘向内长） */
+function drawMold(ctx: CanvasRenderingContext2D, p: number, frame: number) {
+  if (p <= 0.01) return;
+  const spots = [
+    [-120, -20],
+    [-70, -70],
+    [10, -88],
+    [90, -60],
+    [135, 5],
+    [60, 40],
+    [-30, 30],
+    [-140, 40],
+    [20, -20],
+  ];
+  spots.forEach(([x, y], i) => {
+    const local = clamp01((p - i * 0.07) / 0.5);
+    if (local <= 0.01) return;
+    const r = (18 + (i % 4) * 7) * local;
+    const g = ctx.createRadialGradient(x, y, 1, x, y, r);
+    g.addColorStop(0, `rgba(236,236,226,${0.85 * local})`);
+    g.addColorStop(0.6, `rgba(214,216,204,${0.55 * local})`);
+    g.addColorStop(1, "rgba(214,216,204,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    // 绒毛：几根细丝（每 3 帧随 boil 轻微换位）
+    const b = boilOffset(frame, 900 + i, 0, 1.2);
+    ctx.strokeStyle = `rgba(240,240,232,${0.6 * local})`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let k = 0; k < 7; k++) {
+      const a = (k / 7) * Math.PI * 2 + i;
+      ctx.moveTo(x + Math.cos(a) * r * 0.5, y + Math.sin(a) * r * 0.5);
+      ctx.lineTo(x + Math.cos(a) * r * 1.15 + b.x, y + Math.sin(a) * r * 1.15 + b.y);
+    }
+    ctx.stroke();
+  });
 }
 
 export function allTexts(params?: AnimParams) {
