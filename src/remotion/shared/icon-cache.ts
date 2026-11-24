@@ -1,7 +1,22 @@
 const iconCache = new Map<string, HTMLImageElement>();
 
+const registered = new Set<string>();
+
+/** 节拍模块声明自己要用的图片；面板启动和导出前会统一预加载 */
+export function registerImages(paths: string[]): string[] {
+  paths.forEach((p) => registered.add(p));
+  return paths;
+}
+
+export function registeredImages(): string[] {
+  return [...registered];
+}
+
 export function getIconImage(src: string) {
-  return iconCache.get(src);
+  const hit = iconCache.get(src);
+  // 浏览器里没预加载到的图，第一次取时顺手加载，下一帧就能画上
+  if (!hit && typeof document !== "undefined") void preloadIconList([src]);
+  return hit;
 }
 
 export function preloadIconList(paths: string[]): Promise<void> {

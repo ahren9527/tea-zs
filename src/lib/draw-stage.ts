@@ -1,6 +1,7 @@
 import { getClip } from "@/remotion/catalog";
 import { FPS, type AnimParams } from "@/remotion/shared/theme";
 import type { ClipDef } from "@/remotion/shared/types";
+import { preloadIconList, registeredImages } from "@/remotion/shared/icon-cache";
 
 /** 片段可以传 id，也可以直接传 ClipDef */
 export type ClipRef = string | ClipDef;
@@ -12,6 +13,7 @@ export function resolveClip(ref: ClipRef): ClipDef {
 export type { AnimParams };
 
 export async function preloadIcons(): Promise<void> {
+  await preloadIconList(registeredImages());
   if (typeof document !== "undefined" && document.fonts) {
     await document.fonts.load('500 64px "LXGW WenKai"');
     await document.fonts.load('600 80px "LXGW WenKai"');

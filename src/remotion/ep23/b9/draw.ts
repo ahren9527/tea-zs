@@ -3,7 +3,7 @@
  * 沿用 ep22 B7 水墨口诀风格：宣纸留白 + 底部远山薄雾（复用 public/tea/ep23/b9-mountains.png，无图时退回程序画山脊）+
  * 两团淡墨依次洇开 + 马善政毛笔楷书两列竖排（「国标管的是出厂」/「存茶要自己留余量」）+ 左下朱印「存茶留余」。不要卷轴。
  */
-import { getIconImage } from "@/remotion/shared/icon-cache";
+import { getIconImage, registerImages } from "@/remotion/shared/icon-cache";
 import {
   END_STILL_FRAMES,
   TAU,
@@ -64,7 +64,7 @@ export const BRUSH_FONT = '"Ma Shan Zheng", "ZS WenKai", "LXGW WenKai", serif';
 
 /** 复用 ep22 B7 水墨远山透明底图，未加载时退回程序山脊 */
 export const MOUNT_SRC = "tea/ep23/b9-mountains.png";
-export const NODE_IMAGES = [MOUNT_SRC];
+export const NODE_IMAGES = registerImages([MOUNT_SRC]);
 
 const COLS = [
   { x: COL_X[0], y: COL_Y[0], at: L1_AT, key: "line1" as TextKey },

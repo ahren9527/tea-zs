@@ -36,12 +36,12 @@ import {
   textOf,
 } from "../kit/draw-kit";
 import { drawHandGesture, drawMiyunCake, drawNoseProfile } from "../kit/objects";
-import { getIconImage } from "@/remotion/shared/icon-cache";
+import { getIconImage, registerImages } from "@/remotion/shared/icon-cache";
 
 /** 手、鼻子用平涂淡彩插画（透明底 PNG），比代码简笔更像；图没加载时退回代码画 */
 const HAND_SRC = "tea/ep23/b10-hand.png";
 const NOSE_SRC = "tea/ep23/b10-nose.png";
-export const NODE_IMAGES = [HAND_SRC, NOSE_SRC];
+export const NODE_IMAGES = registerImages([HAND_SRC, NOSE_SRC]);
 
 function drawCutout(
   ctx: CanvasRenderingContext2D,
